@@ -1,8 +1,14 @@
 {
   "name": "server",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "test": "bun test",
+    "validate": "bun run scripts/validate-apis.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
@@ -10,7 +16,11 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.23",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@fal-ai/serverless-client": "^0.15.0",
     "@google/genai": "^1.38.0",
+    "@hono/zod-validator": "^0.7.6",
     "hono": "^4.11.7",
     "zod": "^4.3.6"
   }

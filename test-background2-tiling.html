@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Background2 Tiling Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #000;
+      color: #fff;
+      font-family: monospace;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      max-width: 1600px;
+    }
+    .test-tile {
+      border: 2px solid #333;
+      position: relative;
+    }
+    .test-tile h3 {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 5px 10px;
+      margin: 0;
+      font-size: 14px;
+      z-index: 10;
+    }
+    .tile-grid {
+      width: 512px;
+      height: 512px;
+      background-repeat: repeat;
+      background-size: 256px 256px;
+    }
+    .info {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    .header {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Background2 Tiling Test</h1>
+    <p>Testing seamless tiling for background2 variations - each shown as 2x2 grid at 256px scale</p>
+  </div>
+
+  <div class="container">
+    <div class="test-tile">
+      <h3>Variation 1</h3>
+      <div class="tile-grid" style="background-image: url('/home/mkagent/repos/Space-Laser/assets/background2_variation1.png');"></div>
+      <div class="info">931.59 KB</div>
+    </div>
+
+    <div class="test-tile">
+      <h3>Variation 2</h3>
+      <div class="tile-grid" style="background-image: url('/home/mkagent/repos/Space-Laser/assets/background2_variation2.png');"></div>
+      <div class="info">961.19 KB</div>
+    </div>
+
+    <div class="test-tile">
+      <h3>Variation 3</h3>
+      <div class="tile-grid" style="background-image: url('/home/mkagent/repos/Space-Laser/assets/background2_variation3.png');"></div>
+      <div class="info">717.19 KB</div>
+    </div>
+
+    <div class="test-tile">
+      <h3>Variation 5</h3>
+      <div class="tile-grid" style="background-image: url('/home/mkagent/repos/Space-Laser/assets/background2_variation5.png');"></div>
+      <div class="info">784.07 KB</div>
+    </div>
+  </div>
+
+  <script>
+    // Log file sizes
+    console.log('=== Background2 Variations ===');
+    console.log('Variation 1: 931.59 KB');
+    console.log('Variation 2: 961.19 KB');
+    console.log('Variation 3: 717.19 KB (smallest)');
+    console.log('Variation 5: 784.07 KB');
+    console.log('\nRecommendation: Select variation 3 for best size/quality ratio');
+  </script>
+</body>
+</html>

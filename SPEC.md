@@ -10,10 +10,10 @@ A visual node editor where you connect inputs (text, images, drawings, video) th
 
 - [x] Gemini API validated (rate limited on free tier, needs billing)
 - [x] FAL API validated (Meshy text-to-3D working)
-- [ ] Project scaffold
-- [ ] Node editor prototype
-- [ ] Core nodes implementation
-- [ ] Asset optimization pipeline
+- [x] Project scaffold (Bun workspaces, React 19, Vite 7)
+- [x] Node editor prototype (React Flow 12.10 working)
+- [x] Core nodes implementation (21 nodes implemented)
+- [ ] Asset optimization pipeline (partial - resize/crop done, compress pending)
 
 ---
 
@@ -272,21 +272,21 @@ FAL_KEY=670ef279-...:26238e4d...
 ## Implementation Phases
 
 ### Phase 1: Foundation
-- [ ] Scaffold monorepo (pnpm workspaces)
-- [ ] Set up React + Vite + TypeScript
-- [ ] Integrate React Flow
-- [ ] Basic node types (Text, Preview)
-- [ ] Connect to Gemini API
+- [x] Scaffold monorepo (Bun workspaces)
+- [x] Set up React + Vite + TypeScript
+- [x] Integrate React Flow
+- [x] Basic node types (Text, Preview)
+- [x] Connect to Gemini API
 
 ### Phase 2: Core Nodes
-- [ ] Image Gen node (nano-banana-pro)
+- [x] Image Gen node (nano-banana-pro)
 - [ ] Canvas node (tldraw integration)
-- [ ] Image Upload node
-- [ ] Remove BG node (FAL birefnet)
-- [ ] Resize/Crop nodes
+- [x] Image Upload node
+- [x] Remove BG node (FAL birefnet)
+- [x] Resize/Crop nodes
 
 ### Phase 3: 3D Pipeline
-- [ ] 3D Gen node (FAL Meshy/Tripo)
+- [x] 3D Gen node (FAL Meshy/Tripo)
 - [ ] 3D Preview (Three.js viewer)
 - [ ] 3D Upload node
 - [ ] LOD generation

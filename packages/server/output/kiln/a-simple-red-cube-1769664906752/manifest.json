@@ -1,0 +1,10 @@
+{
+  "name": "a-simple-red-cube",
+  "category": "prop",
+  "mode": "glb",
+  "style": "low-poly",
+  "timestamp": 1769664906752,
+  "files": {
+    "geometry": "geometry.ts"
+  }
+}

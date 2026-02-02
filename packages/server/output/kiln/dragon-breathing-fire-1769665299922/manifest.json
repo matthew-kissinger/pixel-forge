@@ -1,0 +1,11 @@
+{
+  "name": "dragon-breathing-fire",
+  "category": "character",
+  "mode": "both",
+  "style": "low-poly",
+  "timestamp": 1769665299922,
+  "files": {
+    "geometry": "geometry.ts",
+    "effect": "effect.ts"
+  }
+}

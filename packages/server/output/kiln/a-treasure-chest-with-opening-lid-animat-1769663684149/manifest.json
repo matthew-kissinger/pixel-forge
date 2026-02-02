@@ -1,0 +1,11 @@
+{
+  "name": "a-treasure-chest-with-opening-lid-animat",
+  "category": "prop",
+  "mode": "both",
+  "style": "low-poly",
+  "timestamp": 1769663684149,
+  "files": {
+    "geometry": "geometry.ts",
+    "effect": "effect.ts"
+  }
+}

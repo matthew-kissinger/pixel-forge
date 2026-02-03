@@ -9,6 +9,7 @@ import { PixelateNode } from './PixelateNode';
 import { TileNode } from './TileNode';
 import { ColorPaletteNode } from './ColorPaletteNode';
 import { FilterNode } from './FilterNode';
+import { CompressNode } from './CompressNode';
 import { CropNode } from './CropNode';
 import { CombineNode } from './CombineNode';
 import { SaveNode } from './SaveNode';
@@ -52,6 +53,7 @@ export const nodeTypes = {
   // Processing
   removeBg: RemoveBgNode,
   resize: ResizeNode,
+  compress: CompressNode,
   crop: CropNode,
   pixelate: PixelateNode,
   tile: TileNode,

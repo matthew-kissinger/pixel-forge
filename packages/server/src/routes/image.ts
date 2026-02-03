@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
+import sharp from 'sharp';
 import { buildPresetPrompt, getPresetById } from '@pixel-forge/shared/presets';
 import { generateImage, extractSpritesFromSheet } from '../services/gemini';
 import { removeBackground } from '../services/fal';
@@ -42,6 +43,14 @@ const generateSchema = z.object({
 
 const removeBgSchema = z.object({
   image: z.string().min(1, 'Image data is required'),
+});
+
+const compressSchema = z.object({
+  image: z.string().min(1, 'Image data is required'),
+  format: z.enum(['png', 'webp', 'jpeg']).optional().default('webp'),
+  quality: z.number().int().min(1).max(100).optional().default(80),
+  maxWidth: z.number().int().min(1).max(8192).optional(),
+  maxHeight: z.number().int().min(1).max(8192).optional(),
 });
 
 const sliceSheetSchema = z.object({
@@ -110,6 +119,59 @@ imageRouter.post(
       console.error('Background removal error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Background removal failed'
+      );
+    }
+  }
+);
+
+imageRouter.post(
+  '/compress',
+  zValidator('json', compressSchema),
+  async (c) => {
+    const { image, format, quality, maxWidth, maxHeight } = c.req.valid('json');
+
+    try {
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+      const inputBuffer = Buffer.from(base64Data, 'base64');
+      const originalSize = inputBuffer.length;
+
+      let pipeline = sharp(inputBuffer);
+
+      if (maxWidth || maxHeight) {
+        pipeline = pipeline.resize({
+          width: maxWidth,
+          height: maxHeight,
+          fit: 'inside',
+          withoutEnlargement: true,
+        });
+      }
+
+      switch (format) {
+        case 'png':
+          pipeline = pipeline.png({ quality });
+          break;
+        case 'jpeg':
+          pipeline = pipeline.jpeg({ quality });
+          break;
+        case 'webp':
+          pipeline = pipeline.webp({ quality });
+          break;
+      }
+
+      const outputBuffer = await pipeline.toBuffer();
+      const compressedSize = outputBuffer.length;
+      const base64Output = outputBuffer.toString('base64');
+
+      return c.json({
+        image: `data:image/${format};base64,${base64Output}`,
+        originalSize,
+        compressedSize,
+        format,
+      });
+    } catch (error) {
+      console.error('Compress error:', error);
+      throw new BadRequestError(
+        error instanceof Error ? error.message : 'Compression failed'
       );
     }
   }

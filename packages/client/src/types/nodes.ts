@@ -95,6 +95,7 @@ export type RotationDirs = 4 | 8;
 /** Base interface all node data must extend */
 interface BaseNodeDataFields {
   label: string;
+  [key: string]: unknown;
 }
 
 // Input Nodes
@@ -184,6 +185,14 @@ export interface ResizeNodeData extends BaseNodeDataFields {
   pixelPerfect: boolean;
 }
 
+export interface CompressNodeData extends BaseNodeDataFields {
+  nodeType: 'compress';
+  format: 'png' | 'webp' | 'jpeg';
+  quality: number;
+  maxWidth?: number;
+  maxHeight?: number;
+}
+
 export interface CropNodeData extends BaseNodeDataFields {
   nodeType: 'crop';
   x: number;
@@ -249,7 +258,8 @@ export interface SliceSheetNodeData extends BaseNodeDataFields {
   nodeType: 'sliceSheet';
   rows: number;
   cols: number;
-  outputMode: 'individual' | 'zip';
+  sprites?: string[];
+  currentSpriteIndex?: number;
 }
 
 export interface BatchGenNodeData extends BaseNodeDataFields {
@@ -306,6 +316,7 @@ export type NodeDataUnion =
   // Processing
   | RemoveBgNodeData
   | ResizeNodeData
+  | CompressNodeData
   | CropNodeData
   | PixelateNodeData
   | TileNodeData
@@ -554,6 +565,21 @@ export const nodeDefinitions: NodeDefinition[] = [
     },
   },
   {
+    type: 'compress',
+    label: 'Compress',
+    description: 'Optimize images for game engines',
+    category: 'process',
+    io: { inputs: ['image'], output: 'image' },
+    defaultData: {
+      nodeType: 'compress',
+      label: 'Compress',
+      format: 'webp',
+      quality: 80,
+      maxWidth: undefined,
+      maxHeight: undefined,
+    },
+  },
+  {
     type: 'crop',
     label: 'Crop',
     description: 'Crop images with presets',
@@ -688,7 +714,6 @@ export const nodeDefinitions: NodeDefinition[] = [
       label: 'Slice Sheet',
       rows: 6,
       cols: 5,
-      outputMode: 'individual',
     },
   },
 

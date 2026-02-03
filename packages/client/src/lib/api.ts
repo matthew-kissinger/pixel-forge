@@ -44,6 +44,13 @@ export interface SliceSheetResponse {
   sprites: string[]; // base64 data URLs
 }
 
+export interface CompressImageResponse {
+  image: string; // base64 data URL
+  originalSize: number;
+  compressedSize: number;
+  format: 'png' | 'webp' | 'jpeg';
+}
+
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
@@ -103,6 +110,19 @@ export async function sliceSheet(
   return apiFetch<SliceSheetResponse>('/image/slice-sheet', {
     method: 'POST',
     body: JSON.stringify({ image: imageBase64, rows, cols }),
+  });
+}
+
+export async function compressImage(
+  image: string,
+  format: 'png' | 'webp' | 'jpeg' = 'webp',
+  quality = 80,
+  maxWidth?: number,
+  maxHeight?: number
+): Promise<CompressImageResponse> {
+  return apiFetch<CompressImageResponse>('/image/compress', {
+    method: 'POST',
+    body: JSON.stringify({ image, format, quality, maxWidth, maxHeight }),
   });
 }
 

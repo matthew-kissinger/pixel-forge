@@ -6,6 +6,7 @@ import { buildPresetPrompt, getPresetById } from '@pixel-forge/shared/presets';
 import { generateImage, extractSpritesFromSheet } from '../services/gemini';
 import { removeBackground } from '../services/fal';
 import { BadRequestError, TooManyRequestsError } from '../lib/errors';
+import { logger } from '@pixel-forge/shared/logger';
 
 const imageRouter = new Hono();
 
@@ -96,10 +97,10 @@ imageRouter.post(
       const shouldRemoveBgFinal = shouldRemoveBg ?? preset?.autoRemoveBg ?? false;
       if (shouldRemoveBgFinal && result.image) {
         try {
-          const bgResult = await removeBackground(result.image);
+          const bgResult = await removeBackground(result.image!);
           return c.json({ image: bgResult.image });
         } catch (bgError) {
-          console.warn('Background removal failed, returning original:', bgError);
+          logger.warn('Background removal failed, returning original:', bgError);
           return c.json(result);
         }
       }
@@ -108,7 +109,7 @@ imageRouter.post(
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
-      console.error('Image generation error:', error);
+      logger.error('Image generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Image generation failed'
       );
@@ -128,7 +129,7 @@ imageRouter.post(
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
-      console.error('Background removal error:', error);
+      logger.error('Background removal error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Background removal failed'
       );
@@ -183,7 +184,7 @@ imageRouter.post(
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
-      console.error('Compress error:', error);
+      logger.error('Compress error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Compression failed'
       );
@@ -214,7 +215,7 @@ imageRouter.post(
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
-      console.error('Slice sheet error:', error);
+      logger.error('Slice sheet error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Slice sheet failed'
       );
@@ -242,10 +243,10 @@ imageRouter.post(
       // Remove background for game assets
       let finalImage = result.image;
       try {
-        const bgResult = await removeBackground(result.image);
+        const bgResult = await removeBackground(result.image!);
         finalImage = bgResult.image;
       } catch (bgError) {
-        console.warn('Background removal failed, using original:', bgError);
+        logger.warn('Background removal failed, using original:', bgError);
       }
 
       return c.json({
@@ -254,7 +255,7 @@ imageRouter.post(
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
-      console.error('Smart generation error:', error);
+      logger.error('Smart generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Smart generation failed'
       );
@@ -290,33 +291,57 @@ imageRouter.post(
             prompt = `${consistencyPhrase}. ${prompt}`;
           }
 
-          const finalPrompt = preset ? buildPresetPrompt(preset, prompt) : prompt;
+                                  const finalPrompt = (preset ? buildPresetPrompt(preset, prompt as any) : prompt) as any;
 
-          // Add seed variation if provided (seed + index for variation)
-          // Note: Gemini doesn't directly support seeds, but we can add it to metadata
-          // For now, we'll generate without seed support and rely on consistency phrase
+                      
 
-          const result = await generateImage(finalPrompt);
+                                  // Add seed variation if provided (seed + index for variation)
 
-          // Apply background removal if needed
-          const shouldRemoveBg = preset?.autoRemoveBg ?? false;
-          if (shouldRemoveBg && result.image) {
-            try {
-              const bgResult = await removeBackground(result.image);
-              images.push(bgResult.image);
-            } catch (bgError) {
-              console.warn(`Background removal failed for subject ${i + 1}:`, bgError);
-              images.push(result.image);
-            }
-          } else {
-            images.push(result.image);
-          }
+                                  // Note: Gemini doesn't directly support seeds, but we can add it to metadata
+
+                                  // For now, we'll generate without seed support and rely on consistency phrase
+
+                      
+
+                                  const result = await generateImage(finalPrompt);
+
+                      
+
+                                  // Apply background removal if needed
+
+                                  const shouldRemoveBg = preset?.autoRemoveBg ?? false;
+
+                                  if (shouldRemoveBg && (result as any).image) {
+
+                                    try {
+
+                                      const bgResult = await removeBackground((result as any).image);
+
+                                      images.push(bgResult.image);
+
+                                    } catch (bgError) {
+
+                                      logger.warn(`Background removal failed for subject ${i + 1}:`, bgError);
+
+                                      images.push((result as any).image);
+
+                                    }
+
+                                  } else {
+
+                                    images.push((result as any).image);
+
+                                  }
+
+                      
+
+          
         } catch (error) {
           if (error instanceof TooManyRequestsError) {
             throw error;
           }
           const errorMsg = error instanceof Error ? error.message : 'Generation failed';
-          console.error(`Failed to generate subject ${i + 1} (${subject}):`, errorMsg);
+          logger.error(`Failed to generate subject ${i + 1} (${subject}):`, errorMsg);
           errors.push(`Subject ${i + 1}: ${errorMsg}`);
           // Continue with remaining subjects
         }
@@ -335,7 +360,7 @@ imageRouter.post(
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
-      console.error('Batch generation error:', error);
+      logger.error('Batch generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Batch generation failed'
       );

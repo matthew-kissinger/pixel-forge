@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
+import { logger } from '@pixel-forge/shared/logger';
 
 let genai: GoogleGenAI | null = null;
 
@@ -120,9 +121,9 @@ async function removeChromaKey(
     const srcIdx = i * channels;
     const dstIdx = i * 4;
 
-    const r = data[srcIdx];
-    const g = data[srcIdx + 1];
-    const b = data[srcIdx + 2];
+    const r = data[srcIdx] ?? 0;
+    const g = data[srcIdx + 1] ?? 0;
+    const b = data[srcIdx + 2] ?? 0;
 
     // Check if pixel is chroma key color
     let isChromaKey = false;
@@ -187,13 +188,13 @@ async function extractAlphaFromDualImages(
     const bIdx = i * 3;
     const dstIdx = i * 4;
 
-    const wR = whiteData.data[wIdx];
-    const wG = whiteData.data[wIdx + 1];
-    const wB = whiteData.data[wIdx + 2];
+    const wR = whiteData.data[wIdx] ?? 0;
+    const wG = whiteData.data[wIdx + 1] ?? 0;
+    const wB = whiteData.data[wIdx + 2] ?? 0;
 
-    const bR = blackData.data[bIdx];
-    const bG = blackData.data[bIdx + 1];
-    const bB = blackData.data[bIdx + 2];
+    const bR = blackData.data[bIdx] ?? 0;
+    const bG = blackData.data[bIdx + 1] ?? 0;
+    const bB = blackData.data[bIdx + 2] ?? 0;
 
     // Calculate alpha from difference between white and black backgrounds
     // On white bg: result = fg * a + 255 * (1-a)
@@ -254,7 +255,7 @@ async function generateRawImage(prompt: string): Promise<Buffer> {
   for (const part of parts) {
     if (part.inlineData) {
       const { data } = part.inlineData;
-      return Buffer.from(data, 'base64');
+      return Buffer.from(data ?? '', 'base64');
     }
   }
 
@@ -286,7 +287,7 @@ export async function generateSprite(
     background: 'red-screen', // Red screen avoids conflicts with green game assets
   });
 
-  console.log('[generateSprite] Prompt:', prompt);
+  logger.debug('[generateSprite] Prompt:', prompt);
 
   // Generate raw image
   const rawBuffer = await generateRawImage(prompt);
@@ -327,7 +328,7 @@ export async function generateSpriteVariations(
       const result = await generateSprite(variedSubject, options);
       results.push(result);
     } catch (error) {
-      console.error(`[generateSpriteVariations] Variation ${i + 1} failed:`, error);
+      logger.error(`[generateSpriteVariations] Variation ${i + 1} failed:`, error);
     }
   }
 
@@ -414,7 +415,7 @@ ${stylePrompt}. ${rowDescriptions}
 
 NO SHADOWS. No variation in red background tone. Full size, ${opts.size} square.`;
 
-  console.log('[generateIsometricSpriteSheet] Prompt:', prompt);
+  logger.info('[generateIsometricSpriteSheet] Prompt:', prompt);
 
   const rawBuffer = await generateRawImage(prompt);
 

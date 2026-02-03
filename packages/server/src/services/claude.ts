@@ -13,6 +13,7 @@
  */
 
 import { query } from '@anthropic-ai/claude-agent-sdk';
+import { logger } from '@pixel-forge/shared/logger';
 
 // =============================================================================
 // Types
@@ -35,6 +36,7 @@ export interface KilnGenerateRequest {
   budget?: AssetBudget;
   includeAnimation?: boolean;
   existingCode?: string;
+  referenceImageUrl?: string;
 }
 
 export interface KilnGenerateResponse {
@@ -564,14 +566,14 @@ async function runQuery(
 
   let sessionId: string | undefined;
 
-  console.log('[Kiln] Starting agent query...');
+  logger.info('[Kiln] Starting agent query...');
 
   for await (const message of q) {
     if (message.type === 'result') {
-      sessionId = message.sessionId;
-      console.log('[Kiln] Agent completed, session:', sessionId);
+      sessionId = message.session_id;
+      logger.info('[Kiln] Agent completed, session:', sessionId);
     } else if (message.type === 'assistant') {
-      console.log('[Kiln] Agent message received');
+      logger.debug('[Kiln] Agent message received');
     }
   }
 
@@ -579,7 +581,7 @@ async function runQuery(
   let code = '';
   let effectCode: string | undefined;
 
-  console.log('[Kiln] Reading files from:', dir);
+  logger.debug('[Kiln] Reading files from:', dir);
 
   if (manifest.files.geometry) {
     const geoPath = `${dir}/${manifest.files.geometry}`;
@@ -597,12 +599,12 @@ async function runQuery(
           .replace(/\{\s*time:\s*([^,]+),\s*value:\s*\[/g, '{ time: $1, rotation: [')
           .trim();
 
-        console.log('[Kiln] Read geometry.ts:', code.length, 'chars (post-processed)');
+        logger.debug('[Kiln] Read geometry.ts:', code.length, 'chars (post-processed)');
       } else {
-        console.log('[Kiln] geometry.ts does not exist at:', geoPath);
+        logger.debug('[Kiln] geometry.ts does not exist at:', geoPath);
       }
     } catch (e) {
-      console.log('[Kiln] Error reading geometry.ts:', e);
+      logger.debug('[Kiln] Error reading geometry.ts:', e);
     }
   }
 
@@ -629,8 +631,8 @@ export async function generateKilnCode(
       .replace(/^-|-$/g, '')
       .slice(0, 40) || 'asset';
 
-    console.log('[Kiln] Generating:', assetName);
-    console.log('[Kiln] Mode:', request.mode, '| Category:', request.category);
+    logger.info('[Kiln] Generating:', assetName);
+    logger.debug('[Kiln] Mode:', request.mode, '| Category:', request.category);
 
     // Run query - agent writes files directly to output bundle
     const result = await runQuery(
@@ -641,8 +643,8 @@ export async function generateKilnCode(
       request.style
     );
 
-    console.log('[Kiln] Output dir:', result.outputDir);
-    console.log('[Kiln] Files - geometry:', !!result.code, 'effect:', !!result.effectCode);
+    logger.info('[Kiln] Output dir:', result.outputDir);
+    logger.debug('[Kiln] Files - geometry:', !!result.code, 'effect:', !!result.effectCode);
 
     return {
       success: true,
@@ -653,7 +655,7 @@ export async function generateKilnCode(
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Claude generation error:', error);
+    logger.error('Claude generation error:', error);
     return {
       success: false,
       error: message,
@@ -684,8 +686,9 @@ export async function* streamKilnCode(
     });
 
     for await (const message of q) {
-      if (message.type === 'assistant' && message.message?.content) {
-        for (const block of message.message.content) {
+      if (message.type === 'assistant' && (message as any).message?.content) {
+        const content = (message as any).message.content;
+        for (const block of content) {
           if (block.type === 'text') {
             yield { type: 'chunk', data: block.text };
           }
@@ -850,7 +853,7 @@ Use the Skill tool to reference kiln-glb or kiln-tsl for API details if needed.`
           }
         }
       } else if (message.type === 'result') {
-        sessionId = message.sessionId;
+        sessionId = message.session_id;
       }
     }
 
@@ -870,8 +873,8 @@ Use the Skill tool to reference kiln-glb or kiln-tsl for API details if needed.`
       const geoMatch = code.match(/```(?:typescript|geometry)\n?([\s\S]*?function build[\s\S]*?)```/);
       const effMatch = code.match(/```(?:typescript|effect)\n?(import[\s\S]*?export \{ material \}[\s\S]*?)```/);
 
-      if (geoMatch) code = geoMatch[1].trim();
-      if (effMatch) effectCode = effMatch[1].trim();
+      if (geoMatch?.[1]) code = geoMatch[1].trim();
+      if (effMatch?.[1]) effectCode = effMatch[1].trim();
     }
 
     return {

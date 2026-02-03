@@ -30,7 +30,7 @@ describe('Health Check', () => {
     const res = await app.fetch(new Request(`${baseUrl}/health`));
     expect(res.status).toBe(200);
 
-    const data = await res.json();
+    const data = await res.json() as any;
     expect(data.status).toBe('ok');
     expect(data.timestamp).toBeDefined();
   });
@@ -58,7 +58,7 @@ describe('Image API', () => {
     );
     expect(res.status).toBe(200);
 
-    const data = await res.json();
+    const data = await res.json() as any;
     expect(data.image).toBeDefined();
     expect(data.image).toStartWith('data:image/');
   });
@@ -84,7 +84,7 @@ describe('Image API', () => {
     );
     expect(res.status).toBe(200);
 
-    const data = await res.json();
+    const data = await res.json() as any;
     expect(data.image).toBeDefined();
   });
 });
@@ -111,7 +111,7 @@ describe('Model API', () => {
     );
     expect(res.status).toBe(200);
 
-    const data = await res.json();
+    const data = await res.json() as any;
     expect(data.requestId).toBeDefined();
   });
 
@@ -121,7 +121,7 @@ describe('Model API', () => {
     );
     expect(res.status).toBe(200);
 
-    const data = await res.json();
+    const data = await res.json() as any;
     expect(data.status).toBeDefined();
   });
 });
@@ -131,7 +131,7 @@ describe('404 Handler', () => {
     const res = await app.fetch(new Request(`${baseUrl}/unknown/route`));
     expect(res.status).toBe(404);
 
-    const data = await res.json();
+    const data = await res.json() as any;
     expect(data.error).toBe('Not found');
   });
 });

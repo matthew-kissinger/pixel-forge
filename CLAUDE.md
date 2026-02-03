@@ -182,23 +182,25 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Image compression node** - Game-ready output optimization (WebP, quality, file size targets) - previous attempt failed, needs retry
-- **SliceSheet multi-output** - Currently only outputs first sprite; needs ZIP download or multi-output support
-- **Workflow execution engine** - Run entire pipelines automatically instead of clicking each node
-- **More presets** - Pixel art sprite, vegetation, effect animation presets
+- **Executor node coverage** - Several nodes unimplemented in executor (tile, colorPalette, filter, combine, rotate, kilnGen) - need to wire these up
+- **Missing node components** - 5 types defined but no components: styleReference, seedControl, spriteSheet, exportGLB, exportSheet
+- **Workflow UX polish** - Error display per-node, execution history, re-run failed nodes
 
 ### Completed Goals
 
-- ~~Planet texture preset~~ - Done (4 presets in `packages/shared/presets.ts`)
-- ~~Sprite sheet slicing~~ - Done (`SliceSheetNode`, basic single-output)
+- ~~Planet texture preset~~ - Done (7 presets in `packages/shared/presets.ts`)
+- ~~Sprite sheet slicing~~ - Done (`SliceSheetNode`, multiple sprites + ZIP download)
 - ~~Batch consistency~~ - Done (`BatchGenNode` with consistency phrases)
-- ~~Template persistence~~ - Done (workflow save/load JSON, 8 workflow templates)
+- ~~Template persistence~~ - Done (workflow save/load JSON, 9 workflow templates)
+- ~~Image compression node~~ - Done (`CompressNode` + `/api/image/compress` endpoint)
+- ~~Workflow execution engine~~ - Done (`executor.ts` with topological sort, parallel execution, cancellation)
+- ~~More presets~~ - Done (vegetation-sprite, effect-strip, soldier-sprite added)
 
 ## Current State
 
-React Flow editor with 24 node types. Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets, batch generates with consistency phrases. Workflow save/load works. 8 pre-built templates across 5 categories. 4 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works.
+React Flow editor with 23 node components (28 defined in type system). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node works. Workflow execution engine with topological sort, parallel branch execution, and cancellation support (uncommitted).
 
-Key gaps: image compression/optimization node, sprite sheet multi-output, automated pipeline execution, more presets for specific asset types.
+Key gaps: executor missing support for several node types (tile, colorPalette, filter, combine, rotate, kilnGen), 5 node types defined but missing components (styleReference, seedControl, spriteSheet, exportGLB, exportSheet), workflow UX polish.
 
 ## Quality Bar
 
@@ -223,9 +225,9 @@ Assets should be:
 **Structure:**
 ```
 packages/
-├── client/    # React + React Flow editor (24 node types, Zustand store, templates)
+├── client/    # React + React Flow editor (23 node components, Zustand store, 9 templates, executor)
 ├── server/    # Hono API wrapping AI services (Gemini, FAL, Claude)
-└── shared/    # Shared types and presets (preset definitions, prompt builders)
+└── shared/    # Shared types and presets (7 presets, prompt builders)
 ```
 
 ## Template Examples

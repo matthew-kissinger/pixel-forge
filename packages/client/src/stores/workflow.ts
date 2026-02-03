@@ -109,6 +109,8 @@ interface WorkflowState {
   // Persistence
   exportWorkflow: () => WorkflowData;
   importWorkflow: (data: WorkflowData) => void;
+  lastAutoSave: number | null;
+  setLastAutoSave: (timestamp: number | null) => void;
 }
 
 const initialNodes: Node<NodeData>[] = [];
@@ -166,6 +168,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => {
     executionHistory: [],
     undoStack: [],
     redoStack: [],
+    lastAutoSave: null,
 
     onNodesChange: (changes) => {
       const state = get();
@@ -443,6 +446,10 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => {
 
   canRedo: () => {
     return get().redoStack.length > 0;
+  },
+
+  setLastAutoSave: (timestamp) => {
+    set({ lastAutoSave: timestamp });
   },
   };
 });

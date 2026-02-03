@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { subscribeWithSelector } from 'zustand/middleware';
 import {
   type Node,
   type Edge,
@@ -142,9 +143,10 @@ const restoreSnapshot = (snapshot: WorkflowSnapshot): { nodes: Node<NodeData>[];
   };
 };
 
-export const useWorkflowStore = create<WorkflowState>((set, get) => {
-  // Helper to push current state to undo stack
-  const pushToHistory = (skipRedoClear = false) => {
+export const useWorkflowStore = create<WorkflowState>()(
+  subscribeWithSelector((set, get) => {
+    // Helper to push current state to undo stack
+    const pushToHistory = (skipRedoClear = false) => {
     const state = get();
     const snapshot = createSnapshot(state.nodes, state.edges);
     const undoStack = [snapshot, ...state.undoStack].slice(0, MAX_HISTORY_SIZE);
@@ -452,5 +454,6 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => {
     set({ lastAutoSave: timestamp });
   },
   };
-});
+  })
+);
 

@@ -184,10 +184,9 @@ Build a **template/preset system** where:
 
 - **kilnGen executor** - Currently throws "not yet supported" (`handlers/model3d.ts:43`); needs real implementation once Kiln API is stable
 - **Workflow validation** - Pre-execution validation to catch missing inputs, disconnected nodes, cycles before running. Previous automated attempt failed.
-- **Batch operations UX** - No progress indication per-item in batch generation
-- **API retry logic** - No exponential backoff or retry on transient failures in `api.ts`; `TooManyRequestsError` has `retryAfter` field but client doesn't use it
-- **Test coverage** - Only basic store/type/API tests exist; no executor, integration, or error-handling tests
-- **Console cleanup** - 35+ `console.log`/`console.error` calls across client and server; needs structured logging or removal
+- **Test coverage** - Executor tests added (`executor.test.ts`, 378 lines) but no integration, error-handling, or handler-level tests
+- **Console cleanup** - 68 `console.log`/`console.error` calls across client (37) and server (31); needs structured logging or removal. Heaviest: `services/claude.ts` (12), `routes/image.ts` (10), `kiln/runtime.ts` (5)
+- **Uncommitted work** - Copy/paste refactor in `App.tsx` (clipboard ref, ID remapping, edge preservation) and `executor.test.ts` are staged but not committed
 
 ### Completed Goals
 
@@ -211,12 +210,15 @@ Build a **template/preset system** where:
 - ~~Auto-save~~ - Done (`useAutoSave.ts`: localStorage every 2s, recovery prompt on load)
 - ~~Minimap & controls~~ - Done (MiniMap toggle, Fit View, Auto Layout buttons in Toolbar)
 - ~~Execution timeout~~ - Done (per-node timeouts in executor: 120s gen, 60s processing, 30s canvas, AbortController)
+- ~~Batch operations UX~~ - Done (per-item progress tracking in batch handler: `current`, `total`, `label`)
+- ~~API retry logic~~ - Done (`retry.ts`: exponential backoff with jitter, `Retry-After` header support, AbortSignal, retryable status codes; `api.ts` wraps all calls via `retryWithBackoff`)
+- ~~Executor tests~~ - Done (`executor.test.ts`: 378 lines covering topological sort, diamond dependencies, parallel wave execution)
 
 ## Current State
 
-React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. Executor refactored into 467-line main module + 8 handler modules (1,166 lines total in `lib/handlers/`). Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle / MiniMap toggle / Fit View / Auto Layout. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons + Ctrl+Z/Ctrl+Shift+Z working. Copy/paste nodes with Ctrl+C/V (multi-node + edge preservation). Delete/Backspace key removes selected nodes/edges. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel, undo, redo, copy, paste, delete. Auto-save to localStorage with recovery prompt.
+React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases and per-item progress tracking. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic (`retry.ts` + `api.ts`). Executor refactored into 467-line main module + 8 handler modules (1,166 lines total in `lib/handlers/`). Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle / MiniMap toggle / Fit View / Auto Layout. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons + Ctrl+Z/Ctrl+Shift+Z working. Copy/paste nodes with Ctrl+C/V (multi-node + edge preservation). Delete/Backspace key removes selected nodes/edges. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel, undo, redo, copy, paste, delete. Auto-save to localStorage with recovery prompt. Test coverage: executor (378 lines), store (298 lines), types (156 lines), API (137 lines).
 
-Key gaps: kilnGen executor not yet implemented, no pre-execution workflow validation, no batch progress per-item, no API retry logic, minimal test coverage, console.log cleanup needed.
+Key gaps: kilnGen executor not yet implemented, no pre-execution workflow validation, console.log cleanup needed (68 calls), uncommitted copy/paste refactor and executor tests.
 
 ## Quality Bar
 

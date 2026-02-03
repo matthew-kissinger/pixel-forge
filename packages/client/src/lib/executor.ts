@@ -102,6 +102,86 @@ function topologicalSort(nodes: Node[], edges: Edge[]): Node[] {
 }
 
 /**
+ * Group nodes into execution waves based on dependency depth.
+ * All nodes in the same wave can execute in parallel.
+ * Returns array of waves, where each wave is an array of nodes.
+ */
+function getExecutionWaves(nodes: Node[], edges: Edge[]): Node[][] {
+  // Build dependency graph
+  const dependents = new Map<string, Set<string>>();
+  const dependencies = new Map<string, Set<string>>();
+  const nodeMap = new Map<string, Node>();
+
+  nodes.forEach((node) => {
+    nodeMap.set(node.id, node);
+    dependents.set(node.id, new Set());
+    dependencies.set(node.id, new Set());
+  });
+
+  edges.forEach((edge) => {
+    // edge.source -> edge.target means target depends on source
+    const sourceDeps = dependencies.get(edge.target);
+    const targetDeps = dependents.get(edge.source);
+    if (sourceDeps) sourceDeps.add(edge.source);
+    if (targetDeps) targetDeps.add(edge.target);
+  });
+
+  // Kahn's algorithm but collect nodes at each BFS level
+  const waves: Node[][] = [];
+  const queue: Node[] = [];
+  const inDegree = new Map<string, number>();
+
+  // Initialize in-degree counts
+  nodes.forEach((node) => {
+    const deps = dependencies.get(node.id);
+    const degree = deps ? deps.size : 0;
+    inDegree.set(node.id, degree);
+    if (degree === 0) {
+      queue.push(node);
+    }
+  });
+
+  // Process nodes level by level
+  while (queue.length > 0) {
+    // Process all nodes at current level (wave)
+    const currentWave: Node[] = [];
+    const waveSize = queue.length;
+
+    for (let i = 0; i < waveSize; i++) {
+      const node = queue.shift()!;
+      currentWave.push(node);
+
+      // Decrement in-degree of dependents
+      const deps = dependents.get(node.id);
+      if (deps) {
+        deps.forEach((dependentId) => {
+          const currentDegree = inDegree.get(dependentId) ?? 0;
+          const newDegree = currentDegree - 1;
+          inDegree.set(dependentId, newDegree);
+          if (newDegree === 0) {
+            const dependentNode = nodeMap.get(dependentId);
+            if (dependentNode) queue.push(dependentNode);
+          }
+        });
+      }
+    }
+
+    if (currentWave.length > 0) {
+      waves.push(currentWave);
+    }
+  }
+
+  // Add nodes with no connections (they weren't in the graph)
+  const processedIds = new Set(waves.flat().map((n) => n.id));
+  const orphanNodes = nodes.filter((node) => !processedIds.has(node.id));
+  if (orphanNodes.length > 0) {
+    waves.push(orphanNodes);
+  }
+
+  return waves;
+}
+
+/**
  * Check if a node has all required inputs available
  */
 function hasRequiredInputs(
@@ -1148,66 +1228,91 @@ async function executeNode(
 }
 
 /**
- * Execute entire workflow
+ * Execute entire workflow with parallel branch execution
  */
 export async function executeWorkflow(
   nodes: Node[],
   edges: Edge[],
   store: WorkflowStore,
-  ctx: ExecutionContext = { cancelled: false }
+  ctx: ExecutionContext = { getCancelled: () => false }
 ): Promise<ExecutionResult> {
   const errors: Array<{ nodeId: string; error: string }> = [];
-  const sortedNodes = topologicalSort(nodes, edges);
-  const { nodeOutputs, setNodeStatus } = store;
+  const { setNodeStatus, setNodeError } = store;
+
+  // Get execution waves (nodes grouped by dependency depth)
+  const waves = getExecutionWaves(nodes, edges);
 
   // Filter to only executable nodes (skip output-only nodes for now)
-  const executableNodes = sortedNodes.filter((node) => {
-    const nodeType = (node.data as NodeDataUnion).nodeType;
-    return !['preview', 'save', 'exportGLB', 'exportSheet'].includes(nodeType);
-  });
+  const executableWaves = waves.map((wave) =>
+    wave.filter((node) => {
+      const nodeType = (node.data as NodeDataUnion).nodeType;
+      return !['preview', 'save', 'exportGLB', 'exportSheet'].includes(nodeType);
+    })
+  ).filter((wave) => wave.length > 0);
 
+  // Calculate total for progress tracking
+  const total = executableWaves.reduce((sum, wave) => sum + wave.length, 0);
   let executed = 0;
-  const total = executableNodes.length;
 
-  for (const node of executableNodes) {
+  // Helper function to execute a single node with error handling
+  const executeNodeWithTracking = async (node: Node): Promise<void> => {
+    if (ctx.getCancelled()) {
+      throw new Error('Execution cancelled');
+    }
+
+    // Read nodeOutputs fresh from store (important for parallel execution)
+    const currentOutputs = store.getState().nodeOutputs;
+
+    // Check if node has required inputs
+    if (!hasRequiredInputs(node, edges, currentOutputs)) {
+      const nodeType = (node.data as NodeDataUnion).nodeType;
+      // Input nodes don't need inputs, so skip them if they're not ready
+      if (!['textPrompt', 'imageUpload', 'number', 'styleReference', 'seedControl', 'batchGen'].includes(nodeType)) {
+        throw new Error('Missing required inputs');
+      }
+    }
+
+    setNodeError(node.id, null);
+    setNodeStatus(node.id, 'running');
+    await executeNode(node, store, edges, ctx);
+    setNodeStatus(node.id, 'success');
+  };
+
+  // Execute waves sequentially, but nodes within each wave in parallel
+  for (const wave of executableWaves) {
     if (ctx.getCancelled()) {
       break;
     }
 
-    // Check if node has required inputs
-    if (!hasRequiredInputs(node, edges, nodeOutputs)) {
-      const nodeType = (node.data as NodeDataUnion).nodeType;
-      // Input nodes don't need inputs, so skip them if they're not ready
-      if (!['textPrompt', 'imageUpload', 'number', 'styleReference', 'seedControl', 'batchGen'].includes(nodeType)) {
-        errors.push({
-          nodeId: node.id,
-          error: 'Missing required inputs',
-        });
-        setNodeStatus(node.id, 'error');
-        continue;
-      }
-    }
-
-    // Update progress
+    // Update progress before wave
     ctx.onProgress?.(executed, total);
 
-    try {
-      setNodeStatus(node.id, 'running');
-      await executeNode(node, store, edges, ctx);
-      setNodeStatus(node.id, 'success');
+    // Execute all nodes in this wave in parallel
+    const results = await Promise.allSettled(
+      wave.map((node) => executeNodeWithTracking(node))
+    );
+
+    // Process results and update progress
+    results.forEach((result, index) => {
+      const node = wave[index];
       executed++;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      errors.push({
-        nodeId: node.id,
-        error: errorMessage,
-      });
-      setNodeStatus(node.id, 'error');
-      // Continue execution (don't stop on error)
-    }
 
-    // Update progress after execution
-    ctx.onProgress?.(executed, total);
+      if (result.status === 'rejected') {
+        const errorMessage = result.reason instanceof Error ? result.reason.message : 'Unknown error';
+        // Skip cancellation errors (they're handled by the outer loop)
+        if (errorMessage !== 'Execution cancelled') {
+          errors.push({
+            nodeId: node.id,
+            error: errorMessage,
+          });
+          setNodeError(node.id, errorMessage);
+          setNodeStatus(node.id, 'error');
+        }
+      }
+
+      // Update progress after each node completes
+      ctx.onProgress?.(executed, total);
+    });
   }
 
   return {

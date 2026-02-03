@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useWorkflowStore, type NodeStatus, type BaseNodeData } from '../../stores/workflow';
 
@@ -31,6 +31,7 @@ export function BaseNode<T extends { label: string }>({
   outputLabel = 'Output',
 }: BaseNodeProps<T>) {
   const status = useWorkflowStore((s) => s.nodeStatus[id] ?? 'idle');
+  const error = useWorkflowStore((s) => s.nodeErrors[id]);
 
   return (
     <div
@@ -48,7 +49,22 @@ export function BaseNode<T extends { label: string }>({
         {status === 'running' && (
           <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />
         )}
+        {status === 'error' && (
+          <AlertCircle className="h-4 w-4 text-[var(--error)]" />
+        )}
       </div>
+
+      {/* Error Message */}
+      {status === 'error' && error && (
+        <div 
+          className="bg-[var(--error)] px-3 py-1 text-[10px] text-white"
+          title={error}
+        >
+          <div className="line-clamp-2 leading-tight">
+            {error}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="p-3">{children}</div>

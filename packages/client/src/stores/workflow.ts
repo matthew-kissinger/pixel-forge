@@ -52,6 +52,7 @@ interface WorkflowState {
   edges: Edge[];
   nodeOutputs: Record<string, NodeOutput>;
   nodeStatus: Record<string, NodeStatus>;
+  nodeErrors: Record<string, string>;
 
   // Execution state
   isExecuting: boolean;
@@ -68,6 +69,7 @@ interface WorkflowState {
   updateNodeData: <T extends BaseNodeData>(nodeId: string, data: Partial<T>) => void;
   setNodeOutput: (nodeId: string, output: NodeOutput) => void;
   setNodeStatus: (nodeId: string, status: NodeStatus) => void;
+  setNodeError: (nodeId: string, error: string | null) => void;
   clearNodeOutput: (nodeId: string) => void;
   getInputsForNode: (nodeId: string) => NodeOutput[];
   reset: () => void;
@@ -90,6 +92,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   edges: initialEdges,
   nodeOutputs: {},
   nodeStatus: {},
+  nodeErrors: {},
   isExecuting: false,
   executionProgress: { current: 0, total: 0 },
   executionCancelled: false,
@@ -141,6 +144,16 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
     });
   },
 
+  setNodeError: (nodeId, error) => {
+    const nodeErrors = { ...get().nodeErrors };
+    if (error === null) {
+      delete nodeErrors[nodeId];
+    } else {
+      nodeErrors[nodeId] = error;
+    }
+    set({ nodeErrors });
+  },
+
   clearNodeOutput: (nodeId) => {
     const nodeOutputs = { ...get().nodeOutputs };
     delete nodeOutputs[nodeId];
@@ -161,6 +174,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       edges: initialEdges,
       nodeOutputs: {},
       nodeStatus: {},
+      nodeErrors: {},
       isExecuting: false,
       executionProgress: { current: 0, total: 0 },
       executionCancelled: false,
@@ -168,7 +182,15 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   },
 
   setExecuting: (isExecuting) => {
-    set({ isExecuting });
+    if (isExecuting) {
+      const nodeStatus = { ...get().nodeStatus };
+      Object.keys(nodeStatus).forEach((id) => {
+        nodeStatus[id] = 'idle';
+      });
+      set({ isExecuting, nodeStatus, nodeErrors: {} });
+    } else {
+      set({ isExecuting });
+    }
   },
 
   setExecutionProgress: (current, total) => {
@@ -225,6 +247,7 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       })),
       nodeOutputs: {},
       nodeStatus: data.nodes.reduce((acc, n) => ({ ...acc, [n.id]: 'idle' }), {}),
+      nodeErrors: {},
     });
   },
 }));

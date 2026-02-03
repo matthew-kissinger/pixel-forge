@@ -182,10 +182,10 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Missing node components** - 5 types defined but no components: styleReference, seedControl, spriteSheet, exportGLB, exportSheet
-- **Workflow UX polish** - Error display per-node, execution history, re-run failed nodes
-- **Parallel execution** - Executor runs sequentially; independent branches should run in parallel
+- **Re-run failed nodes** - Allow re-executing individual failed nodes without re-running the entire workflow
 - **kilnGen executor** - Currently throws "not yet supported"; needs real implementation once Kiln API is stable
+- **Undo/redo** - Workflow editing has no undo support yet
+- **Keyboard shortcuts** - No hotkeys for common operations (execute, save, delete node)
 
 ### Completed Goals
 
@@ -194,15 +194,17 @@ Build a **template/preset system** where:
 - ~~Batch consistency~~ - Done (`BatchGenNode` with consistency phrases)
 - ~~Template persistence~~ - Done (workflow save/load JSON, 9 workflow templates)
 - ~~Image compression node~~ - Done (`CompressNode` + `/api/image/compress` endpoint + executor handler)
-- ~~Workflow execution engine~~ - Done (`executor.ts` with topological sort, sequential execution, cancellation, committed)
+- ~~Workflow execution engine~~ - Done (`executor.ts` with topological sort, parallel wave execution, cancellation)
 - ~~More presets~~ - Done (vegetation-sprite, effect-strip, soldier-sprite added)
 - ~~Executor node coverage~~ - Done (all 28 node types have handlers: processing nodes use canvas ops, output nodes skip, kilnGen throws intentional error)
+- ~~Missing node components~~ - Done (all 28 node types have UI components: styleReference, seedControl, spriteSheet, exportGLB, exportSheet added)
+- ~~Workflow UX polish~~ - Done (per-node error display, execution history panel with timeline/status/errors, search/filter in NodePalette)
 
 ## Current State
 
-React Flow editor with 23 node components (28 defined in type system). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine committed with topological sort, sequential execution with progress tracking, and cancellation support. Toolbar has Execute All / Stop button. All 28 node types have executor handlers (1219-line executor.ts with canvas-based image processing for tile, filter, combine, rotate, colorPalette, analyze, iterate).
+React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, and execution history. Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle. 1368-line executor.ts with canvas-based image processing for tile, filter, combine, rotate, colorPalette, analyze, iterate.
 
-Key gaps: 5 node types defined but missing UI components (styleReference, seedControl, spriteSheet, exportGLB, exportSheet), workflow UX polish (per-node errors, execution history), executor runs sequentially (no parallel branch execution yet).
+Key gaps: no undo/redo, no keyboard shortcuts, no re-run of individual failed nodes, kilnGen executor not yet implemented.
 
 ## Quality Bar
 
@@ -227,7 +229,7 @@ Assets should be:
 **Structure:**
 ```
 packages/
-├── client/    # React + React Flow editor (23 node components, Zustand store, 9 templates, executor)
+├── client/    # React + React Flow editor (28 node components, 5 panels, Zustand store, 9 templates, executor)
 ├── server/    # Hono API wrapping AI services (Gemini, FAL, Claude)
 └── shared/    # Shared types and presets (7 presets, prompt builders)
 ```

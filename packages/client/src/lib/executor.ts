@@ -25,6 +25,59 @@ export interface ExecutionResult {
 export type { ExecutionContext };
 
 /**
+ * Timeout values per node type category
+ */
+const NODE_TIMEOUTS: Partial<Record<NodeTypeName, number>> = {
+  // Generation nodes: 120s
+  imageGen: 120000,
+  batchGen: 120000,
+  isometricTile: 120000,
+  spriteSheet: 120000,
+  model3DGen: 120000,
+  kilnGen: 120000,
+
+  // Processing nodes: 60s
+  removeBg: 60000,
+
+  // Canvas processing nodes: 30s
+  resize: 30000,
+  crop: 30000,
+  pixelate: 30000,
+  tile: 30000,
+  filter: 30000,
+  combine: 30000,
+  rotate: 30000,
+  colorPalette: 30000,
+  compress: 30000,
+  sliceSheet: 30000,
+  analyze: 30000,
+  iterate: 30000,
+};
+
+const DEFAULT_TIMEOUT = 60000;
+
+/**
+ * Wraps any async operation with a timeout using AbortController.
+ */
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ms);
+  try {
+    const result = await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        controller.signal.addEventListener('abort', () => {
+          reject(new Error(`${label} timed out after ${ms / 1000}s - the API may be overloaded. Try re-running this node.`));
+        });
+      }),
+    ]);
+    return result;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
  * Topologically sort nodes based on edges
  * Returns nodes in execution order (dependencies first)
  */
@@ -229,8 +282,12 @@ async function executeNode(
     ctx,
   };
 
-  // Execute handler
-  await handler(handlerContext);
+  // Determine timeout and label
+  const timeoutMs = NODE_TIMEOUTS[nodeType] || DEFAULT_TIMEOUT;
+  const label = getNodeDefinition(nodeType)?.label || nodeType;
+
+  // Execute handler with timeout
+  await withTimeout(handler(handlerContext), timeoutMs, label);
 }
 
 /**

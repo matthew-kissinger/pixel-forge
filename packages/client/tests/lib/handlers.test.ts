@@ -677,19 +677,120 @@ describe('Model3D Handlers', () => {
   });
 
   describe('handleKilnGen', () => {
-    it('should throw not yet supported error', async () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    it('should throw error when no prompt provided', async () => {
       const context = createMockContext({
         node: {
           id: 'kiln-1',
           type: 'kilnGen',
           position: { x: 0, y: 0 },
-          data: { nodeType: 'kilnGen', label: 'Test' },
+          data: { nodeType: 'kilnGen', label: 'Test', mode: 'glb', category: 'prop' },
         },
       });
 
       await expect(model3dHandlers.handleKilnGen(context)).rejects.toThrow(
         'Missing prompt - connect a text input or enter a prompt'
       );
+    });
+
+    it('should call generateKilnCode API with prompt from input', async () => {
+      (generateKilnCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: true,
+        code: 'const meta = { name: "Test" };',
+      });
+
+      const context = createMockContext({
+        node: {
+          id: 'kiln-1',
+          type: 'kilnGen',
+          position: { x: 0, y: 0 },
+          data: { nodeType: 'kilnGen', label: 'Test', mode: 'glb', category: 'prop', includeAnimation: true },
+        },
+        inputs: [{ type: 'text', data: 'a low-poly sword', timestamp: Date.now() }],
+      });
+
+      await model3dHandlers.handleKilnGen(context);
+
+      expect(generateKilnCode).toHaveBeenCalledWith({
+        prompt: 'a low-poly sword',
+        mode: 'glb',
+        category: 'prop',
+        style: 'low-poly',
+        includeAnimation: true,
+      });
+      expect(context.setNodeOutput).toHaveBeenCalledWith('kiln-1', {
+        type: 'text',
+        data: 'const meta = { name: "Test" };',
+        timestamp: expect.any(Number),
+      });
+    });
+
+    it('should use inline prompt if no input connected', async () => {
+      (generateKilnCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: true,
+        code: 'const meta = { name: "Inline" };',
+      });
+
+      const context = createMockContext({
+        node: {
+          id: 'kiln-2',
+          type: 'kilnGen',
+          position: { x: 0, y: 0 },
+          data: {
+            nodeType: 'kilnGen',
+            label: 'Test',
+            prompt: 'a low-poly shield',
+            mode: 'tsl',
+            category: 'vfx',
+            includeAnimation: false,
+          },
+        },
+      });
+
+      await model3dHandlers.handleKilnGen(context);
+
+      expect(generateKilnCode).toHaveBeenCalledWith({
+        prompt: 'a low-poly shield',
+        mode: 'tsl',
+        category: 'vfx',
+        style: 'low-poly',
+        includeAnimation: false,
+      });
+    });
+
+    it('should throw error when API fails', async () => {
+      (generateKilnCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: false,
+        error: 'API overloaded',
+      });
+
+      const context = createMockContext({
+        node: {
+          id: 'kiln-3',
+          type: 'kilnGen',
+          position: { x: 0, y: 0 },
+          data: { nodeType: 'kilnGen', label: 'Test', mode: 'glb', category: 'prop', prompt: 'test' },
+        },
+      });
+
+      await expect(model3dHandlers.handleKilnGen(context)).rejects.toThrow('API overloaded');
+    });
+
+    it('should respect cancellation', async () => {
+      const context = createMockContext({
+        node: {
+          id: 'kiln-4',
+          type: 'kilnGen',
+          position: { x: 0, y: 0 },
+          data: { nodeType: 'kilnGen', label: 'Test', mode: 'glb', category: 'prop', prompt: 'test' },
+        },
+      });
+      context.ctx.getCancelled = vi.fn(() => true);
+
+      await expect(model3dHandlers.handleKilnGen(context)).rejects.toThrow('Execution cancelled');
     });
   });
 });

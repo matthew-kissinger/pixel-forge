@@ -1,11 +1,12 @@
 /**
  * 3D Model Generation Node Handlers
- * 
+ *
  * Handlers for 3D model generation nodes: model3DGen, kilnGen
  */
 
 import type { NodeHandlerContext } from './index';
-import { generateModel, pollModelStatus } from '../api';
+import type { NodeDataUnion } from '../../types/nodes';
+import { generateModel, pollModelStatus, generateKilnCode } from '../api';
 
 export async function handleModel3DGen(context: NodeHandlerContext): Promise<void> {
   const { inputs, setNodeOutput, node, ctx } = context;
@@ -36,7 +37,45 @@ export async function handleModel3DGen(context: NodeHandlerContext): Promise<voi
   });
 }
 
-export async function handleKilnGen(_context: NodeHandlerContext): Promise<void> {
-  // Kiln generation is complex - for now, skip or implement basic version
-  throw new Error('Kiln generation not yet supported in auto-execution');
+export async function handleKilnGen(context: NodeHandlerContext): Promise<void> {
+  const { nodeData, inputs, setNodeOutput, node, ctx } = context;
+  const data = nodeData as Extract<NodeDataUnion, { nodeType: 'kilnGen' }>;
+
+  // Get prompt from input connection or node data
+  let prompt: string | null = null;
+  const promptInput = inputs.find((i) => i.type === 'text');
+  if (promptInput) {
+    prompt = promptInput.data;
+  } else if (data.prompt?.trim()) {
+    prompt = data.prompt.trim();
+  }
+
+  if (!prompt) {
+    throw new Error('Missing prompt - connect a text input or enter a prompt');
+  }
+
+  if (ctx.getCancelled()) throw new Error('Execution cancelled');
+
+  // Call Kiln API to generate code
+  const result = await generateKilnCode({
+    prompt,
+    mode: data.mode,
+    category: data.category,
+    style: 'low-poly',
+    includeAnimation: data.includeAnimation ?? true,
+  });
+
+  if (ctx.getCancelled()) throw new Error('Execution cancelled');
+
+  if (!result.success || !result.code) {
+    throw new Error(result.error || 'Kiln generation failed');
+  }
+
+  // Store generated code as text output
+  // The KilnGenNode component will read this and update its data.code
+  setNodeOutput(node.id, {
+    type: 'text',
+    data: result.code,
+    timestamp: Date.now(),
+  });
 }

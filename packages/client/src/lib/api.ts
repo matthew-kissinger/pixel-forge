@@ -194,3 +194,33 @@ export async function pollModelStatus(
 
   throw new Error('Model generation timed out');
 }
+
+export interface GenerateKilnCodeOptions {
+  prompt: string;
+  mode?: 'glb' | 'tsl' | 'both';
+  category?: 'character' | 'prop' | 'vfx' | 'environment';
+  style?: 'low-poly' | 'stylized' | 'voxel';
+  includeAnimation?: boolean;
+  existingCode?: string;
+  referenceImageUrl?: string;
+}
+
+export interface GenerateKilnCodeResponse {
+  success: boolean;
+  code?: string;
+  effectCode?: string;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+  };
+  error?: string;
+}
+
+export async function generateKilnCode(
+  options: GenerateKilnCodeOptions
+): Promise<GenerateKilnCodeResponse> {
+  return apiFetch<GenerateKilnCodeResponse>('/kiln/generate', {
+    method: 'POST',
+    body: JSON.stringify(options),
+  });
+}

@@ -52,7 +52,6 @@ const nodeIcons: Record<NodeType, typeof Type> = {
   rotate: RotateCw,
   iterate: Repeat,
   analyze: ScanSearch,
-  compress: Minimize2,
   sliceSheet: Scissors,
   preview: Eye,
   save: Download,

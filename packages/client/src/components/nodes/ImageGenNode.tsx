@@ -3,7 +3,8 @@ import { type NodeProps } from '@xyflow/react';
 import { ImageIcon, Sparkles, Eraser, ChevronDown } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
-import { generateImage, removeBackground, type ArtStyle, type AspectRatio } from '../../lib/api';
+import { PRESETS, getPresetById } from '@pixel-forge/shared/presets';
+import { generateImage, type ArtStyle, type AspectRatio } from '../../lib/api';
 
 // Style presets with descriptions
 const STYLE_PRESETS: { value: ArtStyle; label: string; description: string }[] = [
@@ -32,6 +33,7 @@ interface ImageGenNodeData {
   style?: ArtStyle;
   aspectRatio?: AspectRatio | 'auto';
   autoRemoveBg?: boolean;
+  presetId?: string;
 }
 
 export function ImageGenNode(props: NodeProps) {
@@ -49,6 +51,8 @@ export function ImageGenNode(props: NodeProps) {
   const currentStyle = nodeData.style ?? 'pixel-art';
   const currentAspectRatio = nodeData.aspectRatio ?? 'auto';
   const autoRemoveBg = nodeData.autoRemoveBg ?? false;
+  const currentPresetId = nodeData.presetId;
+  const currentPreset = currentPresetId ? getPresetById(currentPresetId) : undefined;
 
   const handleGenerate = useCallback(async () => {
     const inputs = getInputsForNode(id);
@@ -65,29 +69,20 @@ export function ImageGenNode(props: NodeProps) {
       // Build the styled prompt
       const stylePrefix = getStylePrefix(currentStyle);
       const styledPrompt = stylePrefix ? `${stylePrefix} ${promptInput.data}` : promptInput.data;
+      const prompt = currentPreset ? promptInput.data : styledPrompt;
 
       // Generate the image
       const result = await generateImage({
-        prompt: styledPrompt,
-        style: currentStyle,
+        prompt,
+        style: currentPreset ? undefined : currentStyle,
         aspectRatio: currentAspectRatio === 'auto' ? undefined : currentAspectRatio,
+        removeBackground: autoRemoveBg,
+        presetId: currentPreset?.id,
       });
-
-      let finalImage = result.image;
-
-      // Auto remove background if enabled
-      if (autoRemoveBg) {
-        try {
-          const bgResult = await removeBackground(result.image);
-          finalImage = bgResult.image;
-        } catch (bgError) {
-          console.warn('Background removal failed, using original image:', bgError);
-        }
-      }
 
       setNodeOutput(id, {
         type: 'image',
-        data: finalImage,
+        data: result.image,
         timestamp: Date.now(),
       });
       setNodeStatus(id, 'success');
@@ -103,6 +98,7 @@ export function ImageGenNode(props: NodeProps) {
     currentStyle,
     currentAspectRatio,
     autoRemoveBg,
+    currentPreset,
   ]);
 
   const updateStyle = (style: ArtStyle) => {
@@ -111,6 +107,31 @@ export function ImageGenNode(props: NodeProps) {
 
   const updateAspectRatio = (aspectRatio: AspectRatio | 'auto') => {
     updateNodeData(id, { aspectRatio });
+  };
+
+  const updatePreset = (presetId: string) => {
+    if (presetId === 'custom') {
+      updateNodeData(id, { presetId: undefined });
+      return;
+    }
+
+    const preset = getPresetById(presetId);
+    if (!preset) {
+      updateNodeData(id, { presetId: undefined });
+      return;
+    }
+
+    const nextData: Partial<ImageGenNodeData> = {
+      presetId: preset.id,
+      autoRemoveBg: preset.autoRemoveBg,
+    };
+
+    const presetAspectRatio = getAspectRatioFromSize(preset.outputSize);
+    if (presetAspectRatio) {
+      nextData.aspectRatio = presetAspectRatio;
+    }
+
+    updateNodeData(id, nextData);
   };
 
   const toggleAutoRemoveBg = () => {
@@ -137,7 +158,7 @@ export function ImageGenNode(props: NodeProps) {
             onClick={() => setShowSettings(!showSettings)}
             className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]"
           >
-            <span>{STYLE_PRESETS.find((s) => s.value === currentStyle)?.label}</span>
+            <span>{currentPreset ? currentPreset.name : STYLE_PRESETS.find((s) => s.value === currentStyle)?.label}</span>
             <ChevronDown
               className={`h-3 w-3 transition-transform ${showSettings ? 'rotate-180' : ''}`}
             />
@@ -147,6 +168,28 @@ export function ImageGenNode(props: NodeProps) {
         {/* Expanded settings */}
         {showSettings && (
           <div className="flex flex-col gap-2 rounded border border-[var(--border-color)] bg-[var(--bg-tertiary)] p-2">
+            {/* Preset selector */}
+            <div>
+              <label className="mb-1 block text-xs text-[var(--text-secondary)]">Preset</label>
+              <select
+                value={currentPreset?.id ?? 'custom'}
+                onChange={(e) => updatePreset(e.target.value)}
+                className="w-full rounded border border-[var(--border-color)] bg-[var(--bg-secondary)] px-2 py-1 text-sm text-[var(--text-primary)]"
+              >
+                <option value="custom">Custom (No Preset)</option>
+                {PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.name}
+                  </option>
+                ))}
+              </select>
+              {currentPreset && (
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  {currentPreset.outputSize.width}x{currentPreset.outputSize.height} • {currentPreset.background} bg • {currentPreset.format.toUpperCase()}
+                </p>
+              )}
+            </div>
+
             {/* Style selector */}
             <div>
               <label className="mb-1 block text-xs text-[var(--text-secondary)]">Style</label>
@@ -238,4 +281,12 @@ function getStylePrefix(style: ArtStyle): string {
     default:
       return '';
   }
+}
+
+function getAspectRatioFromSize(size: { width: number; height: number }): AspectRatio | undefined {
+  if (size.width === size.height) {
+    return '1:1';
+  }
+
+  return undefined;
 }

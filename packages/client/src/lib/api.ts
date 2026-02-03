@@ -8,6 +8,7 @@ export interface GenerateImageOptions {
   style?: ArtStyle;
   aspectRatio?: AspectRatio;
   removeBackground?: boolean;
+  presetId?: string;
 }
 
 export interface GenerateImageResponse {
@@ -37,6 +38,10 @@ export interface ModelStatusResponse {
 
 export interface RemoveBgResponse {
   image: string; // base64 data URL
+}
+
+export interface SliceSheetResponse {
+  sprites: string[]; // base64 data URLs
 }
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -87,6 +92,17 @@ export async function removeBackground(imageBase64: string): Promise<RemoveBgRes
   return apiFetch<RemoveBgResponse>('/image/remove-bg', {
     method: 'POST',
     body: JSON.stringify({ image: imageBase64 }),
+  });
+}
+
+export async function sliceSheet(
+  imageBase64: string,
+  rows: number,
+  cols: number
+): Promise<SliceSheetResponse> {
+  return apiFetch<SliceSheetResponse>('/image/slice-sheet', {
+    method: 'POST',
+    body: JSON.stringify({ image: imageBase64, rows, cols }),
   });
 }
 

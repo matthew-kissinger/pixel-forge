@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { generateImage } from '../services/gemini';
+import { buildPresetPrompt, getPresetById } from '@pixel-forge/shared/presets';
+import { generateImage, extractSpritesFromSheet } from '../services/gemini';
 import { removeBackground } from '../services/fal';
 import { BadRequestError } from '../lib/errors';
 
@@ -36,24 +37,40 @@ const generateSchema = z.object({
   style: z.enum(artStyles).optional(),
   aspectRatio: z.enum(aspectRatios).optional(),
   removeBackground: z.boolean().optional(),
+  presetId: z.string().optional(),
 });
 
 const removeBgSchema = z.object({
   image: z.string().min(1, 'Image data is required'),
 });
 
+const sliceSheetSchema = z.object({
+  image: z.string().min(1, 'Image data is required'),
+  rows: z.number().int().min(1).max(50),
+  cols: z.number().int().min(1).max(50),
+});
+
 imageRouter.post(
   '/generate',
   zValidator('json', generateSchema),
   async (c) => {
-    const { prompt, style, aspectRatio, removeBackground: shouldRemoveBg } = c.req.valid('json');
+    const { prompt, removeBackground: shouldRemoveBg, presetId } = c.req.valid('json');
 
     try {
+      const preset = presetId ? getPresetById(presetId) : undefined;
+
+      if (presetId && !preset) {
+        throw new BadRequestError(`Unknown preset: ${presetId}`);
+      }
+
+      const finalPrompt = preset ? buildPresetPrompt(preset, prompt) : prompt;
+
       // Generate the image with the prompt (style is already in the prompt from client)
-      const result = await generateImage(prompt);
+      const result = await generateImage(finalPrompt);
 
       // Optionally remove background
-      if (shouldRemoveBg && result.image) {
+      const shouldRemoveBgFinal = shouldRemoveBg ?? preset?.autoRemoveBg ?? false;
+      if (shouldRemoveBgFinal && result.image) {
         try {
           const bgResult = await removeBackground(result.image);
           return c.json({ image: bgResult.image });
@@ -86,6 +103,35 @@ imageRouter.post(
       console.error('Background removal error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Background removal failed'
+      );
+    }
+  }
+);
+
+imageRouter.post(
+  '/slice-sheet',
+  zValidator('json', sliceSheetSchema),
+  async (c) => {
+    const { image, rows, cols } = c.req.valid('json');
+
+    try {
+      // Extract base64 data without data URL prefix if present
+      const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+      const sheetBuffer = Buffer.from(base64Data, 'base64');
+
+      const sprites = await extractSpritesFromSheet(sheetBuffer, rows, cols);
+
+      // Convert buffers to base64 data URLs
+      const spriteDataUrls = sprites.map((buffer) => {
+        const base64 = buffer.toString('base64');
+        return `data:image/png;base64,${base64}`;
+      });
+
+      return c.json({ sprites: spriteDataUrls });
+    } catch (error) {
+      console.error('Slice sheet error:', error);
+      throw new BadRequestError(
+        error instanceof Error ? error.message : 'Slice sheet failed'
       );
     }
   }

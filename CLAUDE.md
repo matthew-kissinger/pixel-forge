@@ -1,52 +1,263 @@
 # Pixel Forge
 
-Node-based game asset generator using AI (Gemini + FAL).
+Node-based game asset generator. Think ComfyUI but purpose-built for game development.
 
-## Current Phase: Testing
+## Vision
 
-**We are in active testing.** Agents should perform end-to-end testing by generating real game assets. The goal is not just "does it work" but "does it produce great results."
+**Make AI-generated game assets actually good.** Not "technically works" - genuinely usable in shipped games.
 
-### Testing Approach
+The problem: AI image generators output inconsistent styles, wrong sizes, backgrounds that don't remove cleanly, formats engines can't use. Game devs spend more time fixing AI output than they save generating it.
 
-1. **Multiple variations** - Don't settle on first output. Generate 3-5 variations per asset.
-2. **Iterate on prompts** - Refine prompts based on results. Document what works.
-3. **Cohesive sets** - Assets must work together visually. Same style, palette, quality level.
-4. **Quality bar** - Not serviceable. Great. Assets should look like they belong in a polished game.
+Pixel Forge solves this with a visual pipeline:
+1. **Generate** - AI creates the raw asset (Gemini nano-banana-pro)
+2. **Transform** - Resize, crop, remove background, adjust
+3. **Optimize** - Compress to game-ready formats (WebP, atlas, LOD)
+4. **Export** - Output files engines actually accept
 
-### Current Test: Space Laser Asset Pack
+## Critical: Transparency Workflow
 
-See `TASKS.md` for the full asset list. Generate the complete Space Laser asset pack as an end-to-end test of the pipeline.
+**Always use solid red (#FF0000) or green (#00FF00) backgrounds.** Never ask Gemini for "transparent background" - it produces a checkerboard pattern with no actual alpha channel.
 
-**Success criteria:**
-- All 19 assets generated
-- Consistent bioluminescent sci-fi style across set
-- Transparent backgrounds where specified
-- Correct sizes (or easy to resize)
-- Assets look cohesive when placed together in-game
+The correct flow:
+1. Generate with `solid red background` in prompt
+2. Remove background via BiRefNet or chroma key
+3. Export with proper alpha channel
 
-## Quick Context
+Red is preferred because it rarely appears in game assets. Green for subjects with red colors.
 
-- **Stack**: React 19.2, Vite 7.2, React Flow 12.10, Bun 1.2, Hono 4.11
-- **AI**: Gemini (nano-banana-pro-preview for images, veo-3.1 for video), FAL (Meshy for 3D, BiRefNet for bg removal)
+## Real Test Case: Asteroid-Miner Assets
 
-## Key Files
+Generate assets for the Asteroid-Miner game (`~/repos/Asteroid-Miner`). This is a real test - assets must work in-game.
 
-- `TASKS.md` - Current asset generation tasks
-- `SESSION_CONTEXT.md` - Full context from setup session
-- `PLAN.md` - Implementation tasks by week
-- `SPEC.md` - Architecture and node definitions
-- `.env.local` - API keys (Gemini + FAL)
+### Planet Textures (Priority)
+Game needs more planet variety. Currently has 22, could use 30+.
 
-## Technical Notes
+**Prompt template:**
+```
+Seamless spherical planet texture, [PLANET TYPE].
+Equirectangular projection, tileable horizontally.
+[SURFACE DETAILS].
+2K resolution, photorealistic, no stars in background.
+Solid black background.
+```
 
-1. Use `nano-banana-pro-preview` for image gen (NOT gemini-2.5-flash-image)
-2. Gemini outputs 1024x1024 regardless of prompt - resize node needed
-3. FAL 3D gen is async (queue-based) - need polling for status
-4. All deps installed with latest versions via `bun create vite` and `bun add`
+**Planet types to generate:**
+- Lava world - glowing cracks, volcanic eruptions, orange/black
+- Ocean world - deep blue with white cloud swirls
+- Toxic world - sickly green/yellow atmosphere, acid seas
+- Crystal world - geometric facets, purple/cyan reflections
+- Dead world - gray cratered surface, no atmosphere
+- Jungle world - dense green canopy visible from space
+- Ring world - with debris rings (separate ring texture)
+- Binary world - two-tone hemisphere split
+
+**Requirements:**
+- Format: JPEG (no alpha needed for planets)
+- Size: 2048x1024 (2:1 equirectangular for sphere UV)
+- Color space: sRGB
+- Output to: `~/repos/Asteroid-Miner/public/assets/p23.jpeg` etc.
+
+### Enemy Ship Sprites
+Game needs enemy variety. Currently spectral drones are basic.
+
+**Prompt template:**
+```
+Sci-fi enemy spacecraft, [SHIP TYPE].
+Top-down view, symmetrical design.
+Solid red background (#FF0000).
+Glowing [COLOR] energy core, metallic hull.
+Game-ready asset, clean edges, centered.
+512x512 resolution.
+```
+
+**Ship types:**
+- Scout drone - small, fast, minimal armor
+- Heavy fighter - bulky, lots of weapons
+- Bomber - asymmetric, large payload bay
+- Swarm unit - insectoid, organic-mechanical hybrid
+- Capital ship turret - stationary defense platform
+
+**Requirements:**
+- Format: PNG with transparency (BiRefNet removal)
+- Size: 512x512 or 256x256
+- Need multiple color variants (red, blue, green energy cores)
+
+### UI Icons
+Resource and upgrade icons for the trading interface.
+
+**Prompt template:**
+```
+Game UI icon, [ITEM], fantasy sci-fi style.
+Simple silhouette, high contrast, glowing edges.
+Solid red background (#FF0000).
+64x64 target size, readable at small scale.
+```
+
+**Icons needed:**
+- Iron ore, Gold ore, Platinum ore
+- Fuel cell, Shield generator, Hull plating
+- Mining laser, Engine upgrade, Cargo bay
+- Credits/currency symbol
+
+## Real Test Case: Terror in the Jungle Assets
+
+Generate assets for terror-in-the-jungle (`~/repos/terror-in-the-jungle`). Pixel art battlefield game with billboard sprites.
+
+### Vegetation Sprites
+```
+Pixel art [PLANT TYPE], top-down angled view for billboard.
+Tropical jungle aesthetic, vibrant greens.
+Solid red background (#FF0000).
+256x256, clean edges, game-ready sprite.
+```
+
+**Plants needed:** ferns, palms, bamboo, tropical flowers, vines, broad-leaf plants
+
+**Requirements:**
+- Format: PNG with transparency
+- Size: 256x256
+- Output to: `~/repos/terror-in-the-jungle/public/assets/`
+
+### Enemy Soldier Sprites (Billboard System)
+
+The game uses billboard sprites that rotate to face the camera. Each soldier needs multiple angles and poses for believable 3D rendering.
+
+**Direction sheets** (8 angles for rotation):
+```
+Pixel art soldier, [FACTION] military, [POSE].
+8-direction sprite sheet (N, NE, E, SE, S, SW, W, NW).
+Same pose from each angle, consistent lighting.
+Solid red background (#FF0000).
+64x64 per frame, 8 frames in row (512x64 total).
+```
+
+**Poses needed per faction:**
+- Idle standing
+- Walking (2-4 frame animation per direction = 16-32 frames)
+- Running
+- Crouching
+- Shooting rifle
+- Shooting from cover
+- Death/ragdoll (multiple variants)
+- Prone/crawling
+
+**Factions:** jungle camo, desert camo, urban camo, spec ops black
+
+**Exploration opportunities:**
+- Can we generate consistent 8-angle sheets from a single reference?
+- Animation frame interpolation between poses
+- Procedural damage/dirt variations
+- Faction color palette swaps from base sprites
+- LOD variants (smaller resolution for distance)
+
+### Environment Props
+```
+Pixel art [PROP], jungle battlefield setting.
+Isometric-ish angle for 3D billboard placement.
+Solid red background (#FF0000).
+128x128 or 256x256.
+```
+
+**Props needed:** sandbags, ammo crates, barrels, ruins, bunkers, watchtowers
+
+### Effect Sprites
+```
+Pixel art [EFFECT] animation, 8-frame sequence.
+Bright colors, high contrast for visibility.
+Solid red background (#FF0000).
+128x128 per frame, horizontal strip (1024x128 total).
+```
+
+**Effects needed:** explosion, muzzle flash, smoke puff, blood splatter, dirt kick
+
+## Current Direction
+
+Build a **template/preset system** where:
+- User picks a preset (isometric, pixel art, icons, textures)
+- Preset defines: prompt prefix/suffix, model config, post-processing
+- User only provides the subject ("medieval blacksmith")
+- System handles the rest consistently
+
+**Save what works.** When a template produces good results, save that configuration. Build a library of proven templates over time.
+
+### Near-term Goals
+
+- **Image compression node** - Game-ready output optimization (WebP, quality, file size targets) - previous attempt failed, needs retry
+- **SliceSheet multi-output** - Currently only outputs first sprite; needs ZIP download or multi-output support
+- **Workflow execution engine** - Run entire pipelines automatically instead of clicking each node
+- **More presets** - Pixel art sprite, vegetation, effect animation presets
+
+### Completed Goals
+
+- ~~Planet texture preset~~ - Done (4 presets in `packages/shared/presets.ts`)
+- ~~Sprite sheet slicing~~ - Done (`SliceSheetNode`, basic single-output)
+- ~~Batch consistency~~ - Done (`BatchGenNode` with consistency phrases)
+- ~~Template persistence~~ - Done (workflow save/load JSON, 8 workflow templates)
+
+## Current State
+
+React Flow editor with 24 node types. Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets, batch generates with consistency phrases. Workflow save/load works. 8 pre-built templates across 5 categories. 4 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works.
+
+Key gaps: image compression/optimization node, sprite sheet multi-output, automated pipeline execution, more presets for specific asset types.
+
+## Quality Bar
+
+Assets should be:
+- **Consistent** - Same style across a batch
+- **Correct size** - Power-of-2 dimensions
+- **Clean** - No artifacts, proper transparency, no cut-off edges
+- **Small** - <50KB sprites, compressed
+- **Usable** - Formats engines accept
+
+**Test by generating real assets**, not just checking if code runs.
+
+## Technical Context
+
+**Stack:** React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
+
+**AI Services:**
+- Gemini `nano-banana-pro-preview` - 2D generation (always red/green bg)
+- FAL BiRefNet - Background removal (works on any bg color)
+- FAL Meshy - 3D model generation
+
+**Structure:**
+```
+packages/
+├── client/    # React + React Flow editor (24 node types, Zustand store, templates)
+├── server/    # Hono API wrapping AI services (Gemini, FAL, Claude)
+└── shared/    # Shared types and presets (preset definitions, prompt builders)
+```
+
+## Template Examples
+
+See `docs/presets/` for reference formats:
+
+| Template | Background | Size | Use Case |
+|----------|------------|------|----------|
+| `planet-texture` | Black | 2048x1024 | Equirectangular planet surfaces |
+| `enemy-sprite` | Red #FF0000 | 512x512 | Top-down ship sprites |
+| `game-icon` | Red #FF0000 | 64x64 | UI icons |
+| `isometric-sheet` | Red #FF0000 | 2048x2048 | Multi-view sprite sheets |
+
+## Skills
+
+Local skills in `.claude/skills/` provide domain knowledge:
+- **nano-banana-pro** - Gemini model settings, prompt patterns, transparency workflow
+- **pixel-art-professional** - Dithering, palettes, shading, color theory
+- **canvas-design** - Visual art creation philosophy
+- **frontend-design** - UI design principles
+- **kiln-glb** - 3D asset primitives
+- **kiln-tsl** - Shader effects
+
+## Development Approach
+
+Build features by using them. Want to add planet texture generation? Generate actual planets for Asteroid-Miner and see if they look good in-game.
+
+When something works well, capture the configuration. When it fails, document why.
 
 ## Commands
 
 ```bash
-bun run dev:client  # Vite dev server
-bun run dev:server  # Bun/Hono server
+bun run dev:client  # :5173
+bun run dev:server  # :3000
 ```

@@ -29,6 +29,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { NodeContextMenu } from './components/NodeContextMenu';
 import { executeSingleNode } from './lib/executor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useAutoSave } from './hooks/useAutoSave';
 
 let nodeIdCounter = 0;
 const generateNodeId = () => `node_${++nodeIdCounter}`;
@@ -259,6 +260,7 @@ function FlowEditor() {
 
 export default function App() {
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  useAutoSave();
 
   return (
     <ErrorBoundary>

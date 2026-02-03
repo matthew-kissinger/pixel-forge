@@ -39,8 +39,31 @@ export function Toolbar({ onToggleHistory, isHistoryVisible }: ToolbarProps) {
     redo,
     canUndo,
     canRedo,
+    lastAutoSave,
   } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Formatter for "last saved" time
+  const [lastSavedText, setLastSavedText] = useState<string>('');
+  
+  useEffect(() => {
+    if (!lastAutoSave) {
+      setLastSavedText('');
+      return;
+    }
+    
+    const update = () => {
+      const seconds = Math.floor((Date.now() - lastAutoSave) / 1000);
+      if (seconds < 10) return 'Just now';
+      if (seconds < 60) return `${seconds}s ago`;
+      const minutes = Math.floor(seconds / 60);
+      return `${minutes}m ago`;
+    };
+
+    setLastSavedText(update());
+    const interval = setInterval(() => setLastSavedText(update()), 10000);
+    return () => clearInterval(interval);
+  }, [lastAutoSave]);
 
   const handleSave = useCallback(() => {
     const workflow = exportWorkflow();
@@ -270,6 +293,12 @@ export function Toolbar({ onToggleHistory, isHistoryVisible }: ToolbarProps) {
       )}
 
       <div className="h-6 w-px bg-[var(--border-color)]" />
+
+      {lastSavedText && (
+        <span className="px-2 text-[10px] text-[var(--text-secondary)] opacity-70">
+          Last saved: {lastSavedText}
+        </span>
+      )}
 
       <button
         onClick={handleSave}

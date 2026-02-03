@@ -3,11 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { ScanSearch, Settings } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
-import {
-  loadImage,
-  extractDominantColors,
-  getImageDimensions,
-} from '../../lib/image-utils';
+import { extractDominantColors, getImageDimensions } from '../../lib/image-utils';
 
 interface AnalyzeNodeData {
   label: string;
@@ -28,7 +24,7 @@ interface AnalysisResult {
 
 export function AnalyzeNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as AnalyzeNodeData;
+  const nodeData = data as unknown as AnalyzeNodeData;
 
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();

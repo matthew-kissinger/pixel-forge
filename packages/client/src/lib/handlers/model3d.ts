@@ -5,12 +5,10 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { NodeDataUnion } from '../../types/nodes';
 import { generateModel, pollModelStatus } from '../api';
 
 export async function handleModel3DGen(context: NodeHandlerContext): Promise<void> {
-  const { nodeData, inputs, setNodeOutput, node, ctx } = context;
-  const data = nodeData as Extract<NodeDataUnion, { nodeType: 'model3DGen' }>;
+  const { inputs, setNodeOutput, node, ctx } = context;
   const promptInput = inputs.find((i) => i.type === 'text');
   if (!promptInput) {
     throw new Error('Missing text prompt input');
@@ -38,7 +36,7 @@ export async function handleModel3DGen(context: NodeHandlerContext): Promise<voi
   });
 }
 
-export async function handleKilnGen(context: NodeHandlerContext): Promise<void> {
+export async function handleKilnGen(_context: NodeHandlerContext): Promise<void> {
   // Kiln generation is complex - for now, skip or implement basic version
   throw new Error('Kiln generation not yet supported in auto-execution');
 }

@@ -16,7 +16,7 @@ const TILE_SIZES = [64, 128, 256, 512];
 
 export function IsometricTileNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as IsometricTileNodeData;
+  const nodeData = data as unknown as IsometricTileNodeData;
 
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();

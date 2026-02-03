@@ -1,4 +1,4 @@
-import { useCallback, type DragEvent, useState } from 'react';
+import { useCallback, type DragEvent, useState, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -57,7 +57,113 @@ function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
   const reactFlow = useReactFlow();
   const { screenToFlowPosition, fitView } = reactFlow;
 
-  useKeyboardShortcuts(workflowStore, reactFlow);
+  // Clipboard state for copy/paste
+  const clipboardRef = useRef<{ nodes: Node<NodeData>[]; edges: Edge[] }>({
+    nodes: [],
+    edges: [],
+  });
+
+  const handleCopy = useCallback(
+    (selectedNodes: Node<NodeData>[]) => {
+      if (selectedNodes.length === 0) return;
+
+      // Find edges where both source and target are in the selected set
+      const selectedIds = new Set(selectedNodes.map((n) => n.id));
+      const copiedEdges = edges.filter(
+        (e) => selectedIds.has(e.source) && selectedIds.has(e.target)
+      );
+
+      clipboardRef.current = {
+        nodes: selectedNodes,
+        edges: copiedEdges,
+      };
+    },
+    [edges]
+  );
+
+  const handlePaste = useCallback(() => {
+    const { nodes: copiedNodes, edges: copiedEdges } = clipboardRef.current;
+    if (copiedNodes.length === 0) return;
+
+    // Create ID mapping for old -> new
+    const idMap = new Map<string, string>();
+    const newNodes: Node<NodeData>[] = [];
+
+    // Calculate offset - use the first node's position as reference
+    const firstNode = copiedNodes[0];
+    const offsetX = 50;
+    const offsetY = 50;
+
+    // Find a non-overlapping position for the first node
+    const firstNewPosition = findNonOverlappingPosition(
+      {
+        x: firstNode.position.x + offsetX,
+        y: firstNode.position.y + offsetY,
+      },
+      nodes
+    );
+
+    // Calculate the offset from original to new position for the first node
+    const actualOffsetX = firstNewPosition.x - firstNode.position.x;
+    const actualOffsetY = firstNewPosition.y - firstNode.position.y;
+
+    // Create new nodes with new IDs, maintaining relative positions
+    for (const node of copiedNodes) {
+      const newId = generateNodeId();
+      idMap.set(node.id, newId);
+
+      const newNode: Node<NodeData> = {
+        ...node,
+        id: newId,
+        position: {
+          x: node.position.x + actualOffsetX,
+          y: node.position.y + actualOffsetY,
+        },
+        data: structuredClone(node.data),
+        selected: false,
+      };
+
+      // Clear any output/status data
+      clearNodeOutput(newId);
+      setNodeStatus(newId, 'idle');
+      setNodeError(newId, null);
+
+      newNodes.push(newNode);
+    }
+
+    // Add all new nodes
+    for (const newNode of newNodes) {
+      addNode(newNode);
+    }
+
+    // Create new edges with updated IDs
+    const newEdges: Edge[] = [];
+    for (const edge of copiedEdges) {
+      const newSource = idMap.get(edge.source);
+      const newTarget = idMap.get(edge.target);
+      if (newSource && newTarget) {
+        newEdges.push({
+          ...edge,
+          id: `edge_${Date.now()}_${Math.random()}`,
+          source: newSource,
+          target: newTarget,
+        });
+      }
+    }
+
+    // Add new edges
+    for (const edge of newEdges) {
+      onConnect({
+        ...edge,
+        sourceHandle: edge.sourceHandle ?? null,
+        targetHandle: edge.targetHandle ?? null,
+      });
+    }
+
+    toast.info(`Pasted ${newNodes.length} node${newNodes.length > 1 ? 's' : ''}`);
+  }, [nodes, addNode, clearNodeOutput, setNodeStatus, setNodeError, onConnect]);
+
+  useKeyboardShortcuts(workflowStore, reactFlow, handleCopy, handlePaste);
 
   const [menu, setMenu] = useState<{
     id: string;

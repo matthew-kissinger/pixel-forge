@@ -256,7 +256,7 @@ export function createUserPrompt(
 export function createEditPrompt(
   currentCode: string,
   editRequest: string,
-  mode: RenderMode = 'glb'
+  _mode: RenderMode = 'glb'
 ): string {
   return `Current code:\n${currentCode}\n\nEdit: ${editRequest}\n\nOutput complete modified code only.`;
 }

@@ -79,7 +79,7 @@ export const useKeyboardShortcuts = (
 
       if (isMeta && key === 'c') {
         const flow = flowRef.current;
-        const selected = flow.getNodes().filter((n) => n.selected);
+        const selected = flow.getNodes().filter((n) => n.selected) as Node<NodeData>[];
         if (selected.length > 0) {
           event.preventDefault();
           onCopy?.(selected);

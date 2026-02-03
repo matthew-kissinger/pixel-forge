@@ -11,22 +11,21 @@ interface RotateNodeData {
   outputMode?: 'sheet' | 'separate';
 }
 
-const DIRECTION_LABELS = {
+const DIRECTION_LABELS: Record<4 | 8, string[]> = {
   4: ['Down', 'Left', 'Up', 'Right'],
   8: ['Down', 'Down-Left', 'Left', 'Up-Left', 'Up', 'Up-Right', 'Right', 'Down-Right'],
 };
 
 export function RotateNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as RotateNodeData;
+  const nodeData = data as unknown as RotateNodeData;
 
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();
   const status = nodeStatus[id] ?? 'idle';
   const [showSettings, setShowSettings] = useState(false);
 
-  const directions = nodeData.directions ?? 4;
-  const outputMode = nodeData.outputMode ?? 'sheet';
+  const directions: 4 | 8 = nodeData.directions ?? 4;
 
   const handleRotate = useCallback(async () => {
     const inputs = getInputsForNode(id);

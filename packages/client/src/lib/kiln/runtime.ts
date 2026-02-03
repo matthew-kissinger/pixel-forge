@@ -13,6 +13,7 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { AssetModule, KilnOutput } from './types';
 import * as primitives from './primitives';
 import type { RenderMode } from './prompt';
+import type { WebGPURenderer as WebGPURendererType } from 'three/webgpu';
 
 // WebGPU imports (dynamic to allow fallback)
 let WebGPURenderer: typeof import('three/webgpu').WebGPURenderer | null = null;
@@ -56,7 +57,7 @@ const DEFAULT_CONFIG: RuntimeConfig = {
 // =============================================================================
 
 export class KilnRuntime {
-  private renderer: THREE.WebGLRenderer | THREE.Renderer | null = null;
+  private renderer: THREE.WebGLRenderer | WebGPURendererType | null = null;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private controls: OrbitControls | null = null;
@@ -70,9 +71,11 @@ export class KilnRuntime {
   private webgpuAvailable = false;
   private usingWebGPU = false;
   private originalMaterials: Map<THREE.Mesh, THREE.Material | THREE.Material[]> = new Map();
-  private tslMaterial: THREE.Material | null = null;
 
-  constructor(private config: RuntimeConfig = DEFAULT_CONFIG) {
+  private config: RuntimeConfig;
+
+  constructor(config: RuntimeConfig = DEFAULT_CONFIG) {
+    this.config = config;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(config.background ?? 0x1a1a1a);
 
@@ -316,8 +319,6 @@ export class KilnRuntime {
         return { success: false, error: 'Failed to compile TSL effect' };
       }
 
-      this.tslMaterial = material;
-
       // Store original materials and apply TSL material
       this.asset.traverse((child) => {
         if (child instanceof THREE.Mesh) {
@@ -350,7 +351,6 @@ export class KilnRuntime {
       }
     });
 
-    this.tslMaterial = null;
   }
 
   /**

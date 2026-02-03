@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useWorkflowStore, type NodeStatus, type BaseNodeData } from '../../stores/workflow';
+import { useWorkflowStore, type NodeStatus } from '../../stores/workflow';
 
 interface BaseNodeProps<T extends { label: string }> extends NodeProps {
   data: T;

@@ -21,7 +21,7 @@ export async function handleImageGen(context: NodeHandlerContext): Promise<void>
     style: data.style,
     aspectRatio: data.aspectRatio,
     removeBackground: data.autoRemoveBg,
-    presetId: data.presetId,
+    presetId: typeof data.presetId === 'string' ? data.presetId : undefined,
   };
 
   const result = await generateImage(options);

@@ -192,7 +192,7 @@ export async function applyFilter(
   imageData: string,
   filter: string
 ): Promise<string> {
-  return processImage(imageData, (ctx, canvas, img) => {
+  return processImage(imageData, (ctx, _canvas, img) => {
     ctx.filter = filter;
     ctx.drawImage(img, 0, 0);
   });

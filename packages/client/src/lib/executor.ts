@@ -78,73 +78,6 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
 }
 
 /**
- * Topologically sort nodes based on edges
- * Returns nodes in execution order (dependencies first)
- */
-function topologicalSort(nodes: Node[], edges: Edge[]): Node[] {
-  // Build adjacency list (which nodes depend on this one)
-  const dependents = new Map<string, Set<string>>();
-  const dependencies = new Map<string, Set<string>>();
-  const nodeMap = new Map<string, Node>();
-
-  nodes.forEach((node) => {
-    nodeMap.set(node.id, node);
-    dependents.set(node.id, new Set());
-    dependencies.set(node.id, new Set());
-  });
-
-  edges.forEach((edge) => {
-    // edge.source -> edge.target means target depends on source
-    const sourceDeps = dependencies.get(edge.target);
-    const targetDeps = dependents.get(edge.source);
-    if (sourceDeps) sourceDeps.add(edge.source);
-    if (targetDeps) targetDeps.add(edge.target);
-  });
-
-  // Kahn's algorithm for topological sort
-  const sorted: Node[] = [];
-  const queue: Node[] = [];
-  const inDegree = new Map<string, number>();
-
-  nodes.forEach((node) => {
-    const deps = dependencies.get(node.id);
-    const degree = deps ? deps.size : 0;
-    inDegree.set(node.id, degree);
-    if (degree === 0) {
-      queue.push(node);
-    }
-  });
-
-  while (queue.length > 0) {
-    const node = queue.shift()!;
-    sorted.push(node);
-
-    const deps = dependents.get(node.id);
-    if (deps) {
-      deps.forEach((dependentId) => {
-        const currentDegree = inDegree.get(dependentId) ?? 0;
-        const newDegree = currentDegree - 1;
-        inDegree.set(dependentId, newDegree);
-        if (newDegree === 0) {
-          const dependentNode = nodeMap.get(dependentId);
-          if (dependentNode) queue.push(dependentNode);
-        }
-      });
-    }
-  }
-
-  // Add nodes with no connections (they weren't in the graph)
-  const sortedIds = new Set(sorted.map((n) => n.id));
-  nodes.forEach((node) => {
-    if (!sortedIds.has(node.id)) {
-      sorted.push(node);
-    }
-  });
-
-  return sorted;
-}
-
-/**
  * Group nodes into execution waves based on dependency depth.
  * All nodes in the same wave can execute in parallel.
  * Returns array of waves, where each wave is an array of nodes.
@@ -435,11 +368,11 @@ export async function executeWorkflow(
  */
 export async function executeSingleNode(
   node: Node,
-  allNodes: Node[],
+  _allNodes: Node[],
   edges: Edge[],
   store: WorkflowStore
 ): Promise<{ success: boolean; error?: string }> {
-  const { setNodeStatus, setNodeError, getInputsForNode } = store;
+  const { setNodeStatus, setNodeError } = store;
   const ctx: ExecutionContext = { getCancelled: () => false };
 
   try {

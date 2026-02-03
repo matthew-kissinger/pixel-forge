@@ -63,6 +63,8 @@ const nodeIcons: Record<NodeType, typeof Type> = {
   sliceSheet: Scissors,
   preview: Eye,
   save: Download,
+  exportGLB: Shapes,
+  exportSheet: LayoutGrid,
 };
 
 export function NodePalette() {

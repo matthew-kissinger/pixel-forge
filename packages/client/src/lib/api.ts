@@ -99,7 +99,7 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
       return response.json();
     },
-    { signal: options?.signal }
+    { signal: options?.signal ?? undefined }
   );
 }
 

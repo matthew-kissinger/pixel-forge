@@ -107,7 +107,7 @@ interface ExecutionHistoryProps {
   onToggle: () => void;
 }
 
-export function ExecutionHistory({ isVisible, onToggle }: ExecutionHistoryProps) {
+export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHistoryProps) {
   const { executionHistory, clearExecutionHistory } = useWorkflowStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
 

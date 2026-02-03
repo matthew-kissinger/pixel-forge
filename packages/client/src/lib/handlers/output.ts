@@ -7,19 +7,19 @@
 
 import type { NodeHandlerContext } from './index';
 
-export async function handlePreview(context: NodeHandlerContext): Promise<void> {
+export async function handlePreview(_context: NodeHandlerContext): Promise<void> {
   // Output nodes don't need execution - they just display/save
   // The preview node will automatically show inputs when they're available
 }
 
-export async function handleSave(context: NodeHandlerContext): Promise<void> {
+export async function handleSave(_context: NodeHandlerContext): Promise<void> {
   // Output nodes don't need execution - they just display/save
 }
 
-export async function handleExportGLB(context: NodeHandlerContext): Promise<void> {
+export async function handleExportGLB(_context: NodeHandlerContext): Promise<void> {
   // Output nodes don't need execution - they just display/save
 }
 
-export async function handleExportSheet(context: NodeHandlerContext): Promise<void> {
+export async function handleExportSheet(_context: NodeHandlerContext): Promise<void> {
   // Output nodes don't need execution - they just display/save
 }

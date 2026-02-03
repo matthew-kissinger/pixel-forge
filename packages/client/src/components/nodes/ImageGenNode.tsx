@@ -38,7 +38,7 @@ interface ImageGenNodeData {
 
 export function ImageGenNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as ImageGenNodeData;
+  const nodeData = data as unknown as ImageGenNodeData;
 
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();

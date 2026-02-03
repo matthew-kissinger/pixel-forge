@@ -10,11 +10,10 @@
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Box, Sparkles, Download, Play, Edit3, RotateCcw, Maximize2, Minimize2, ZoomIn, ZoomOut, RefreshCw, X } from 'lucide-react';
+import { Box, Sparkles, Download, Play, Edit3, RotateCcw, Maximize2, ZoomIn, ZoomOut, RefreshCw, X } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow';
 import {
   KilnRuntime,
-  generateStarterCode,
   type RenderMode,
   type KilnOutput,
 } from '../../lib/kiln';

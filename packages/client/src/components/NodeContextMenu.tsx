@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Play, Copy, Trash2, XCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 

@@ -182,12 +182,12 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Re-run failed nodes** - Allow re-executing individual failed nodes without re-running the entire workflow
+- **Wire undo/redo keyboard shortcuts** - `Ctrl+Z`/`Ctrl+Shift+Z` currently show toast "not yet implemented" instead of calling store methods (`useKeyboardShortcuts.ts:60-69`). Store has working `undo()`/`redo()` methods. Toolbar buttons work.
+- **Copy/paste nodes** - No clipboard support for duplicating nodes (Ctrl+C/V)
 - **kilnGen executor** - Currently throws "not yet supported" (`executor.ts:411-413`); needs real implementation once Kiln API is stable
-- **Keyboard shortcuts** - No hotkeys for common operations (execute, save, delete node, undo/redo)
-- **Copy/paste nodes** - No clipboard support for duplicating nodes
-- **Node context menu** - Right-click menu for re-run, duplicate, delete
-- **Refactor executor.ts** - 1,369 lines monolithic; split into per-node handler modules
+- **Refactor executor.ts** - 1,405 lines monolithic; split into per-node handler modules
+- **Delete key for nodes** - No keyboard shortcut to delete selected nodes (only via context menu)
+- **Batch operations UX** - No progress indication per-item in batch generation
 
 ### Completed Goals
 
@@ -202,12 +202,14 @@ Build a **template/preset system** where:
 - ~~Missing node components~~ - Done (all 28 node types have UI components: styleReference, seedControl, spriteSheet, exportGLB, exportSheet added)
 - ~~Workflow UX polish~~ - Done (per-node error display, execution history panel with timeline/status/errors, search/filter in NodePalette)
 - ~~Undo/redo~~ - Done (snapshot-based in `workflow.ts`, tracks structural changes: add/remove nodes/edges, connect, reset, import)
+- ~~Keyboard shortcuts~~ - Done (`useKeyboardShortcuts.ts`: Ctrl+S save, Ctrl+O load, Ctrl+A select all, Ctrl+Enter execute, Esc cancel/deselect)
+- ~~Node context menu~~ - Done (`NodeContextMenu.tsx`: re-run, duplicate, delete, clear output via right-click)
 
 ## Current State
 
-React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, and execution history. Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle. Undo/redo with snapshot-based history (max 50 snapshots). 1,369-line executor.ts with canvas-based image processing for tile, filter, combine, rotate, colorPalette, analyze, iterate.
+React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, and execution history. Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons working, keyboard shortcuts show toast placeholder. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel. 1,405-line executor.ts with canvas-based image processing for tile, filter, combine, rotate, colorPalette, analyze, iterate.
 
-Key gaps: no keyboard shortcuts, no copy/paste nodes, no node context menu, no re-run of individual failed nodes, kilnGen executor not yet implemented, executor.ts needs refactoring into modules.
+Key gaps: undo/redo keyboard shortcuts not wired to store (show toasts), no copy/paste nodes, kilnGen executor not yet implemented, executor.ts needs refactoring into modules, no Delete key shortcut for nodes.
 
 ## Quality Bar
 

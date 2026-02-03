@@ -182,12 +182,10 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- ~~Console cleanup~~ - Done (Replaced 68+ console.log/error calls with lightweight logger utility in @pixel-forge/shared)
-- **TypeScript build errors** - Client build now passing (fixed missing imports and type issues in IterateNode/TileNode). Server still has ~50 errors.
-- **kilnGen executor** - Currently throws "not yet supported" (`handlers/model3d.ts:43`); needs real implementation once Kiln API is stable
-- **Workflow validation** - Pre-execution validation implemented in executor.ts but needs test updates.
-- **Test coverage** - Executor tests added (`executor.test.ts`, 378 lines) but no integration, error-handling, or handler-level tests
-- **Uncommitted work** - Copy/paste refactor in `App.tsx` (clipboard ref, ID remapping, edge preservation) is modified but not committed
+- **Broken executor tests** - `executor.test.ts` uses `vi.mock(path, async (importOriginal) => ...)` which is incompatible with Bun's test runner (importOriginal is undefined). 69/70 tests pass, 1 fail + 2 errors.
+- **kilnGen executor** - Currently throws "not yet supported" (`handlers/model3d.ts:42`); needs real implementation once Kiln API is stable
+- **Bundle size** - Main chunk is 1.5MB (gzip: 417KB). Three.js (645KB) is only used by KilnGenNode - lazy loading it would cut bundle significantly.
+- **Test coverage** - No integration tests, no handler-level unit tests, no E2E tests
 
 ### Completed Goals
 
@@ -214,12 +212,17 @@ Build a **template/preset system** where:
 - ~~Batch operations UX~~ - Done (per-item progress tracking in batch handler: `current`, `total`, `label`)
 - ~~API retry logic~~ - Done (`retry.ts`: exponential backoff with jitter, `Retry-After` header support, AbortSignal, retryable status codes; `api.ts` wraps all calls via `retryWithBackoff`)
 - ~~Executor tests~~ - Done (`executor.test.ts`: 378 lines covering topological sort, diamond dependencies, parallel wave execution)
+- ~~Console cleanup~~ - Done (Replaced 68+ console.log/error calls with lightweight logger utility in @pixel-forge/shared)
+- ~~TypeScript build errors~~ - Done (both client and server build cleanly with `tsc --noEmit`)
+- ~~Copy/paste refactor~~ - Done (committed in `331a35c`)
+- ~~URL hash sharing~~ - Done (`share.ts`: encode/decode workflows in URL hash for sharing)
+- ~~Preset launcher~~ - Done (`PresetLauncher.tsx`: quick-launch panel for workflow presets)
 
 ## Current State
 
 React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases and per-item progress tracking. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic (`retry.ts` + `api.ts`). Executor refactored into 467-line main module + 8 handler modules (1,166 lines total in `lib/handlers/`). Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle / MiniMap toggle / Fit View / Auto Layout. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons + Ctrl+Z/Ctrl+Shift+Z working. Copy/paste nodes with Ctrl+C/V (multi-node + edge preservation). Delete/Backspace key removes selected nodes/edges. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel, undo, redo, copy, paste, delete. Auto-save to localStorage with recovery prompt. Test coverage: executor (378 lines), store (298 lines), types (156 lines), API (137 lines).
 
-Key gaps: Server build errors (~50 real errors, mostly possibly undefined or stale types), kilnGen executor not yet implemented, pre-execution workflow validation needs test synchronization, uncommitted copy/paste refactor in App.tsx, server tsconfig missing exclude for generated output/kiln/ directory.
+Key gaps: executor.test.ts broken under Bun (vitest mock incompatibility), kilnGen executor not yet implemented, 1.5MB main bundle chunk needs code-splitting (Three.js lazy load), no handler-level or integration tests.
 
 ## Quality Bar
 
@@ -244,7 +247,7 @@ Assets should be:
 **Structure:**
 ```
 packages/
-├── client/    # React + React Flow editor (28 node components, 5 panels, Zustand store w/ undo/redo, 9 templates, executor)
+├── client/    # React + React Flow editor (28 node components, 6 panels, Zustand store w/ undo/redo, 9 templates, executor)
 ├── server/    # Hono API wrapping AI services (Gemini, FAL, Claude)
 └── shared/    # Shared types and presets (7 presets, prompt builders)
 ```

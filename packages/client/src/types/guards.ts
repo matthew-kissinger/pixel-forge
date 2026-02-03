@@ -17,6 +17,7 @@ import type {
   KilnGenNodeData,
   RemoveBgNodeData,
   ResizeNodeData,
+  CompressNodeData,
   CropNodeData,
   PixelateNodeData,
   TileNodeData,
@@ -187,6 +188,12 @@ export function isResizeNodeData(data: unknown): data is ResizeNodeData {
   );
 }
 
+export function isCompressNodeData(data: unknown): data is CompressNodeData {
+  if (!isNodeDataUnion(data) || data.nodeType !== 'compress') return false;
+  const d = data as CompressNodeData;
+  return isString(d.format) && isNumber(d.quality);
+}
+
 export function isCropNodeData(data: unknown): data is CropNodeData {
   if (!isNodeDataUnion(data) || data.nodeType !== 'crop') return false;
   const d = data as CropNodeData;
@@ -342,6 +349,7 @@ export const nodeTypeGuards = {
   kilnGen: isKilnGenNodeData,
   removeBg: isRemoveBgNodeData,
   resize: isResizeNodeData,
+  compress: isCompressNodeData,
   crop: isCropNodeData,
   pixelate: isPixelateNodeData,
   tile: isTileNodeData,

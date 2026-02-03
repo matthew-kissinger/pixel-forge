@@ -6,6 +6,7 @@ import {
   Box,
   Eraser,
   Maximize2,
+  Minimize2,
   Grid3X3,
   LayoutGrid,
   Palette,
@@ -24,6 +25,8 @@ import {
   ScanSearch,
   Diamond,
   Flame,
+  Scissors,
+  Sparkles,
 } from 'lucide-react';
 import { legacyNodeDefinitions as nodeDefinitions, nodeCategories, type NodeType } from '../nodes';
 import { cn } from '../../lib/utils';
@@ -36,8 +39,10 @@ const nodeIcons: Record<NodeType, typeof Type> = {
   isometricTile: Diamond,
   model3DGen: Box,
   kilnGen: Flame,
+  batchGen: Sparkles,
   removeBg: Eraser,
   resize: Maximize2,
+  compress: Minimize2,
   crop: Crop,
   pixelate: Grid3X3,
   tile: LayoutGrid,
@@ -47,6 +52,8 @@ const nodeIcons: Record<NodeType, typeof Type> = {
   rotate: RotateCw,
   iterate: Repeat,
   analyze: ScanSearch,
+  compress: Minimize2,
+  sliceSheet: Scissors,
   preview: Eye,
   save: Download,
 };

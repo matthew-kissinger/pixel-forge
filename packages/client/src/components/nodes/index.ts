@@ -18,6 +18,8 @@ import { IsometricTileNode } from './IsometricTileNode';
 import { RotateNode } from './RotateNode';
 import { IterateNode } from './IterateNode';
 import { AnalyzeNode } from './AnalyzeNode';
+import { SliceSheetNode } from './SliceSheetNode';
+import { BatchGenNode } from './BatchGenNode';
 
 // Re-export from the new type system
 export {
@@ -46,6 +48,7 @@ export const nodeTypes = {
   isometricTile: IsometricTileNode,
   model3DGen: Model3DGenNode,
   kilnGen: KilnGenNode,
+  batchGen: BatchGenNode,
   // Processing
   removeBg: RemoveBgNode,
   resize: ResizeNode,
@@ -58,6 +61,7 @@ export const nodeTypes = {
   rotate: RotateNode,
   iterate: IterateNode,
   analyze: AnalyzeNode,
+  sliceSheet: SliceSheetNode,
   // Output
   preview: PreviewNode,
   save: SaveNode,

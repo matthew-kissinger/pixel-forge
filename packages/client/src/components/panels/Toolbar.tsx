@@ -1,12 +1,28 @@
-import { useCallback, useRef } from 'react';
-import { Save, FolderOpen, Trash2, FileJson, Play, Square } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
+import {
+  Save,
+  FolderOpen,
+  Trash2,
+  FileJson,
+  Play,
+  Square,
+  Clock,
+  Undo2,
+  Redo2,
+  HelpCircle,
+} from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow';
 import { toast } from '../ui/Toast';
 import { TemplateLoader } from './TemplateLoader';
 import { QuickGenerate } from './QuickGenerate';
 import { executeWorkflow } from '../../lib/executor';
 
-export function Toolbar() {
+interface ToolbarProps {
+  onToggleHistory?: () => void;
+  isHistoryVisible?: boolean;
+}
+
+export function Toolbar({ onToggleHistory, isHistoryVisible }: ToolbarProps) {
   const {
     nodes,
     edges,
@@ -19,6 +35,10 @@ export function Toolbar() {
     setExecuting,
     setExecutionProgress,
     setExecutionCancelled,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,6 +169,22 @@ export function Toolbar() {
     setExecutionCancelled,
   ]);
 
+  useEffect(() => {
+    const handleSaveShortcut = () => handleSave();
+    const handleLoadShortcut = () => handleLoad();
+    const handleExecuteShortcut = () => handleExecuteAll();
+
+    window.addEventListener('workflow:save', handleSaveShortcut);
+    window.addEventListener('workflow:load', handleLoadShortcut);
+    window.addEventListener('workflow:execute', handleExecuteShortcut);
+
+    return () => {
+      window.removeEventListener('workflow:save', handleSaveShortcut);
+      window.removeEventListener('workflow:load', handleLoadShortcut);
+      window.removeEventListener('workflow:execute', handleExecuteShortcut);
+    };
+  }, [handleExecuteAll, handleLoad, handleSave]);
+
   return (
     <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow-lg">
       <input
@@ -166,6 +202,29 @@ export function Toolbar() {
 
       {/* Template Loader */}
       <TemplateLoader />
+
+      <div className="h-6 w-px bg-[var(--border-color)]" />
+
+      {/* Undo/Redo Buttons */}
+      <button
+        onClick={undo}
+        disabled={!canUndo()}
+        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+        title="Undo"
+      >
+        <Undo2 className="h-4 w-4" />
+        <span className="hidden sm:inline">Undo</span>
+      </button>
+
+      <button
+        onClick={redo}
+        disabled={!canRedo()}
+        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+        title="Redo"
+      >
+        <Redo2 className="h-4 w-4" />
+        <span className="hidden sm:inline">Redo</span>
+      </button>
 
       <div className="h-6 w-px bg-[var(--border-color)]" />
 
@@ -230,6 +289,50 @@ export function Toolbar() {
         <span className="hidden sm:inline">Load</span>
       </button>
 
+      <div className="relative group">
+        <button
+          type="button"
+          className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+          title="Keyboard shortcuts"
+        >
+          <HelpCircle className="h-4 w-4" />
+          <span className="hidden sm:inline">Shortcuts</span>
+        </button>
+        <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-64 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 text-xs text-[var(--text-secondary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+          <div className="mb-2 text-[var(--text-primary)]">Keyboard shortcuts</div>
+          <div className="grid gap-1">
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Ctrl/Cmd + S</span> Save
+            </div>
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Ctrl/Cmd + O</span> Load
+            </div>
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Ctrl/Cmd + Z</span> Undo
+            </div>
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Ctrl/Cmd + Shift + Z</span> Redo
+            </div>
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Ctrl/Cmd + Enter</span>{' '}
+              Execute
+            </div>
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Ctrl/Cmd + A</span> Select
+              all
+            </div>
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Delete / Backspace</span>{' '}
+              Delete selected
+            </div>
+            <div>
+              <span className="font-mono text-[var(--text-primary)]">Esc</span> Cancel or
+              deselect
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="mx-1 h-6 w-px bg-[var(--border-color)]" />
 
       <button
@@ -242,6 +345,24 @@ export function Toolbar() {
       </button>
 
       <div className="mx-1 h-6 w-px bg-[var(--border-color)]" />
+
+      {onToggleHistory && (
+        <>
+          <button
+            onClick={onToggleHistory}
+            className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors ${
+              isHistoryVisible
+                ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
+            }`}
+            title="Toggle execution history"
+          >
+            <Clock className="h-4 w-4" />
+            <span className="hidden sm:inline">History</span>
+          </button>
+          <div className="h-6 w-px bg-[var(--border-color)]" />
+        </>
+      )}
 
       <button
         onClick={handleClear}

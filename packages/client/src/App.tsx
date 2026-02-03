@@ -16,6 +16,7 @@ import { useWorkflowStore, type NodeData } from './stores/workflow';
 import {
   nodeTypes,
   legacyNodeDefinitions as nodeDefinitions,
+  nodeCategories,
   type NodeType,
   getNodeIOSpec,
   type NodeTypeName,
@@ -34,7 +35,11 @@ import { useAutoSave } from './hooks/useAutoSave';
 let nodeIdCounter = 0;
 const generateNodeId = () => `node_${++nodeIdCounter}`;
 
-function FlowEditor() {
+interface FlowEditorProps {
+  isMiniMapVisible: boolean;
+}
+
+function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
   const workflowStore = useWorkflowStore();
   const {
     nodes,
@@ -220,27 +225,25 @@ function FlowEditor() {
     >
       <Background gap={20} size={1} color="var(--border-color)" />
       <Controls position="bottom-left" style={{ marginLeft: '240px' }} />
-      <MiniMap
-        position="bottom-right"
-        nodeColor={(node) => {
-          const type = node.type as NodeType;
-          const def = nodeDefinitions.find((d) => d.type === type);
-          if (def) {
-            switch (def.category) {
-              case 'input':
-                return '#22c55e';
-              case 'generate':
-                return '#6366f1';
-              case 'process':
-                return '#f59e0b';
-              case 'output':
-                return '#ef4444';
+      {isMiniMapVisible && (
+        <MiniMap
+          position="bottom-right"
+          style={{
+            border: '1px solid var(--border-color)',
+            borderRadius: 8,
+            background: 'var(--bg-secondary)',
+          }}
+          nodeColor={(node) => {
+            const type = node.type as NodeType;
+            const def = nodeDefinitions.find((d) => d.type === type);
+            if (def) {
+              return nodeCategories[def.category]?.color ?? 'var(--bg-tertiary)';
             }
-          }
-          return 'var(--bg-tertiary)';
-        }}
-        maskColor="rgba(0, 0, 0, 0.6)"
-      />
+            return 'var(--bg-tertiary)';
+          }}
+          maskColor="rgba(0, 0, 0, 0.6)"
+        />
+      )}
       {menu && (
         <NodeContextMenu
           x={menu.x}
@@ -260,17 +263,20 @@ function FlowEditor() {
 
 export default function App() {
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+  const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
   useAutoSave();
 
   return (
     <ErrorBoundary>
       <ReactFlowProvider>
         <div className="h-screen w-screen">
-          <FlowEditor />
+          <FlowEditor isMiniMapVisible={isMiniMapVisible} />
           <NodePalette />
           <Toolbar
             onToggleHistory={() => setIsHistoryVisible(!isHistoryVisible)}
             isHistoryVisible={isHistoryVisible}
+            onToggleMiniMap={() => setIsMiniMapVisible(!isMiniMapVisible)}
+            isMiniMapVisible={isMiniMapVisible}
           />
           <ExecutionHistory
             isVisible={isHistoryVisible}

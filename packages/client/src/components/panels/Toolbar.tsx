@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Save,
   FolderOpen,
@@ -10,19 +10,32 @@ import {
   Undo2,
   Redo2,
   HelpCircle,
+  Maximize2,
+  LayoutGrid,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
+import { useReactFlow } from '@xyflow/react';
 import { useWorkflowStore } from '../../stores/workflow';
 import { toast } from '../ui/Toast';
 import { TemplateLoader } from './TemplateLoader';
 import { QuickGenerate } from './QuickGenerate';
 import { executeWorkflow } from '../../lib/executor';
+import { autoLayoutNodes } from '../../lib/autoLayout';
 
 interface ToolbarProps {
   onToggleHistory?: () => void;
   isHistoryVisible?: boolean;
+  onToggleMiniMap?: () => void;
+  isMiniMapVisible?: boolean;
 }
 
-export function Toolbar({ onToggleHistory, isHistoryVisible }: ToolbarProps) {
+export function Toolbar({
+  onToggleHistory,
+  isHistoryVisible,
+  onToggleMiniMap,
+  isMiniMapVisible,
+}: ToolbarProps) {
   const {
     nodes,
     edges,
@@ -40,8 +53,10 @@ export function Toolbar({ onToggleHistory, isHistoryVisible }: ToolbarProps) {
     canUndo,
     canRedo,
     lastAutoSave,
+    setNodes,
   } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reactFlow = useReactFlow();
 
   // Formatter for "last saved" time
   const [lastSavedText, setLastSavedText] = useState<string>('');
@@ -192,6 +207,24 @@ export function Toolbar({ onToggleHistory, isHistoryVisible }: ToolbarProps) {
     setExecutionCancelled,
   ]);
 
+  const handleFitView = useCallback(() => {
+    reactFlow.fitView({ padding: 0.2 });
+  }, [reactFlow]);
+
+  const handleAutoLayout = useCallback(() => {
+    if (nodes.length === 0) {
+      toast.info('No nodes to layout');
+      return;
+    }
+
+    const layoutNodes = autoLayoutNodes(nodes, edges);
+    setNodes(layoutNodes);
+
+    requestAnimationFrame(() => {
+      reactFlow.fitView({ padding: 0.2, duration: 300 });
+    });
+  }, [nodes, edges, reactFlow, setNodes]);
+
   useEffect(() => {
     const handleSaveShortcut = () => handleSave();
     const handleLoadShortcut = () => handleLoad();
@@ -248,6 +281,46 @@ export function Toolbar({ onToggleHistory, isHistoryVisible }: ToolbarProps) {
         <Redo2 className="h-4 w-4" />
         <span className="hidden sm:inline">Redo</span>
       </button>
+
+      <div className="h-6 w-px bg-[var(--border-color)]" />
+
+      {/* View Controls */}
+      <button
+        onClick={handleFitView}
+        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        title="Fit view"
+      >
+        <Maximize2 className="h-4 w-4" />
+        <span className="hidden sm:inline">Fit View</span>
+      </button>
+
+      <button
+        onClick={handleAutoLayout}
+        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        title="Auto layout"
+      >
+        <LayoutGrid className="h-4 w-4" />
+        <span className="hidden sm:inline">Auto Layout</span>
+      </button>
+
+      {onToggleMiniMap && (
+        <button
+          onClick={onToggleMiniMap}
+          className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors ${
+            isMiniMapVisible
+              ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
+              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
+          }`}
+          title={isMiniMapVisible ? 'Hide minimap' : 'Show minimap'}
+        >
+          {isMiniMapVisible ? (
+            <Eye className="h-4 w-4" />
+          ) : (
+            <EyeOff className="h-4 w-4" />
+          )}
+          <span className="hidden sm:inline">MiniMap</span>
+        </button>
+      )}
 
       <div className="h-6 w-px bg-[var(--border-color)]" />
 

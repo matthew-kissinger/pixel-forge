@@ -5,7 +5,7 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { Extract } from '../../types/nodes';
+import type { NodeDataUnion } from '../../types/nodes';
 import { removeBackground } from '../api';
 
 export async function handleRemoveBg(context: NodeHandlerContext): Promise<void> {

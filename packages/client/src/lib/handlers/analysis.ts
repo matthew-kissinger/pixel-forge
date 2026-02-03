@@ -5,7 +5,7 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { Extract } from '../../types/nodes';
+import type { NodeDataUnion } from '../../types/nodes';
 import { sliceSheet, compressImage } from '../api';
 import { extractDominantColors, getImageDimensions } from '../image-utils';
 

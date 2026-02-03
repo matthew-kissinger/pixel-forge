@@ -5,7 +5,7 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { Extract } from '../../types/nodes';
+import type { NodeDataUnion } from '../../types/nodes';
 import type { NodeOutput } from '../../stores/workflow';
 
 export async function handleTile(context: NodeHandlerContext): Promise<void> {

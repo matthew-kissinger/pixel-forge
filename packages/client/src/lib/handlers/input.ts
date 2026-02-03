@@ -5,7 +5,7 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { Extract } from '../../types/nodes';
+import type { NodeDataUnion } from '../../types/nodes';
 
 export async function handleTextPrompt(context: NodeHandlerContext): Promise<void> {
   const { nodeData, setNodeOutput, node } = context;

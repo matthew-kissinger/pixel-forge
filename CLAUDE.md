@@ -182,12 +182,12 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Wire undo/redo keyboard shortcuts** - `Ctrl+Z`/`Ctrl+Shift+Z` currently show toast "not yet implemented" instead of calling store methods (`useKeyboardShortcuts.ts:60-69`). Store has working `undo()`/`redo()` methods. Toolbar buttons work. Previous automated attempts failed.
-- **Copy/paste nodes** - No clipboard support for duplicating nodes (Ctrl+C/V). Previous automated attempt failed.
-- **Delete key for nodes** - No keyboard shortcut to delete selected nodes (only via context menu)
 - **kilnGen executor** - Currently throws "not yet supported" (`handlers/model3d.ts:43`); needs real implementation once Kiln API is stable
 - **Workflow validation** - Pre-execution validation to catch missing inputs, disconnected nodes, cycles before running. Previous automated attempt failed.
 - **Batch operations UX** - No progress indication per-item in batch generation
+- **API retry logic** - No exponential backoff or retry on transient failures in `api.ts`; `TooManyRequestsError` has `retryAfter` field but client doesn't use it
+- **Test coverage** - Only basic store/type/API tests exist; no executor, integration, or error-handling tests
+- **Console cleanup** - 35+ `console.log`/`console.error` calls across client and server; needs structured logging or removal
 
 ### Completed Goals
 
@@ -203,6 +203,9 @@ Build a **template/preset system** where:
 - ~~Workflow UX polish~~ - Done (per-node error display, execution history panel with timeline/status/errors, search/filter in NodePalette)
 - ~~Undo/redo~~ - Done (snapshot-based in `workflow.ts`, tracks structural changes: add/remove nodes/edges, connect, reset, import)
 - ~~Keyboard shortcuts~~ - Done (`useKeyboardShortcuts.ts`: Ctrl+S save, Ctrl+O load, Ctrl+A select all, Ctrl+Enter execute, Esc cancel/deselect)
+- ~~Undo/redo keyboard shortcuts~~ - Done (Ctrl+Z/Ctrl+Shift+Z wired to `store.undo()`/`store.redo()` in `useKeyboardShortcuts.ts:62-78`)
+- ~~Copy/paste nodes~~ - Done (Ctrl+C/V with multi-node + edge support, `handleCopy`/`handlePaste` in `App.tsx`, wired via `useKeyboardShortcuts.ts:80-95`)
+- ~~Delete key for nodes~~ - Done (Delete/Backspace removes selected nodes and edges via `flow.deleteElements()` in `useKeyboardShortcuts.ts:130-138`)
 - ~~Node context menu~~ - Done (`NodeContextMenu.tsx`: re-run, duplicate, delete, clear output via right-click)
 - ~~Refactor executor.ts~~ - Done (467-line main executor + 8 handler modules in `lib/handlers/`: input, imageGen, model3d, processing, canvas, analysis, batch, output)
 - ~~Auto-save~~ - Done (`useAutoSave.ts`: localStorage every 2s, recovery prompt on load)
@@ -211,9 +214,9 @@ Build a **template/preset system** where:
 
 ## Current State
 
-React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. Executor refactored into 467-line main module + 8 handler modules (1,166 lines total in `lib/handlers/`). Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle / MiniMap toggle / Fit View / Auto Layout. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons working, keyboard shortcuts show toast placeholder. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel. Auto-save to localStorage with recovery prompt.
+React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. Executor refactored into 467-line main module + 8 handler modules (1,166 lines total in `lib/handlers/`). Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle / MiniMap toggle / Fit View / Auto Layout. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons + Ctrl+Z/Ctrl+Shift+Z working. Copy/paste nodes with Ctrl+C/V (multi-node + edge preservation). Delete/Backspace key removes selected nodes/edges. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel, undo, redo, copy, paste, delete. Auto-save to localStorage with recovery prompt.
 
-Key gaps: undo/redo keyboard shortcuts not wired to store (show toasts), no copy/paste nodes, kilnGen executor not yet implemented, no Delete key shortcut for nodes, no pre-execution workflow validation.
+Key gaps: kilnGen executor not yet implemented, no pre-execution workflow validation, no batch progress per-item, no API retry logic, minimal test coverage, console.log cleanup needed.
 
 ## Quality Bar
 

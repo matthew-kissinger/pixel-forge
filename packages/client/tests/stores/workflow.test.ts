@@ -210,4 +210,89 @@ describe('Workflow Store', () => {
       expect(Object.keys(nodeStatus)).toHaveLength(0);
     });
   });
+
+  describe('Persistence', () => {
+    it('should export current workflow', () => {
+      const store = useWorkflowStore.getState();
+
+      store.addNode({
+        id: 'node-1',
+        type: 'textPrompt',
+        position: { x: 10, y: 10 },
+        data: { label: 'Prompt', prompt: 'test' },
+      });
+
+      store.addNode({
+        id: 'node-2',
+        type: 'preview',
+        position: { x: 100, y: 100 },
+        data: { label: 'Preview', inputType: 'any' },
+      });
+
+      store.onConnect({
+        source: 'node-1',
+        target: 'node-2',
+        sourceHandle: 'out',
+        targetHandle: 'in',
+      });
+
+      const workflow = store.exportWorkflow();
+
+      expect(workflow.version).toBe(1);
+      expect(workflow.nodes).toHaveLength(2);
+      expect(workflow.edges).toHaveLength(1);
+      expect(workflow.nodes[0].id).toBe('node-1');
+      expect(workflow.nodes[0].data.prompt).toBe('test');
+      expect(workflow.edges[0].source).toBe('node-1');
+      expect(workflow.edges[0].target).toBe('node-2');
+    });
+
+    it('should import a workflow', () => {
+      const store = useWorkflowStore.getState();
+
+      const workflowData = {
+        version: 1,
+        nodes: [
+          {
+            id: 'n1',
+            type: 'textPrompt',
+            position: { x: 50, y: 50 },
+            data: { label: 'Imported', prompt: 'hello' },
+          },
+        ],
+        edges: [],
+      };
+
+      store.importWorkflow(workflowData);
+
+      const { nodes } = useWorkflowStore.getState();
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].id).toBe('n1');
+      expect(nodes[0].data.label).toBe('Imported');
+      expect(nodes[0].data.prompt).toBe('hello');
+      expect(useWorkflowStore.getState().nodeStatus['n1']).toBe('idle');
+    });
+
+    it('should throw error for invalid version', () => {
+      const store = useWorkflowStore.getState();
+      const invalidWorkflow = {
+        version: 999,
+        nodes: [],
+        edges: [],
+      };
+
+      expect(() => store.importWorkflow(invalidWorkflow)).toThrow(/version/);
+    });
+
+    it('should throw error for missing fields', () => {
+      const store = useWorkflowStore.getState();
+      const invalidWorkflow = {
+        version: 1,
+        // missing nodes/edges
+      } as any;
+
+      expect(() => store.importWorkflow(invalidWorkflow)).toThrow(/Invalid workflow format/);
+    });
+  });
 });
+

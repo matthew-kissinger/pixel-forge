@@ -5,27 +5,11 @@ import { toast } from '../ui/Toast';
 import { TemplateLoader } from './TemplateLoader';
 
 export function Toolbar() {
-  const { nodes, edges, nodeOutputs, reset } = useWorkflowStore();
+  const { nodes, nodeOutputs, reset, exportWorkflow, importWorkflow } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = useCallback(() => {
-    const workflow = {
-      version: 1,
-      nodes: nodes.map((n) => ({
-        id: n.id,
-        type: n.type,
-        position: n.position,
-        data: n.data,
-      })),
-      edges: edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle,
-        targetHandle: e.targetHandle,
-      })),
-      // Don't save outputs - they can be regenerated
-    };
+    const workflow = exportWorkflow();
 
     const blob = new Blob([JSON.stringify(workflow, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -36,7 +20,7 @@ export function Toolbar() {
     URL.revokeObjectURL(url);
 
     toast.success('Workflow saved');
-  }, [nodes, edges]);
+  }, [exportWorkflow]);
 
   const handleLoad = useCallback(() => {
     fileInputRef.current?.click();
@@ -51,41 +35,11 @@ export function Toolbar() {
       reader.onload = (event) => {
         try {
           const workflow = JSON.parse(event.target?.result as string);
-
-          if (!workflow.version || !workflow.nodes || !workflow.edges) {
-            throw new Error('Invalid workflow file');
-          }
-
-          // Reset and load
-          reset();
-
-          // Use setTimeout to ensure reset is processed
-          setTimeout(() => {
-            const store = useWorkflowStore.getState();
-            workflow.nodes.forEach((n: any) => {
-              store.addNode({
-                id: n.id,
-                type: n.type,
-                position: n.position,
-                data: n.data,
-              });
-            });
-
-            // Add edges
-            workflow.edges.forEach((e: any) => {
-              store.onConnect({
-                source: e.source,
-                target: e.target,
-                sourceHandle: e.sourceHandle || null,
-                targetHandle: e.targetHandle || null,
-              });
-            });
-
-            toast.success('Workflow loaded');
-          }, 50);
+          importWorkflow(workflow);
+          toast.success('Workflow loaded');
         } catch (error) {
           console.error('Failed to load workflow:', error);
-          toast.error('Failed to load workflow file');
+          toast.error(error instanceof Error ? error.message : 'Failed to load workflow file');
         }
       };
       reader.readAsText(file);
@@ -95,7 +49,7 @@ export function Toolbar() {
         fileInputRef.current.value = '';
       }
     },
-    [reset]
+    [importWorkflow]
   );
 
   const handleClear = useCallback(() => {

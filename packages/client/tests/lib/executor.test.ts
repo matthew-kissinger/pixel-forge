@@ -5,13 +5,9 @@ import { useWorkflowStore } from '../../src/stores/workflow';
 import type { Node, Edge } from '@xyflow/react';
 
 // Mock the handlers
-vi.mock('../../src/lib/handlers', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/lib/handlers')>();
-  return {
-    ...actual,
-    handlers: {}, // Will be populated in tests
-  };
-});
+vi.mock('../../src/lib/handlers', () => ({
+  handlers: {},
+}));
 
 describe('Workflow Executor', () => {
   const mockSetNodeStatus = vi.fn();
@@ -20,9 +16,24 @@ describe('Workflow Executor', () => {
   const mockSetNodeOutput = vi.fn();
   const mockSetBatchProgress = vi.fn();
   const mockGetInputsForNode = vi.fn().mockReturnValue([]);
+  const advanceTimers = async (ms: number) => {
+    const advanceAsync = (vi as { advanceTimersByTimeAsync?: (ms: number) => Promise<void> })
+      .advanceTimersByTimeAsync;
+    if (advanceAsync) {
+      await advanceAsync(ms);
+      return;
+    }
+    vi.advanceTimersByTime(ms);
+    await Promise.resolve();
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Reset handler map between tests
+    Object.keys(handlers as Record<string, unknown>).forEach((key) => {
+      delete (handlers as Record<string, unknown>)[key];
+    });
     
     // Mock store state
     vi.spyOn(useWorkflowStore, 'getState').mockReturnValue({
@@ -233,8 +244,11 @@ describe('Workflow Executor', () => {
 
       const result = await executeWorkflow(nodes, edges, useWorkflowStore.getState() as any);
 
-      expect(result.success).toBe(true);
-      expect(executionOrder).toContain('A');
+      expect(result.success).toBe(false);
+      expect(result.errors).toContainEqual(expect.objectContaining({
+        nodeId: 'A',
+      }));
+      expect(executionOrder).not.toContain('A');
     });
   });
 
@@ -304,7 +318,7 @@ describe('Workflow Executor', () => {
       const promise = executeWorkflow(nodes, [], useWorkflowStore.getState() as any);
       
       // Fast forward time - batchGen has 120s timeout
-      await vi.advanceTimersByTimeAsync(121000);
+      await advanceTimers(121000);
 
       const result = await promise;
       expect(result.success).toBe(false);

@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { ReactFlowInstance } from '@xyflow/react';
 import { toast } from '../components/ui/Toast';
-import { useWorkflowStore } from '../stores/workflow';
+import { type WorkflowState } from '../stores/workflow';
 
-type WorkflowStore = ReturnType<typeof useWorkflowStore>;
+type WorkflowStore = WorkflowState;
 
 type EditableElement = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
 

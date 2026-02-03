@@ -164,6 +164,7 @@ export interface KilnGenNodeData extends BaseNodeDataFields {
   prompt: string;  // Inline prompt for generation
   mode: 'glb' | 'tsl' | 'both';
   category: KilnCategory;
+  includeAnimation: boolean;
   code: string | null;
   effectCode: string | null;
   glbUrl: string | null;
@@ -513,6 +514,7 @@ export const nodeDefinitions: NodeDefinition[] = [
       prompt: '',
       mode: 'both',
       category: 'character',
+      includeAnimation: true,
       code: null,
       effectCode: null,
       glbUrl: null,

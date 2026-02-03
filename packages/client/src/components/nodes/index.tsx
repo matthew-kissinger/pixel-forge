@@ -1,75 +1,70 @@
 import { TextPromptNode } from './TextPromptNode';
-import { ImageGenNode } from './ImageGenNode';
 import { PreviewNode } from './PreviewNode';
-import { lazy, Suspense } from 'react';
-import { RemoveBgNode } from './RemoveBgNode';
-import { ResizeNode } from './ResizeNode';
-import { PixelateNode } from './PixelateNode';
-import { TileNode } from './TileNode';
-import { ColorPaletteNode } from './ColorPaletteNode';
-import { FilterNode } from './FilterNode';
-import { CompressNode } from './CompressNode';
-import { CropNode } from './CropNode';
-import { CombineNode } from './CombineNode';
-import { SaveNode } from './SaveNode';
-import { ImageUploadNode } from './ImageUploadNode';
-import { NumberNode } from './NumberNode';
-import { IsometricTileNode } from './IsometricTileNode';
-import { RotateNode } from './RotateNode';
-import { IterateNode } from './IterateNode';
-import { AnalyzeNode } from './AnalyzeNode';
-import { SliceSheetNode } from './SliceSheetNode';
-import { StyleReferenceNode } from './StyleReferenceNode';
-import { SeedControlNode } from './SeedControlNode';
-import { ExportGLBNode } from './ExportGLBNode';
-import { ExportSheetNode } from './ExportSheetNode';
+import { lazy, Suspense, type ComponentType } from 'react';
 
-// Lazy-load heavy components
-const LazyKilnGenNode = lazy(() =>
-  import('./KilnGenNode').then((m) => ({ default: m.KilnGenNode }))
-);
-
-const LazyModel3DGenNode = lazy(() =>
-  import('./Model3DGenNode').then((m) => ({ default: m.Model3DGenNode }))
-);
-
-const LazyBatchGenNode = lazy(() =>
-  import('./BatchGenNode').then((m) => ({ default: m.BatchGenNode }))
-);
-
-const LazySpriteSheetNode = lazy(() =>
-  import('./SpriteSheetNode').then((m) => ({ default: m.SpriteSheetNode }))
-);
-
+// Loading Fallback Component
 const LoadingFallback = ({ label }: { label: string }) => (
   <div className="bg-zinc-900 p-4 rounded-lg border-2 border-zinc-700 w-80 h-48 flex items-center justify-center text-zinc-500 text-sm">
-    Loading {label}...
+    <div className="flex flex-col items-center gap-2">
+      <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      Loading {label}...
+    </div>
   </div>
 );
 
-const KilnGenNodeWrapper = (props: any) => (
-  <Suspense fallback={<LoadingFallback label="3D Engine" />}>
-    <LazyKilnGenNode {...props} />
-  </Suspense>
-);
+/**
+ * Helper to create a lazy-loaded node component with a Suspense wrapper
+ */
+function createLazyNode(
+  importFn: () => Promise<{ [key: string]: ComponentType<any> }>,
+  exportName: string,
+  label: string
+) {
+  const LazyComponent = lazy(() =>
+    importFn().then((m) => ({ default: m[exportName] }))
+  );
 
-const Model3DGenNodeWrapper = (props: any) => (
-  <Suspense fallback={<LoadingFallback label="3D Generator" />}>
-    <LazyModel3DGenNode {...props} />
-  </Suspense>
-);
+  return (props: any) => (
+    <Suspense fallback={<LoadingFallback label={label} />}>
+      <LazyComponent {...props} />
+    </Suspense>
+  );
+}
 
-const BatchGenNodeWrapper = (props: any) => (
-  <Suspense fallback={<LoadingFallback label="Batch Generator" />}>
-    <LazyBatchGenNode {...props} />
-  </Suspense>
-);
+// Lazy-loaded nodes
+// Input
+const ImageUploadNodeWrapper = createLazyNode(() => import('./ImageUploadNode'), 'ImageUploadNode', 'Image Upload');
+const NumberNodeWrapper = createLazyNode(() => import('./NumberNode'), 'NumberNode', 'Number');
+const StyleReferenceNodeWrapper = createLazyNode(() => import('./StyleReferenceNode'), 'StyleReferenceNode', 'Style Reference');
+const SeedControlNodeWrapper = createLazyNode(() => import('./SeedControlNode'), 'SeedControlNode', 'Seed Control');
 
-const SpriteSheetNodeWrapper = (props: any) => (
-  <Suspense fallback={<LoadingFallback label="Sprite Sheet" />}>
-    <LazySpriteSheetNode {...props} />
-  </Suspense>
-);
+// Generation
+const ImageGenNodeWrapper = createLazyNode(() => import('./ImageGenNode'), 'ImageGenNode', 'Image Generator');
+const IsometricTileNodeWrapper = createLazyNode(() => import('./IsometricTileNode'), 'IsometricTileNode', 'Isometric Tile');
+const KilnGenNodeWrapper = createLazyNode(() => import('./KilnGenNode'), 'KilnGenNode', '3D Engine');
+const Model3DGenNodeWrapper = createLazyNode(() => import('./Model3DGenNode'), 'Model3DGenNode', '3D Generator');
+const BatchGenNodeWrapper = createLazyNode(() => import('./BatchGenNode'), 'BatchGenNode', 'Batch Generator');
+const SpriteSheetNodeWrapper = createLazyNode(() => import('./SpriteSheetNode'), 'SpriteSheetNode', 'Sprite Sheet');
+
+// Processing
+const RemoveBgNodeWrapper = createLazyNode(() => import('./RemoveBgNode'), 'RemoveBgNode', 'Background Remover');
+const SliceSheetNodeWrapper = createLazyNode(() => import('./SliceSheetNode'), 'SliceSheetNode', 'Sheet Slicer');
+const ColorPaletteNodeWrapper = createLazyNode(() => import('./ColorPaletteNode'), 'ColorPaletteNode', 'Color Palette');
+const ResizeNodeWrapper = createLazyNode(() => import('./ResizeNode'), 'ResizeNode', 'Image Resizer');
+const TileNodeWrapper = createLazyNode(() => import('./TileNode'), 'TileNode', 'Tiling Engine');
+const CropNodeWrapper = createLazyNode(() => import('./CropNode'), 'CropNode', 'Image Cropper');
+const CombineNodeWrapper = createLazyNode(() => import('./CombineNode'), 'CombineNode', 'Image Combiner');
+const AnalyzeNodeWrapper = createLazyNode(() => import('./AnalyzeNode'), 'AnalyzeNode', 'Vision Analyzer');
+const FilterNodeWrapper = createLazyNode(() => import('./FilterNode'), 'FilterNode', 'Image Filter');
+const CompressNodeWrapper = createLazyNode(() => import('./CompressNode'), 'CompressNode', 'Optimizer');
+const IterateNodeWrapper = createLazyNode(() => import('./IterateNode'), 'IterateNode', 'Iterator');
+const PixelateNodeWrapper = createLazyNode(() => import('./PixelateNode'), 'PixelateNode', 'Pixelator');
+const RotateNodeWrapper = createLazyNode(() => import('./RotateNode'), 'RotateNode', 'Rotator');
+
+// Output
+const SaveNodeWrapper = createLazyNode(() => import('./SaveNode'), 'SaveNode', 'Save');
+const ExportGLBNodeWrapper = createLazyNode(() => import('./ExportGLBNode'), 'ExportGLBNode', 'GLB Exporter');
+const ExportSheetNodeWrapper = createLazyNode(() => import('./ExportSheetNode'), 'ExportSheetNode', 'Sheet Exporter');
 
 // Re-export from the new type system
 export {
@@ -91,36 +86,36 @@ export {
 export const nodeTypes = {
   // Input
   textPrompt: TextPromptNode,
-  imageUpload: ImageUploadNode,
-  number: NumberNode,
-  styleReference: StyleReferenceNode,
-  seedControl: SeedControlNode,
+  imageUpload: ImageUploadNodeWrapper,
+  number: NumberNodeWrapper,
+  styleReference: StyleReferenceNodeWrapper,
+  seedControl: SeedControlNodeWrapper,
   // Generation
-  imageGen: ImageGenNode,
-  isometricTile: IsometricTileNode,
+  imageGen: ImageGenNodeWrapper,
+  isometricTile: IsometricTileNodeWrapper,
   spriteSheet: SpriteSheetNodeWrapper,
   model3DGen: Model3DGenNodeWrapper,
   kilnGen: KilnGenNodeWrapper,
   batchGen: BatchGenNodeWrapper,
   // Processing
-  removeBg: RemoveBgNode,
-  resize: ResizeNode,
-  compress: CompressNode,
-  crop: CropNode,
-  pixelate: PixelateNode,
-  tile: TileNode,
-  colorPalette: ColorPaletteNode,
-  filter: FilterNode,
-  combine: CombineNode,
-  rotate: RotateNode,
-  iterate: IterateNode,
-  analyze: AnalyzeNode,
-  sliceSheet: SliceSheetNode,
+  removeBg: RemoveBgNodeWrapper,
+  resize: ResizeNodeWrapper,
+  compress: CompressNodeWrapper,
+  crop: CropNodeWrapper,
+  pixelate: PixelateNodeWrapper,
+  tile: TileNodeWrapper,
+  colorPalette: ColorPaletteNodeWrapper,
+  filter: FilterNodeWrapper,
+  combine: CombineNodeWrapper,
+  rotate: RotateNodeWrapper,
+  iterate: IterateNodeWrapper,
+  analyze: AnalyzeNodeWrapper,
+  sliceSheet: SliceSheetNodeWrapper,
   // Output
   preview: PreviewNode,
-  save: SaveNode,
-  exportGLB: ExportGLBNode,
-  exportSheet: ExportSheetNode,
+  save: SaveNodeWrapper,
+  exportGLB: ExportGLBNodeWrapper,
+  exportSheet: ExportSheetNodeWrapper,
 } as const;
 
 export type NodeType = keyof typeof nodeTypes;

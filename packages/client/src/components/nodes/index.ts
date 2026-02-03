@@ -24,6 +24,8 @@ import { BatchGenNode } from './BatchGenNode';
 import { StyleReferenceNode } from './StyleReferenceNode';
 import { SeedControlNode } from './SeedControlNode';
 import { SpriteSheetNode } from './SpriteSheetNode';
+import { ExportGLBNode } from './ExportGLBNode';
+import { ExportSheetNode } from './ExportSheetNode';
 
 // Re-export from the new type system
 export {
@@ -73,6 +75,8 @@ export const nodeTypes = {
   // Output
   preview: PreviewNode,
   save: SaveNode,
+  exportGLB: ExportGLBNode,
+  exportSheet: ExportSheetNode,
 } as const;
 
 export type NodeType = keyof typeof nodeTypes;

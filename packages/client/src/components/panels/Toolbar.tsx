@@ -14,6 +14,9 @@ import {
   LayoutGrid,
   Eye,
   EyeOff,
+  CheckCircle2,
+  Rocket,
+  Share2,
 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useWorkflowStore } from '../../stores/workflow';
@@ -22,19 +25,27 @@ import { TemplateLoader } from './TemplateLoader';
 import { QuickGenerate } from './QuickGenerate';
 import { executeWorkflow } from '../../lib/executor';
 import { autoLayoutNodes } from '../../lib/autoLayout';
+import { validateWorkflow } from '../../lib/validate';
+import { encodeWorkflow } from '../../lib/share';
 
 interface ToolbarProps {
   onToggleHistory?: () => void;
   isHistoryVisible?: boolean;
   onToggleMiniMap?: () => void;
   isMiniMapVisible?: boolean;
+  onTogglePresetLauncher?: () => void;
+  isPresetLauncherVisible?: boolean;
 }
+
+const MAX_SHARE_URL_LENGTH = 2048;
 
 export function Toolbar({
   onToggleHistory,
   isHistoryVisible,
   onToggleMiniMap,
   isMiniMapVisible,
+  onTogglePresetLauncher,
+  isPresetLauncherVisible,
 }: ToolbarProps) {
   const {
     nodes,
@@ -97,6 +108,42 @@ export function Toolbar({
   const handleLoad = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
+
+  const handleShare = useCallback(async () => {
+    try {
+      const workflow = exportWorkflow();
+      const encoded = await encodeWorkflow(workflow);
+      const url = new URL(window.location.href);
+      url.hash = `wf=${encoded}`;
+      const shareUrl = url.toString();
+
+      if (shareUrl.length > MAX_SHARE_URL_LENGTH) {
+        toast.error('Workflow is too large to share via URL. Save as file instead.');
+        return;
+      }
+
+      window.location.hash = `wf=${encoded}`;
+
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = shareUrl;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+
+      toast.success('Workflow URL copied to clipboard');
+    } catch (error) {
+      console.error('Failed to share workflow:', error);
+      toast.error('Failed to create workflow URL');
+    }
+  }, [exportWorkflow]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,6 +272,40 @@ export function Toolbar({
     });
   }, [nodes, edges, reactFlow, setNodes]);
 
+  const handleValidate = useCallback(() => {
+    if (nodes.length === 0) {
+      toast.info('No nodes to validate');
+      return;
+    }
+
+    const { setNodeError } = useWorkflowStore.getState();
+    
+    // Clear previous validation errors
+    nodes.forEach((node) => {
+      setNodeError(node.id, null);
+    });
+
+    const validationErrors = validateWorkflow(nodes, edges);
+    
+    // Set validation errors on nodes
+    for (const validationError of validationErrors) {
+      if (validationError.nodeId) {
+        setNodeError(validationError.nodeId, validationError.message);
+      }
+    }
+
+    const blockingErrors = validationErrors.filter((e) => e.severity === 'error');
+    const warnings = validationErrors.filter((e) => e.severity === 'warning');
+
+    if (blockingErrors.length > 0) {
+      toast.error(`Validation failed: ${blockingErrors.length} error(s), ${warnings.length} warning(s)`);
+    } else if (warnings.length > 0) {
+      toast.info(`Validation passed with ${warnings.length} warning(s)`);
+    } else {
+      toast.success('Validation passed - workflow is ready to execute');
+    }
+  }, [nodes, edges]);
+
   useEffect(() => {
     const handleSaveShortcut = () => handleSave();
     const handleLoadShortcut = () => handleLoad();
@@ -324,6 +405,17 @@ export function Toolbar({
 
       <div className="h-6 w-px bg-[var(--border-color)]" />
 
+      {/* Validate Button */}
+      <button
+        onClick={handleValidate}
+        disabled={nodes.length === 0}
+        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+        title="Validate workflow"
+      >
+        <CheckCircle2 className="h-4 w-4" />
+        <span className="hidden sm:inline">Validate</span>
+      </button>
+
       {/* Execute All Button */}
       <button
         onClick={handleExecuteAll}
@@ -391,6 +483,15 @@ export function Toolbar({
         <span className="hidden sm:inline">Load</span>
       </button>
 
+      <button
+        onClick={handleShare}
+        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        title="Share workflow"
+      >
+        <Share2 className="h-4 w-4" />
+        <span className="hidden sm:inline">Share</span>
+      </button>
+
       <div className="relative group">
         <button
           type="button"
@@ -447,6 +548,24 @@ export function Toolbar({
       </button>
 
       <div className="mx-1 h-6 w-px bg-[var(--border-color)]" />
+
+      {onTogglePresetLauncher && (
+        <>
+          <button
+            onClick={onTogglePresetLauncher}
+            className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors ${
+              isPresetLauncherVisible
+                ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
+            }`}
+            title="Toggle preset launcher"
+          >
+            <Rocket className="h-4 w-4" />
+            <span className="hidden sm:inline">Presets</span>
+          </button>
+          <div className="h-6 w-px bg-[var(--border-color)]" />
+        </>
+      )}
 
       {onToggleHistory && (
         <>

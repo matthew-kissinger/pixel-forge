@@ -24,6 +24,7 @@ import {
 import { NodePalette } from './components/panels/NodePalette';
 import { Toolbar } from './components/panels/Toolbar';
 import { ExecutionHistory } from './components/panels/ExecutionHistory';
+import { PresetLauncher } from './components/panels/PresetLauncher';
 import { ToastContainer, toast } from './components/ui/Toast';
 import { findNonOverlappingPosition } from './lib/nodeLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -31,6 +32,7 @@ import { NodeContextMenu } from './components/NodeContextMenu';
 import { executeSingleNode } from './lib/executor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAutoSave } from './hooks/useAutoSave';
+import { useWorkflowFromUrl } from './hooks/useWorkflowFromUrl';
 
 let nodeIdCounter = 0;
 const generateNodeId = () => `node_${++nodeIdCounter}`;
@@ -370,7 +372,11 @@ function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
 export default function App() {
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
-  useAutoSave();
+  const [isPresetLauncherVisible, setIsPresetLauncherVisible] = useState(false);
+  const workflowFromUrlStatus = useWorkflowFromUrl();
+  const allowAutoSaveRecovery =
+    workflowFromUrlStatus === 'none' || workflowFromUrlStatus === 'error';
+  useAutoSave({ allowRecovery: allowAutoSaveRecovery });
 
   return (
     <ErrorBoundary>
@@ -383,6 +389,12 @@ export default function App() {
             isHistoryVisible={isHistoryVisible}
             onToggleMiniMap={() => setIsMiniMapVisible(!isMiniMapVisible)}
             isMiniMapVisible={isMiniMapVisible}
+            onTogglePresetLauncher={() => setIsPresetLauncherVisible(!isPresetLauncherVisible)}
+            isPresetLauncherVisible={isPresetLauncherVisible}
+          />
+          <PresetLauncher
+            isVisible={isPresetLauncherVisible}
+            onToggle={() => setIsPresetLauncherVisible(false)}
           />
           <ExecutionHistory
             isVisible={isHistoryVisible}

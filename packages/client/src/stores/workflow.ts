@@ -9,6 +9,7 @@ import {
   applyEdgeChanges,
   addEdge,
 } from '@xyflow/react';
+import { WorkflowData } from '../types/workflow';
 
 // Re-export types from the new type system for backwards compatibility
 export type {
@@ -22,7 +23,6 @@ export type {
 
 // Import types we need
 import type {
-  NodeDataUnion,
   BaseNodeData,
   TextPromptNodeData as TextPromptData,
   ImageGenNodeData as ImageGenData,
@@ -31,6 +31,7 @@ import type {
 
 // Re-export legacy aliases
 export type { TextPromptData, ImageGenData, PreviewData };
+export type { WorkflowData };
 
 export type NodeStatus = 'idle' | 'running' | 'success' | 'error';
 
@@ -43,6 +44,8 @@ export interface NodeOutput {
 // Use BaseNodeData as the flexible node data type for the store
 // This maintains backwards compatibility with existing code
 export type NodeData = BaseNodeData;
+
+export const WORKFLOW_VERSION = 1;
 
 interface WorkflowState {
   nodes: Node<NodeData>[];
@@ -63,6 +66,10 @@ interface WorkflowState {
   clearNodeOutput: (nodeId: string) => void;
   getInputsForNode: (nodeId: string) => NodeOutput[];
   reset: () => void;
+
+  // Persistence
+  exportWorkflow: () => WorkflowData;
+  importWorkflow: (data: WorkflowData) => void;
 }
 
 const initialNodes: Node<NodeData>[] = [];
@@ -122,8 +129,9 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   },
 
   clearNodeOutput: (nodeId) => {
-    const { [nodeId]: _, ...rest } = get().nodeOutputs;
-    set({ nodeOutputs: rest });
+    const nodeOutputs = { ...get().nodeOutputs };
+    delete nodeOutputs[nodeId];
+    set({ nodeOutputs });
   },
 
   getInputsForNode: (nodeId) => {
@@ -142,4 +150,54 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       nodeStatus: {},
     });
   },
+
+  exportWorkflow: () => {
+    const { nodes, edges } = get();
+    return {
+      version: WORKFLOW_VERSION,
+      nodes: nodes.map((n) => ({
+        id: n.id,
+        type: n.type,
+        position: n.position,
+        data: n.data,
+      })),
+      edges: edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle,
+      })),
+    };
+  },
+
+  importWorkflow: (data) => {
+    if (!data.version || !data.nodes || !data.edges) {
+      throw new Error('Invalid workflow format');
+    }
+
+    if (data.version > WORKFLOW_VERSION) {
+      throw new Error(`Workflow version ${data.version} is not supported (max ${WORKFLOW_VERSION})`);
+    }
+
+    // Reset current state
+    set({
+      nodes: data.nodes.map(n => ({
+        id: n.id,
+        type: n.type,
+        position: n.position,
+        data: n.data,
+      })),
+      edges: data.edges.map(e => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle || null,
+        targetHandle: e.targetHandle || null,
+      })),
+      nodeOutputs: {},
+      nodeStatus: data.nodes.reduce((acc, n) => ({ ...acc, [n.id]: 'idle' }), {}),
+    });
+  },
 }));
+

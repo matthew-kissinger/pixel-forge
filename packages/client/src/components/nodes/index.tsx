@@ -2,7 +2,7 @@ import { TextPromptNode } from './TextPromptNode';
 import { ImageGenNode } from './ImageGenNode';
 import { PreviewNode } from './PreviewNode';
 import { Model3DGenNode } from './Model3DGenNode';
-import { KilnGenNode } from './KilnGenNode';
+import { lazy, Suspense } from 'react';
 import { RemoveBgNode } from './RemoveBgNode';
 import { ResizeNode } from './ResizeNode';
 import { PixelateNode } from './PixelateNode';
@@ -26,6 +26,22 @@ import { SeedControlNode } from './SeedControlNode';
 import { SpriteSheetNode } from './SpriteSheetNode';
 import { ExportGLBNode } from './ExportGLBNode';
 import { ExportSheetNode } from './ExportSheetNode';
+
+const LazyKilnGenNode = lazy(() =>
+  import('./KilnGenNode').then((m) => ({ default: m.KilnGenNode }))
+);
+
+const KilnGenNodeWrapper = (props: any) => (
+  <Suspense
+    fallback={
+      <div className="bg-zinc-900 p-4 rounded-lg border-2 border-zinc-700 w-80 h-48 flex items-center justify-center text-zinc-500 text-sm">
+        Loading 3D Engine...
+      </div>
+    }
+  >
+    <LazyKilnGenNode {...props} />
+  </Suspense>
+);
 
 // Re-export from the new type system
 export {
@@ -56,7 +72,7 @@ export const nodeTypes = {
   isometricTile: IsometricTileNode,
   spriteSheet: SpriteSheetNode,
   model3DGen: Model3DGenNode,
-  kilnGen: KilnGenNode,
+  kilnGen: KilnGenNodeWrapper,
   batchGen: BatchGenNode,
   // Processing
   removeBg: RemoveBgNode,

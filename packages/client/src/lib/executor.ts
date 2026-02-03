@@ -11,6 +11,7 @@ import { getNodeDefinition } from '../types/nodes';
 import type { NodeOutput, ExecutionRecord } from '../stores/workflow';
 import { useWorkflowStore } from '../stores/workflow';
 import { handlers, type NodeHandlerContext, type ExecutionContext } from './handlers';
+import { validateWorkflow, hasBlockingErrors } from './validate';
 
 type WorkflowStore = ReturnType<typeof useWorkflowStore.getState>;
 
@@ -236,6 +237,35 @@ export async function executeWorkflow(
   const startedAt = Date.now();
   const errors: Array<{ nodeId: string; error: string }> = [];
   const { setNodeStatus, setNodeError, addExecutionRecord } = store;
+
+  // Pre-execution validation
+  const validationErrors = validateWorkflow(nodes, edges);
+  
+  // Clear previous validation errors
+  nodes.forEach((node) => {
+    setNodeError(node.id, null);
+  });
+
+  // Set validation errors on nodes
+  for (const validationError of validationErrors) {
+    if (validationError.nodeId) {
+      setNodeError(validationError.nodeId, validationError.message);
+    }
+  }
+
+  // If there are blocking errors, abort execution
+  if (hasBlockingErrors(validationErrors)) {
+    const blockingErrors = validationErrors.filter((e) => e.severity === 'error');
+    return {
+      success: false,
+      errors: blockingErrors.map((e) => ({
+        nodeId: e.nodeId,
+        error: e.message,
+      })),
+      executed: 0,
+      total: nodes.length,
+    };
+  }
 
   // Get execution waves (nodes grouped by dependency depth)
   const waves = getExecutionWaves(nodes, edges);

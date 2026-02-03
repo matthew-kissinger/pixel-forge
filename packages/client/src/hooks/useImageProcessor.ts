@@ -7,6 +7,7 @@ import { useCallback, useRef } from 'react';
 import { useWorkflowStore, type NodeOutput } from '../stores/workflow';
 import type { ImageProcessor } from '../lib/image-utils';
 import { processImage } from '../lib/image-utils';
+import { logger } from '@pixel-forge/shared/logger';
 
 interface UseImageProcessorOptions {
   /** Called before processing starts */
@@ -97,7 +98,7 @@ export function useImageProcessor(
         setNodeStatus(nodeId, 'success');
         onSuccess?.(result);
       } catch (error) {
-        console.error(`Image processing failed for node ${nodeId}:`, error);
+        logger.error(`Image processing failed for node ${nodeId}:`, error);
         setNodeStatus(nodeId, 'error');
         onError?.(error instanceof Error ? error : new Error(String(error)));
       } finally {
@@ -126,7 +127,7 @@ export function useImageProcessor(
         setNodeStatus(nodeId, 'success');
         onSuccess?.(result);
       } catch (error) {
-        console.error(`Async processing failed for node ${nodeId}:`, error);
+        logger.error(`Async processing failed for node ${nodeId}:`, error);
         setNodeStatus(nodeId, 'error');
         onError?.(error instanceof Error ? error : new Error(String(error)));
       } finally {
@@ -213,7 +214,7 @@ export function useNodeOutput(nodeId: string) {
         setOutput(output.type, output.data);
         setStatus('success');
       } catch (error) {
-        console.error(`Operation failed for node ${nodeId}:`, error);
+        logger.error(`Operation failed for node ${nodeId}:`, error);
         setStatus('error');
       } finally {
         processingRef.current = false;

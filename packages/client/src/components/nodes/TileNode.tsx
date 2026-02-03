@@ -2,18 +2,21 @@ import { useCallback } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { LayoutGrid } from 'lucide-react';
 import { BaseNode } from './BaseNode';
-import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { useWorkflowStore } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
-export interface TileData extends BaseNodeData {
+interface TileNodeData {
+  label: string;
   mode: 'seamless' | 'repeat' | 'mirror';
   repeatX: number;
   repeatY: number;
   blendAmount: number;
+  [key: string]: unknown;
 }
 
 export function TileNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as TileData;
+  const nodeData = data as unknown as TileNodeData;
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();
   const status = nodeStatus[id] ?? 'idle';
@@ -141,7 +144,7 @@ export function TileNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Tile failed:', error);
+      logger.error('Tile failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, mode, repeatX, repeatY, blendAmount, getInputsForNode, setNodeOutput, setNodeStatus]);
@@ -158,7 +161,7 @@ export function TileNode(props: NodeProps) {
         <select
           value={mode}
           onChange={(e) =>
-            updateNodeData<TileData>(id, { mode: e.target.value as TileData['mode'] })
+            updateNodeData<TileNodeData>(id, { mode: e.target.value as TileNodeData['mode'] })
           }
           className="nodrag w-full rounded border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-2 py-1 text-sm"
         >
@@ -178,7 +181,7 @@ export function TileNode(props: NodeProps) {
               max={50}
               value={blendAmount * 100}
               onChange={(e) =>
-                updateNodeData<TileData>(id, { blendAmount: parseInt(e.target.value) / 100 })
+                updateNodeData<TileNodeData>(id, { blendAmount: parseInt(e.target.value) / 100 })
               }
               className="nodrag w-full"
             />
@@ -195,7 +198,7 @@ export function TileNode(props: NodeProps) {
                 max={8}
                 value={repeatX}
                 onChange={(e) =>
-                  updateNodeData<TileData>(id, { repeatX: parseInt(e.target.value) })
+                  updateNodeData<TileNodeData>(id, { repeatX: parseInt(e.target.value) })
                 }
                 className="nodrag w-full"
               />
@@ -208,7 +211,7 @@ export function TileNode(props: NodeProps) {
                 max={8}
                 value={repeatY}
                 onChange={(e) =>
-                  updateNodeData<TileData>(id, { repeatY: parseInt(e.target.value) })
+                  updateNodeData<TileNodeData>(id, { repeatY: parseInt(e.target.value) })
                 }
                 className="nodrag w-full"
               />

@@ -1,5 +1,6 @@
 import * as fal from '@fal-ai/serverless-client';
 import { randomBytes } from 'crypto';
+import { logger } from '@pixel-forge/shared/logger';
 
 let configured = false;
 
@@ -54,7 +55,7 @@ function cleanupExpiredRequests(): void {
   }
 
   if (cleaned > 0) {
-    console.log(`[FAL] Cleaned up ${cleaned} expired request(s)`);
+    logger.debug(`[FAL] Cleaned up ${cleaned} expired request(s)`);
   }
 }
 
@@ -123,7 +124,7 @@ export async function generateModel(prompt: string): Promise<GenerateModelResult
         createdAt: Date.now(),
       });
     } catch (error) {
-      console.error('3D generation failed:', error);
+      logger.error('3D generation failed:', error);
       requestStore.set(requestId, {
         status: 'failed',
         error: error instanceof Error ? error.message : 'Unknown error',

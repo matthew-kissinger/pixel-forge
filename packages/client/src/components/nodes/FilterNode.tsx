@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Wand2 } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
 export interface FilterData extends BaseNodeData {
   filter: 'invert' | 'grayscale' | 'sepia' | 'brightness' | 'contrast' | 'saturate' | 'blur' | 'sharpen';
@@ -115,7 +116,7 @@ export function FilterNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Filter failed:', error);
+      logger.error('Filter failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, filter, intensity, getInputsForNode, setNodeOutput, setNodeStatus]);

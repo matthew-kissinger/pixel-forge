@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { RotateCw, Settings } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { loadImage, createCanvas } from '../../lib/image-utils';
 
 interface RotateNodeData {
@@ -74,7 +75,7 @@ export function RotateNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Rotation failed:', error);
+      logger.error('Rotation failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, getInputsForNode, setNodeOutput, setNodeStatus, directions]);

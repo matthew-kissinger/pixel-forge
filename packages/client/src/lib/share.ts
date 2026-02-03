@@ -1,4 +1,5 @@
 import type { WorkflowData } from '../types/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
 export type ExportedWorkflow = WorkflowData;
 
@@ -60,7 +61,7 @@ export const decodeWorkflow = async (hash: string): Promise<ExportedWorkflow | n
     const json = await decompressToString(bytes);
     return JSON.parse(json) as ExportedWorkflow;
   } catch (error) {
-    console.error('Failed to decode workflow hash:', error);
+    logger.error('Failed to decode workflow hash:', error);
     return null;
   }
 };

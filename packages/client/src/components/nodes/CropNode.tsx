@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Crop } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
 export interface CropData extends BaseNodeData {
   x: number;
@@ -127,7 +128,7 @@ export function CropNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Crop failed:', error);
+      logger.error('Crop failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, x, y, width, height, getInputsForNode, setNodeOutput, setNodeStatus]);

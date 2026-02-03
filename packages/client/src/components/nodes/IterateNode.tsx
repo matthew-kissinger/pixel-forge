@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { Repeat, Play, Square, Settings } from 'lucide-react';
+import { Repeat, Settings, Square, Play } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
 interface IterateNodeData {
   label: string;
@@ -57,7 +58,7 @@ export function IterateNode(props: NodeProps) {
 
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Iteration failed:', error);
+      logger.error('Iteration failed:', error);
       setNodeStatus(id, 'error');
     } finally {
       setIsRunning(false);

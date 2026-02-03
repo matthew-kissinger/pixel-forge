@@ -4,6 +4,7 @@ import { ScanSearch, Settings } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
 import { extractDominantColors, getImageDimensions } from '../../lib/image-utils';
+import { logger } from '@pixel-forge/shared/logger';
 
 interface AnalyzeNodeData {
   label: string;
@@ -86,7 +87,7 @@ export function AnalyzeNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Analysis failed:', error);
+      logger.error('Analysis failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, getInputsForNode, setNodeOutput, setNodeStatus, extractStats, extractPalette, extractDimensions]);

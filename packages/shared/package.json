@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "exports": {
-    "./presets": "./presets.ts"
+    "./presets": "./presets.ts",
+    "./logger": "./logger.ts"
   }
 }

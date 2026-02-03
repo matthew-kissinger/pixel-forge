@@ -5,6 +5,7 @@ import { imageRouter } from './routes/image';
 import { modelRouter } from './routes/model';
 import { kilnRouter } from './routes/kiln';
 import { isAppError, getErrorMessage } from './lib/errors';
+import { logger as pixelLogger } from '@pixel-forge/shared/logger';
 
 const app = new Hono();
 
@@ -42,7 +43,7 @@ app.notFound((c) => {
 
 // Error handler with proper status codes
 app.onError((err, c) => {
-  console.error('Server error:', err);
+  pixelLogger.error('Server error:', err);
 
   // Handle custom AppError types
   if (isAppError(err)) {
@@ -72,7 +73,7 @@ app.onError((err, c) => {
 
 const port = parseInt(process.env.PORT || '3000', 10);
 
-console.log(`Starting server on port ${port}...`);
+pixelLogger.info(`Starting server on port ${port}...`);
 
 export default {
   port,

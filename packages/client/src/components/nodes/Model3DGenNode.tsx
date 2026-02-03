@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Box } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { generateModel, pollModelStatus, type ModelStatusResponse } from '../../lib/api';
 
 export interface Model3DGenData extends BaseNodeData {
@@ -69,7 +70,7 @@ export function Model3DGenNode(props: NodeProps) {
       }
     } catch (error) {
       if (!abortRef.current) {
-        console.error('3D model generation failed:', error);
+        logger.error('3D model generation failed:', error);
         setNodeStatus(id, 'error');
         setStatusText(error instanceof Error ? error.message : 'Failed');
       }

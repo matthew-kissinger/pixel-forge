@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Palette } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
 export interface ColorPaletteData extends BaseNodeData {
   palette: string;
@@ -170,7 +171,7 @@ export function ColorPaletteNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Palette apply failed:', error);
+      logger.error('Palette apply failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, palette, dithering, getInputsForNode, setNodeOutput, setNodeStatus]);

@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Minimize2 } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { compressImage } from '../../lib/api';
 
 export interface CompressData extends BaseNodeData {
@@ -75,7 +76,7 @@ export function CompressNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Compression failed:', error);
+      logger.error('Compression failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [

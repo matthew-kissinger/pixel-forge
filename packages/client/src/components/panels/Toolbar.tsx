@@ -27,6 +27,7 @@ import { executeWorkflow } from '../../lib/executor';
 import { autoLayoutNodes } from '../../lib/autoLayout';
 import { validateWorkflow } from '../../lib/validate';
 import { encodeWorkflow } from '../../lib/share';
+import { logger } from '@pixel-forge/shared/logger';
 
 interface ToolbarProps {
   onToggleHistory?: () => void;
@@ -140,7 +141,7 @@ export function Toolbar({
 
       toast.success('Workflow URL copied to clipboard');
     } catch (error) {
-      console.error('Failed to share workflow:', error);
+      logger.error('Failed to share workflow:', error);
       toast.error('Failed to create workflow URL');
     }
   }, [exportWorkflow]);
@@ -157,7 +158,7 @@ export function Toolbar({
           importWorkflow(workflow);
           toast.success('Workflow loaded');
         } catch (error) {
-          console.error('Failed to load workflow:', error);
+          logger.error('Failed to load workflow:', error);
           toast.error(error instanceof Error ? error.message : 'Failed to load workflow file');
         }
       };
@@ -239,7 +240,7 @@ export function Toolbar({
         toast.success(`Execution completed successfully. ${result.executed}/${result.total} nodes executed.`);
       }
     } catch (error) {
-      console.error('Workflow execution failed:', error);
+      logger.error('Workflow execution failed:', error);
       toast.error(error instanceof Error ? error.message : 'Execution failed');
     } finally {
       setExecuting(false);

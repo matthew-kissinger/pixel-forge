@@ -12,6 +12,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { AssetModule, KilnOutput } from './types';
 import * as primitives from './primitives';
+import { logger } from '@pixel-forge/shared/logger';
 import type { RenderMode } from './prompt';
 import type { WebGPURenderer as WebGPURendererType } from 'three/webgpu';
 
@@ -27,7 +28,7 @@ async function loadWebGPU(): Promise<boolean> {
     TSL = await import('three/tsl');
     return true;
   } catch (e) {
-    console.warn('WebGPU not available, TSL effects disabled:', e);
+    logger.warn('WebGPU not available, TSL effects disabled:', e);
     return false;
   }
 }
@@ -289,7 +290,7 @@ export class KilnRuntime {
       return { module };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error('Module compilation failed:', message, '\nCode:', code.slice(0, 500));
+      logger.error('Module compilation failed:', message, '\nCode:', code.slice(0, 500));
       return { error: message };
     }
   }
@@ -334,7 +335,7 @@ export class KilnRuntime {
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error('TSL effect application failed:', message);
+      logger.error('TSL effect application failed:', message);
       return { success: false, error: message };
     }
   }
@@ -454,7 +455,7 @@ export class KilnRuntime {
       const material = factory(webgpuModule, tslModule);
       return material;
     } catch (err) {
-      console.error('TSL compilation failed:', err, '\nCode:', code.slice(0, 500));
+      logger.error('TSL compilation failed:', err, '\nCode:', code.slice(0, 500));
       return null;
     }
   }
@@ -507,7 +508,7 @@ export class KilnRuntime {
           resolve(url);
         },
         (error) => {
-          console.error('GLB export failed:', error);
+          logger.error('GLB export failed:', error);
           resolve(null);
         },
         {

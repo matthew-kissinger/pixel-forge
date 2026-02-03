@@ -4,6 +4,7 @@ import { Scissors, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import JSZip from 'jszip';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { sliceSheet } from '../../lib/api';
 
 export interface SliceSheetData extends BaseNodeData {
@@ -107,7 +108,7 @@ export function SliceSheetNode(props: NodeProps) {
         throw new Error('No sprites returned');
       }
     } catch (error) {
-      console.error('Slice sheet failed:', error);
+      logger.error('Slice sheet failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, rows, cols, getInputsForNode, setNodeOutput, setNodeStatus, updateNodeData]);

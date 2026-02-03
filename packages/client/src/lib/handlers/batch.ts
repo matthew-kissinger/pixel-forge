@@ -7,6 +7,7 @@
 import type { NodeHandlerContext } from './index';
 import type { NodeDataUnion } from '../../types/nodes';
 import { generateImage } from '../api';
+import { logger } from '@pixel-forge/shared/logger';
 
 export async function handleBatchGen(context: NodeHandlerContext): Promise<void> {
   const { nodeData, setNodeOutput, setBatchProgress, node, ctx } = context;
@@ -50,7 +51,7 @@ export async function handleBatchGen(context: NodeHandlerContext): Promise<void>
         imageDataUrls.push(result.image);
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Generation failed';
-        console.error(`Failed to generate subject ${i + 1} (${subject}):`, errorMsg);
+        logger.error(`Failed to generate subject ${i + 1} (${subject}):`, errorMsg);
         errors.push(`Subject ${i + 1}: ${errorMsg}`);
       }
 

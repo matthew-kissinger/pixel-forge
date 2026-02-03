@@ -10,6 +10,7 @@
     "dev:server": "bun run --filter server dev",
     "build": "bun run --filter '*' build",
     "lint": "bun run --filter '*' lint",
+    "typecheck": "bun run --filter '*' typecheck",
     "test": "bun run --filter '*' test"
   },
   "devDependencies": {

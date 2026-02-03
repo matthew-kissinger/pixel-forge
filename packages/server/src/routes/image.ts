@@ -1,13 +1,21 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import sharp from 'sharp';
 import { buildPresetPrompt, getPresetById } from '@pixel-forge/shared/presets';
 import { generateImage, extractSpritesFromSheet } from '../services/gemini';
 import { removeBackground } from '../services/fal';
-import { BadRequestError } from '../lib/errors';
+import { BadRequestError, TooManyRequestsError } from '../lib/errors';
 
 const imageRouter = new Hono();
+
+function handleTooManyRequests(c: Context, error: unknown) {
+  if (!(error instanceof TooManyRequestsError)) return undefined;
+  if (typeof error.retryAfter === 'number' && Number.isFinite(error.retryAfter)) {
+    c.header('Retry-After', String(error.retryAfter));
+  }
+  return c.json({ error: error.message, code: error.statusCode }, 429);
+}
 
 // Art styles supported
 const artStyles = [
@@ -98,6 +106,8 @@ imageRouter.post(
 
       return c.json(result);
     } catch (error) {
+      const rateLimitResponse = handleTooManyRequests(c, error);
+      if (rateLimitResponse) return rateLimitResponse;
       console.error('Image generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Image generation failed'
@@ -116,6 +126,8 @@ imageRouter.post(
       const result = await removeBackground(image);
       return c.json(result);
     } catch (error) {
+      const rateLimitResponse = handleTooManyRequests(c, error);
+      if (rateLimitResponse) return rateLimitResponse;
       console.error('Background removal error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Background removal failed'
@@ -169,6 +181,8 @@ imageRouter.post(
         format,
       });
     } catch (error) {
+      const rateLimitResponse = handleTooManyRequests(c, error);
+      if (rateLimitResponse) return rateLimitResponse;
       console.error('Compress error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Compression failed'
@@ -198,6 +212,8 @@ imageRouter.post(
 
       return c.json({ sprites: spriteDataUrls });
     } catch (error) {
+      const rateLimitResponse = handleTooManyRequests(c, error);
+      if (rateLimitResponse) return rateLimitResponse;
       console.error('Slice sheet error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Slice sheet failed'
@@ -236,6 +252,8 @@ imageRouter.post(
         image: finalImage,
       });
     } catch (error) {
+      const rateLimitResponse = handleTooManyRequests(c, error);
+      if (rateLimitResponse) return rateLimitResponse;
       console.error('Smart generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Smart generation failed'
@@ -294,6 +312,9 @@ imageRouter.post(
             images.push(result.image);
           }
         } catch (error) {
+          if (error instanceof TooManyRequestsError) {
+            throw error;
+          }
           const errorMsg = error instanceof Error ? error.message : 'Generation failed';
           console.error(`Failed to generate subject ${i + 1} (${subject}):`, errorMsg);
           errors.push(`Subject ${i + 1}: ${errorMsg}`);
@@ -312,6 +333,8 @@ imageRouter.post(
         totalCount: subjects.length,
       });
     } catch (error) {
+      const rateLimitResponse = handleTooManyRequests(c, error);
+      if (rateLimitResponse) return rateLimitResponse;
       console.error('Batch generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Batch generation failed'

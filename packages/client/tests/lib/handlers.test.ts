@@ -124,6 +124,7 @@ vi.mock('../../src/lib/api', () => ({
   compressImage: vi.fn(),
   generateModel: vi.fn(),
   pollModelStatus: vi.fn(),
+  generateKilnCode: vi.fn(),
 }));
 
 // Mock image-utils
@@ -139,6 +140,7 @@ import {
   compressImage,
   generateModel,
   pollModelStatus,
+  generateKilnCode,
 } from '../../src/lib/api';
 import {
   extractDominantColors,
@@ -686,7 +688,7 @@ describe('Model3D Handlers', () => {
       });
 
       await expect(model3dHandlers.handleKilnGen(context)).rejects.toThrow(
-        'Kiln generation not yet supported in auto-execution'
+        'Missing prompt - connect a text input or enter a prompt'
       );
     });
   });

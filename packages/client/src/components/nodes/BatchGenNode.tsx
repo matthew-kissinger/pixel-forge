@@ -4,6 +4,7 @@ import { Layers, Play, Settings } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
 import { PRESETS } from '@pixel-forge/shared/presets';
+import { executeSingleNode } from '../../lib/executor';
 
 interface BatchGenNodeData {
   label: string;
@@ -17,11 +18,12 @@ export function BatchGenNode(props: NodeProps) {
   const { id, data } = props;
   const nodeData = data as BatchGenNodeData;
 
-  const { setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } = useWorkflowStore();
+  const nodeStatus = useWorkflowStore((state) => state.nodeStatus);
+  const updateNodeData = useWorkflowStore((state) => state.updateNodeData);
+  const batchProgress = useWorkflowStore((state) => state.batchProgress[id]);
   const status = nodeStatus[id] ?? 'idle';
 
   const [showSettings, setShowSettings] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
 
   const subjects = nodeData.subjects ?? '';
   const presetId = nodeData.presetId;
@@ -29,88 +31,19 @@ export function BatchGenNode(props: NodeProps) {
   const seed = nodeData.seed;
 
   const handleGenerate = useCallback(async () => {
-    // Parse subjects (one per line)
-    const subjectList = subjects
-      .split('\n')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+    const store = useWorkflowStore.getState();
+    const node = store.nodes.find((current) => current.id === id);
 
-    if (subjectList.length === 0) {
-      setNodeStatus(id, 'error');
+    if (!node) {
+      console.error('Batch generation failed: node not found');
       return;
     }
 
-    setNodeStatus(id, 'running');
-    setProgress({ current: 0, total: subjectList.length });
-
-    try {
-      // Call batch API endpoint
-      const response = await fetch('/api/image/batch-generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subjects: subjectList,
-          presetId,
-          consistencyPhrase,
-          seed,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Batch generation failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-
-      // Combine all images into a grid for output
-      const images = await Promise.all(
-        result.images.map(
-          (dataUrl: string) =>
-            new Promise<HTMLImageElement>((resolve, reject) => {
-              const img = new Image();
-              img.onload = () => resolve(img);
-              img.onerror = reject;
-              img.src = dataUrl;
-            })
-        )
-      );
-
-      // Create grid layout (auto-calculate columns for roughly square grid)
-      const cols = Math.ceil(Math.sqrt(images.length));
-      const rows = Math.ceil(images.length / cols);
-      const cellWidth = Math.max(...images.map((img) => img.width));
-      const cellHeight = Math.max(...images.map((img) => img.height));
-      const spacing = 10;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = cellWidth * cols + spacing * (cols - 1);
-      canvas.height = cellHeight * rows + spacing * (rows - 1);
-      const ctx = canvas.getContext('2d')!;
-
-      // Draw each image in grid
-      images.forEach((img, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        const x = col * (cellWidth + spacing) + (cellWidth - img.width) / 2;
-        const y = row * (cellHeight + spacing) + (cellHeight - img.height) / 2;
-        ctx.drawImage(img, x, y);
-      });
-
-      // Output combined grid
-      setNodeOutput(id, {
-        type: 'image',
-        data: canvas.toDataURL('image/png'),
-        timestamp: Date.now(),
-      });
-
-      setNodeStatus(id, 'success');
-    } catch (error) {
-      console.error('Batch generation failed:', error);
-      setNodeStatus(id, 'error');
-    } finally {
-      setProgress({ current: 0, total: 0 });
+    const result = await executeSingleNode(node, store.nodes, store.edges, store);
+    if (!result.success) {
+      console.error('Batch generation failed:', result.error);
     }
-  }, [id, subjects, presetId, consistencyPhrase, seed, setNodeOutput, setNodeStatus]);
+  }, [id]);
 
   return (
     <BaseNode {...props} data={nodeData} hasOutput outputLabel="Images">
@@ -210,20 +143,22 @@ export function BatchGenNode(props: NodeProps) {
         )}
 
         {/* Progress indicator */}
-        {status === 'running' && progress.total > 0 && (
-          <div className="rounded border border-[var(--accent)] bg-[var(--accent)]/10 p-2">
-            <div className="mb-1 flex items-center justify-between text-xs">
-              <span className="text-[var(--text-primary)]">
-                Generated {progress.current} of {progress.total}
+        {batchProgress && (
+          <div className="mt-2">
+            <div className="mb-1 flex justify-between text-xs text-[var(--text-secondary)]">
+              <span>
+                Generating {batchProgress.current}/{batchProgress.total}
               </span>
-              <span className="text-[var(--text-secondary)]">
-                {Math.round((progress.current / progress.total) * 100)}%
-              </span>
+              {batchProgress.label && (
+                <span className="ml-2 truncate">{batchProgress.label}</span>
+              )}
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
               <div
-                className="h-full bg-[var(--accent)] transition-all duration-300"
-                style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
+                style={{
+                  width: `${(batchProgress.current / batchProgress.total) * 100}%`,
+                }}
               />
             </div>
           </div>

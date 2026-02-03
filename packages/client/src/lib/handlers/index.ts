@@ -21,6 +21,10 @@ export interface NodeHandlerContext {
   nodeOutputs: Record<string, NodeOutput>;
   edges: Edge[];
   setNodeOutput: (nodeId: string, output: NodeOutput) => void;
+  setBatchProgress: (
+    nodeId: string,
+    progress: { current: number; total: number; label?: string } | null
+  ) => void;
   ctx: ExecutionContext;
 }
 

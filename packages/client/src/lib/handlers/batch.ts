@@ -6,9 +6,10 @@
 
 import type { NodeHandlerContext } from './index';
 import type { NodeDataUnion } from '../../types/nodes';
+import { generateImage } from '../api';
 
 export async function handleBatchGen(context: NodeHandlerContext): Promise<void> {
-  const { nodeData, setNodeOutput, node, ctx } = context;
+  const { nodeData, setNodeOutput, setBatchProgress, node, ctx } = context;
   const data = nodeData as Extract<NodeDataUnion, { nodeType: 'batchGen' }>;
   const subjects = data.subjects
     ?.split('\n')
@@ -21,30 +22,58 @@ export async function handleBatchGen(context: NodeHandlerContext): Promise<void>
 
   if (ctx.getCancelled()) throw new Error('Execution cancelled');
 
-  const response = await fetch('/api/image/batch-generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      subjects,
-      presetId: data.presetId,
-      consistencyPhrase: data.consistencyPhrase,
-      seed: data.seed,
-    }),
+  const imageDataUrls: string[] = [];
+  const errors: string[] = [];
+
+  setBatchProgress(node.id, {
+    current: 0,
+    total: subjects.length,
+    label: subjects[0],
   });
 
-  if (ctx.getCancelled()) throw new Error('Execution cancelled');
+  try {
+    for (let i = 0; i < subjects.length; i += 1) {
+      if (ctx.getCancelled()) throw new Error('Execution cancelled');
 
-  if (!response.ok) {
-    throw new Error(`Batch generation failed: ${response.statusText}`);
+      const subject = subjects[i];
+      let prompt = subject;
+
+      if (data.consistencyPhrase) {
+        prompt = `${data.consistencyPhrase}. ${prompt}`;
+      }
+
+      try {
+        const result = await generateImage({
+          prompt,
+          presetId: data.presetId,
+        });
+        imageDataUrls.push(result.image);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Generation failed';
+        console.error(`Failed to generate subject ${i + 1} (${subject}):`, errorMsg);
+        errors.push(`Subject ${i + 1}: ${errorMsg}`);
+      }
+
+      setBatchProgress(node.id, {
+        current: i + 1,
+        total: subjects.length,
+        label: subject,
+      });
+    }
+  } finally {
+    setBatchProgress(node.id, null);
   }
 
-  const result = await response.json();
-  
   if (ctx.getCancelled()) throw new Error('Execution cancelled');
+
+  if (imageDataUrls.length === 0) {
+    const errorMessage = errors.length > 0 ? errors.join(' | ') : 'All batch generations failed';
+    throw new Error(errorMessage);
+  }
 
   // Combine images into grid
   const images = await Promise.all(
-    result.images.map(
+    imageDataUrls.map(
       (dataUrl: string) =>
         new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image();

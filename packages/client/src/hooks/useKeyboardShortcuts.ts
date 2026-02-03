@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import type { ReactFlowInstance } from '@xyflow/react';
+import type { ReactFlowInstance, Node } from '@xyflow/react';
 import { toast } from '../components/ui/Toast';
-import { type WorkflowState } from '../stores/workflow';
+import { type WorkflowState, type NodeData } from '../stores/workflow';
 
 type WorkflowStore = WorkflowState;
 
@@ -24,7 +24,9 @@ const isEditableTarget = (target: EventTarget | null): boolean => {
 
 export const useKeyboardShortcuts = (
   workflowStore: WorkflowStore,
-  reactFlow: ReactFlowInstance
+  reactFlow: ReactFlowInstance,
+  onCopy?: (nodes: Node<NodeData>[]) => void,
+  onPaste?: () => void
 ) => {
   const storeRef = useRef(workflowStore);
   const flowRef = useRef(reactFlow);
@@ -59,13 +61,36 @@ export const useKeyboardShortcuts = (
 
       if (isMeta && key === 'z' && event.shiftKey) {
         event.preventDefault();
-        toast.info('Redo not yet implemented');
+        const store = storeRef.current;
+        if (store.canRedo()) {
+          store.redo();
+        }
         return;
       }
 
       if (isMeta && key === 'z') {
         event.preventDefault();
-        toast.info('Undo not yet implemented');
+        const store = storeRef.current;
+        if (store.canUndo()) {
+          store.undo();
+        }
+        return;
+      }
+
+      if (isMeta && key === 'c') {
+        const flow = flowRef.current;
+        const selected = flow.getNodes().filter((n) => n.selected);
+        if (selected.length > 0) {
+          event.preventDefault();
+          onCopy?.(selected);
+          toast.info(`Copied ${selected.length} node${selected.length > 1 ? 's' : ''}`);
+        }
+        return;
+      }
+
+      if (isMeta && key === 'v') {
+        event.preventDefault();
+        onPaste?.();
         return;
       }
 
@@ -99,10 +124,22 @@ export const useKeyboardShortcuts = (
         flow.setEdges((edges) =>
           edges.map((edge) => (edge.selected ? { ...edge, selected: false } : edge))
         );
+        return;
+      }
+
+      if (key === 'delete' || key === 'backspace') {
+        event.preventDefault();
+        const flow = flowRef.current;
+        const selectedNodes = flow.getNodes().filter((n) => n.selected);
+        const selectedEdges = flow.getEdges().filter((e) => e.selected);
+        if (selectedNodes.length > 0 || selectedEdges.length > 0) {
+          flow.deleteElements({ nodes: selectedNodes, edges: selectedEdges });
+        }
+        return;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [onCopy, onPaste]);
 };

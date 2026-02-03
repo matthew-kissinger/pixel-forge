@@ -10,7 +10,7 @@ import {
   applyEdgeChanges,
   addEdge,
 } from '@xyflow/react';
-import { WorkflowData } from '../types/workflow';
+import type { WorkflowData } from '../types/workflow';
 
 // Re-export types from the new type system for backwards compatibility
 export type {
@@ -62,7 +62,7 @@ export const WORKFLOW_VERSION = 1;
 
 type WorkflowSnapshot = { nodes: Node<NodeData>[]; edges: Edge[] };
 
-interface WorkflowState {
+export interface WorkflowState {
   nodes: Node<NodeData>[];
   edges: Edge[];
   nodeOutputs: Record<string, NodeOutput>;
@@ -86,6 +86,7 @@ interface WorkflowState {
 
   // Actions
   addNode: (node: Node<NodeData>) => void;
+  setNodes: (nodes: Node<NodeData>[]) => void;
   updateNodeData: <T extends BaseNodeData>(nodeId: string, data: Partial<T>) => void;
   setNodeOutput: (nodeId: string, output: NodeOutput) => void;
   setNodeStatus: (nodeId: string, status: NodeStatus) => void;
@@ -224,6 +225,11 @@ export const useWorkflowStore = create<WorkflowState>()(
         nodes: [...state.nodes, node],
         nodeStatus: { ...state.nodeStatus, [node.id]: 'idle' },
       });
+    },
+
+    setNodes: (nodes) => {
+      pushToHistory();
+      set({ nodes });
     },
 
   updateNodeData: (nodeId, data) => {
@@ -456,4 +462,3 @@ export const useWorkflowStore = create<WorkflowState>()(
   };
   })
 );
-

@@ -53,6 +53,11 @@ interface WorkflowState {
   nodeOutputs: Record<string, NodeOutput>;
   nodeStatus: Record<string, NodeStatus>;
 
+  // Execution state
+  isExecuting: boolean;
+  executionProgress: { current: number; total: number };
+  executionCancelled: boolean;
+
   // React Flow callbacks
   onNodesChange: (changes: NodeChange<Node<NodeData>>[]) => void;
   onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
@@ -67,6 +72,11 @@ interface WorkflowState {
   getInputsForNode: (nodeId: string) => NodeOutput[];
   reset: () => void;
 
+  // Execution actions
+  setExecuting: (isExecuting: boolean) => void;
+  setExecutionProgress: (current: number, total: number) => void;
+  setExecutionCancelled: (cancelled: boolean) => void;
+
   // Persistence
   exportWorkflow: () => WorkflowData;
   importWorkflow: (data: WorkflowData) => void;
@@ -80,6 +90,9 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
   edges: initialEdges,
   nodeOutputs: {},
   nodeStatus: {},
+  isExecuting: false,
+  executionProgress: { current: 0, total: 0 },
+  executionCancelled: false,
 
   onNodesChange: (changes) => {
     set({
@@ -148,7 +161,22 @@ export const useWorkflowStore = create<WorkflowState>((set, get) => ({
       edges: initialEdges,
       nodeOutputs: {},
       nodeStatus: {},
+      isExecuting: false,
+      executionProgress: { current: 0, total: 0 },
+      executionCancelled: false,
     });
+  },
+
+  setExecuting: (isExecuting) => {
+    set({ isExecuting });
+  },
+
+  setExecutionProgress: (current, total) => {
+    set({ executionProgress: { current, total } });
+  },
+
+  setExecutionCancelled: (cancelled) => {
+    set({ executionCancelled: cancelled });
   },
 
   exportWorkflow: () => {

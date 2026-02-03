@@ -1,11 +1,25 @@
 import { useCallback, useRef } from 'react';
-import { Save, FolderOpen, Trash2, FileJson } from 'lucide-react';
+import { Save, FolderOpen, Trash2, FileJson, Play, Square } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow';
 import { toast } from '../ui/Toast';
 import { TemplateLoader } from './TemplateLoader';
+import { executeWorkflow } from '../../lib/executor';
 
 export function Toolbar() {
-  const { nodes, nodeOutputs, reset, exportWorkflow, importWorkflow } = useWorkflowStore();
+  const {
+    nodes,
+    edges,
+    nodeOutputs,
+    reset,
+    exportWorkflow,
+    importWorkflow,
+    isExecuting,
+    executionProgress,
+    executionCancelled,
+    setExecuting,
+    setExecutionProgress,
+    setExecutionCancelled,
+  } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = useCallback(() => {
@@ -84,6 +98,57 @@ export function Toolbar() {
     toast.success(`Exported ${outputs.length} output(s)`);
   }, [nodeOutputs]);
 
+  const handleExecuteAll = useCallback(async () => {
+    if (nodes.length === 0) {
+      toast.info('No nodes to execute');
+      return;
+    }
+
+    if (isExecuting) {
+      // Stop execution
+      setExecutionCancelled(true);
+      setExecuting(false);
+      toast.info('Execution cancelled');
+      return;
+    }
+
+    // Reset cancellation flag
+    setExecutionCancelled(false);
+    setExecuting(true);
+    setExecutionProgress(0, nodes.length);
+
+    try {
+      const store = useWorkflowStore.getState();
+      const result = await executeWorkflow(nodes, edges, store, {
+        getCancelled: () => useWorkflowStore.getState().executionCancelled,
+        onProgress: (current, total) => {
+          setExecutionProgress(current, total);
+        },
+      });
+
+      if (result.errors.length > 0) {
+        toast.error(
+          `Execution completed with ${result.errors.length} error(s). ${result.executed}/${result.total} nodes executed.`
+        );
+      } else {
+        toast.success(`Execution completed successfully. ${result.executed}/${result.total} nodes executed.`);
+      }
+    } catch (error) {
+      console.error('Workflow execution failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Execution failed');
+    } finally {
+      setExecuting(false);
+      setExecutionProgress(0, 0);
+    }
+  }, [
+    nodes,
+    edges,
+    isExecuting,
+    setExecuting,
+    setExecutionProgress,
+    setExecutionCancelled,
+  ]);
+
   return (
     <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow-lg">
       <input
@@ -96,6 +161,49 @@ export function Toolbar() {
 
       {/* Template Loader */}
       <TemplateLoader />
+
+      <div className="h-6 w-px bg-[var(--border-color)]" />
+
+      {/* Execute All Button */}
+      <button
+        onClick={handleExecuteAll}
+        disabled={nodes.length === 0}
+        className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm font-medium transition-colors ${
+          isExecuting
+            ? 'bg-[var(--error)] text-white hover:bg-red-600'
+            : 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
+        } disabled:cursor-not-allowed disabled:opacity-50`}
+        title={isExecuting ? 'Stop execution' : 'Execute all nodes'}
+      >
+        {isExecuting ? (
+          <>
+            <Square className="h-4 w-4" />
+            <span className="hidden sm:inline">Stop</span>
+          </>
+        ) : (
+          <>
+            <Play className="h-4 w-4" />
+            <span className="hidden sm:inline">Execute</span>
+          </>
+        )}
+      </button>
+
+      {/* Progress indicator */}
+      {isExecuting && executionProgress.total > 0 && (
+        <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+          <span>
+            {executionProgress.current}/{executionProgress.total}
+          </span>
+          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[var(--bg-tertiary)]">
+            <div
+              className="h-full bg-[var(--accent)] transition-all duration-300"
+              style={{
+                width: `${(executionProgress.current / executionProgress.total) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="h-6 w-px bg-[var(--border-color)]" />
 

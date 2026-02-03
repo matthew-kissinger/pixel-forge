@@ -182,11 +182,12 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
+- **TypeScript build errors** - Client has ~32 errors (`tsc -b`): type casts, unused imports/vars, Node generic mismatch, erasableSyntaxOnly. Server has ~50 real errors (excluding generated `output/kiln/`): mostly `possibly undefined` in `gemini.ts` color math, `unknown` types in test files, stale Agent SDK property names in `claude.ts`. Server tsconfig also lacks an `exclude` for `output/` dir, causing 490+ errors from generated kiln code.
 - **kilnGen executor** - Currently throws "not yet supported" (`handlers/model3d.ts:43`); needs real implementation once Kiln API is stable
 - **Workflow validation** - Pre-execution validation to catch missing inputs, disconnected nodes, cycles before running. Previous automated attempt failed.
 - **Test coverage** - Executor tests added (`executor.test.ts`, 378 lines) but no integration, error-handling, or handler-level tests
-- **Console cleanup** - 68 `console.log`/`console.error` calls across client (37) and server (31); needs structured logging or removal. Heaviest: `services/claude.ts` (12), `routes/image.ts` (10), `kiln/runtime.ts` (5)
-- **Uncommitted work** - Copy/paste refactor in `App.tsx` (clipboard ref, ID remapping, edge preservation) and `executor.test.ts` are staged but not committed
+- **Console cleanup** - 140 `console.log`/`console.error`/`console.warn` calls across 36 files. Heaviest: `services/claude.ts` (12), `routes/image.ts` (10), `kiln/runtime.ts` (5), `useAutoSave.ts` (4). Server scripts (validate-apis, test-claude, test-agent-sdk) account for ~70 calls.
+- **Uncommitted work** - Copy/paste refactor in `App.tsx` (clipboard ref, ID remapping, edge preservation) is modified but not committed
 
 ### Completed Goals
 
@@ -218,7 +219,7 @@ Build a **template/preset system** where:
 
 React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases and per-item progress tracking. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic (`retry.ts` + `api.ts`). Executor refactored into 467-line main module + 8 handler modules (1,166 lines total in `lib/handlers/`). Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle / MiniMap toggle / Fit View / Auto Layout. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons + Ctrl+Z/Ctrl+Shift+Z working. Copy/paste nodes with Ctrl+C/V (multi-node + edge preservation). Delete/Backspace key removes selected nodes/edges. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel, undo, redo, copy, paste, delete. Auto-save to localStorage with recovery prompt. Test coverage: executor (378 lines), store (298 lines), types (156 lines), API (137 lines).
 
-Key gaps: kilnGen executor not yet implemented, no pre-execution workflow validation, console.log cleanup needed (68 calls), uncommitted copy/paste refactor and executor tests.
+Key gaps: TypeScript build errors (32 client, 50 server excluding generated output), kilnGen executor not yet implemented, no pre-execution workflow validation, console.log cleanup needed (140 calls across 36 files), uncommitted copy/paste refactor in App.tsx, server tsconfig missing exclude for generated output/kiln/ directory.
 
 ## Quality Bar
 

@@ -27,6 +27,9 @@ import {
   Flame,
   Scissors,
   Sparkles,
+  Paintbrush,
+  Dices,
+  Film,
 } from 'lucide-react';
 import { legacyNodeDefinitions as nodeDefinitions, nodeCategories, type NodeType } from '../nodes';
 import { cn } from '../../lib/utils';
@@ -35,8 +38,11 @@ const nodeIcons: Record<NodeType, typeof Type> = {
   textPrompt: Type,
   imageUpload: Upload,
   number: Hash,
+  styleReference: Paintbrush,
+  seedControl: Dices,
   imageGen: ImageIcon,
   isometricTile: Diamond,
+  spriteSheet: Film,
   model3DGen: Box,
   kilnGen: Flame,
   batchGen: Sparkles,

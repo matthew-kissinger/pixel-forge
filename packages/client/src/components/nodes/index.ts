@@ -21,6 +21,9 @@ import { IterateNode } from './IterateNode';
 import { AnalyzeNode } from './AnalyzeNode';
 import { SliceSheetNode } from './SliceSheetNode';
 import { BatchGenNode } from './BatchGenNode';
+import { StyleReferenceNode } from './StyleReferenceNode';
+import { SeedControlNode } from './SeedControlNode';
+import { SpriteSheetNode } from './SpriteSheetNode';
 
 // Re-export from the new type system
 export {
@@ -44,9 +47,12 @@ export const nodeTypes = {
   textPrompt: TextPromptNode,
   imageUpload: ImageUploadNode,
   number: NumberNode,
+  styleReference: StyleReferenceNode,
+  seedControl: SeedControlNode,
   // Generation
   imageGen: ImageGenNode,
   isometricTile: IsometricTileNode,
+  spriteSheet: SpriteSheetNode,
   model3DGen: Model3DGenNode,
   kilnGen: KilnGenNode,
   batchGen: BatchGenNode,

@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Eraser } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { removeBackground } from '../../lib/api';
 
 export interface RemoveBgData extends BaseNodeData {
@@ -35,7 +36,7 @@ export function RemoveBgNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Background removal failed:', error);
+      logger.error('Background removal failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, getInputsForNode, setNodeOutput, setNodeStatus]);

@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { type NodeProps, Handle, Position } from '@xyflow/react';
 import { Layers } from 'lucide-react';
 import { useWorkflowStore, type BaseNodeData, type NodeOutput } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { cn } from '../../lib/utils';
 
 export interface CombineData extends BaseNodeData {
@@ -131,7 +132,7 @@ export function CombineNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Combine failed:', error);
+      logger.error('Combine failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, mode, alignment, spacing, getInputs, setNodeOutput, setNodeStatus]);

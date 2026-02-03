@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { generateModel, getModelStatus } from '../services/fal';
 import { BadRequestError, NotFoundError } from '../lib/errors';
+import { logger } from '@pixel-forge/shared/logger';
 
 const modelRouter = new Hono();
 
@@ -24,7 +25,7 @@ modelRouter.post(
       const result = await generateModel(prompt);
       return c.json(result);
     } catch (error) {
-      console.error('3D model generation error:', error);
+      logger.error('3D model generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : '3D model generation failed'
       );
@@ -52,7 +53,7 @@ modelRouter.get('/status/:id', async (c) => {
     if (error instanceof NotFoundError || error instanceof BadRequestError) {
       throw error;
     }
-    console.error('Status check error:', error);
+    logger.error('Status check error:', error);
     throw new BadRequestError(
       error instanceof Error ? error.message : 'Status check failed'
     );

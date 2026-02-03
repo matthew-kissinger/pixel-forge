@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Box, Sparkles, Download, Play, Edit3, RotateCcw, Maximize2, ZoomIn, ZoomOut, RefreshCw, X } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import {
   KilnRuntime,
   type RenderMode,
@@ -188,7 +189,7 @@ export function KilnGenNode({ id, data, selected }: KilnGenNodeProps) {
         if (data.effectCode && (data.mode === 'tsl' || data.mode === 'both')) {
           const effectResult = await runtimeRef.current.applyEffect(data.effectCode);
           if (!effectResult.success) {
-            console.warn('TSL effect failed:', effectResult.error);
+            logger.warn('TSL effect failed:', effectResult.error);
             // Don't fail the whole render, just log the warning
           }
         }

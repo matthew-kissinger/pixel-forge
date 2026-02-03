@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Grid3X3 } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
 export interface PixelateData extends BaseNodeData {
   pixelSize: number;
@@ -77,7 +78,7 @@ export function PixelateNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Pixelate failed:', error);
+      logger.error('Pixelate failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, pixelSize, colorLevels, getInputsForNode, setNodeOutput, setNodeStatus]);

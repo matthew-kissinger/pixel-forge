@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useWorkflowStore } from '../stores/workflow';
 import { decodeWorkflow } from '../lib/share';
 import { toast } from '../components/ui/Toast';
+import { logger } from '@pixel-forge/shared/logger';
 
 export type WorkflowFromUrlStatus = 'pending' | 'loaded' | 'none' | 'error';
 
@@ -44,7 +45,7 @@ export function useWorkflowFromUrl(): WorkflowFromUrlStatus {
         toast.success('Loaded shared workflow');
         setStatus('loaded');
       } catch (error) {
-        console.error('Failed to import shared workflow:', error);
+        logger.error('Failed to import shared workflow:', error);
         toast.error('Failed to import shared workflow');
         setStatus('error');
       } finally {

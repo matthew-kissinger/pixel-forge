@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Layers, Play, Settings } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { PRESETS } from '@pixel-forge/shared/presets';
 import { executeSingleNode } from '../../lib/executor';
 
@@ -35,13 +36,13 @@ export function BatchGenNode(props: NodeProps) {
     const node = store.nodes.find((current) => current.id === id);
 
     if (!node) {
-      console.error('Batch generation failed: node not found');
+      logger.error('Batch generation failed: node not found');
       return;
     }
 
     const result = await executeSingleNode(node, store.nodes, store.edges, store);
     if (!result.success) {
-      console.error('Batch generation failed:', result.error);
+      logger.error('Batch generation failed:', result.error);
     }
   }, [id]);
 

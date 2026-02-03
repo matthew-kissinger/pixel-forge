@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { logger } from '@pixel-forge/shared/logger';
 
 interface Props {
   children: ReactNode;
@@ -23,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logger.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ errorInfo });
   }
 
@@ -104,7 +105,7 @@ export class NodeErrorBoundary extends Component<NodeErrorBoundaryProps, NodeErr
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error(`Error in node ${this.props.nodeId}:`, error, errorInfo);
+    logger.error(`Error in node ${this.props.nodeId}:`, error, errorInfo);
   }
 
   handleRetry = (): void => {

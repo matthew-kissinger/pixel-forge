@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Grid3X3, Settings } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { generateImage, removeBackground } from '../../lib/api';
 
 interface IsometricTileNodeData {
@@ -56,7 +57,7 @@ export function IsometricTileNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Isometric tile generation failed:', error);
+      logger.error('Isometric tile generation failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, getInputsForNode, setNodeOutput, setNodeStatus, groundBase]);

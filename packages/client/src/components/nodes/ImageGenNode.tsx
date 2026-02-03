@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { ImageIcon, Sparkles, Eraser, ChevronDown } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { PRESETS, getPresetById } from '@pixel-forge/shared/presets';
 import { generateImage, type ArtStyle, type AspectRatio } from '../../lib/api';
 
@@ -87,7 +88,7 @@ export function ImageGenNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Image generation failed:', error);
+      logger.error('Image generation failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [

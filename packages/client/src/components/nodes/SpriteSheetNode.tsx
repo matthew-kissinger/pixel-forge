@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { LayoutGrid, Sparkles } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 import { generateImage } from '../../lib/api';
 
 export interface SpriteSheetData extends BaseNodeData {
@@ -70,7 +71,7 @@ export function SpriteSheetNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Sprite sheet generation failed:', error);
+      logger.error('Sprite sheet generation failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [

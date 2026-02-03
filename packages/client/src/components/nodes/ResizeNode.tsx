@@ -3,6 +3,7 @@ import { type NodeProps } from '@xyflow/react';
 import { Maximize2, Lock, Unlock } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { logger } from '@pixel-forge/shared/logger';
 
 export interface ResizeData extends BaseNodeData {
   width: number;
@@ -137,7 +138,7 @@ export function ResizeNode(props: NodeProps) {
       });
       setNodeStatus(id, 'success');
     } catch (error) {
-      console.error('Resize failed:', error);
+      logger.error('Resize failed:', error);
       setNodeStatus(id, 'error');
     }
   }, [id, width, height, mode, getInputsForNode, setNodeOutput, setNodeStatus]);

@@ -182,10 +182,10 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **kilnGen executor** - Currently throws "not yet supported" (`handlers/model3d.ts:42`); needs real implementation once Kiln API is stable
-- **Main bundle 502KB (gzip: 145KB)** - Three.js (380KB gzip) and React Flow (61KB gzip) already split into separate chunks. 4 heavy nodes lazy-loaded. Remaining 145KB gzip main chunk could benefit from further splitting (node components, utilities).
-- **No E2E tests** - Only unit tests exist. No integration or end-to-end testing.
 - **Server test coverage thin** - Only 13 API endpoint tests. No tests for service layer (gemini.ts, fal.ts, claude.ts).
+- **E2E test coverage shallow** - Playwright smoke tests exist (9 tests in `e2e/smoke.spec.ts`) but only cover basic UI rendering and navigation. No workflow execution E2E tests.
+- **Bun test runner picks up Playwright files** - Running `bun test` at root finds `e2e/smoke.spec.ts` and fails on `@playwright/test` import. Need root-level test config to exclude E2E, or run via `bun run test:run` in client package.
+- **Service error handling** - gemini.ts, fal.ts, claude.ts have minimal error handling for API failures, no timeouts on external calls, and silent failures in background tasks.
 
 ### Completed Goals
 
@@ -220,12 +220,20 @@ Build a **template/preset system** where:
 - ~~Handler tests fixed~~ - Done (136 pass, 0 fail: canvas mock + `vi.mocked` to `(fn as Mock)` casting, commit b33db70)
 - ~~Code-split React Flow~~ - Done (187KB separate chunk, 4 heavy nodes lazy-loaded: KilnGen, BatchGen, SpriteSheet, Model3DGen)
 - ~~Typecheck scripts~~ - Done (`bun run typecheck` at root, client, and server levels)
+- ~~kilnGen executor~~ - Done (client API integration in `handlers/model3d.ts`, calls `/api/kiln/generate`, commit `01fcf72`)
+- ~~E2E smoke tests~~ - Done (Playwright config + 9 smoke tests in `e2e/smoke.spec.ts`: canvas render, toolbar, node palette, drag-add, keyboard shortcuts, save, search, collapse/expand)
+- ~~Lazy-load all node components~~ - Done (all 28 nodes lazy-loaded via `createLazyNode` helper with Suspense wrappers and loading spinners; main chunk reduced from 502KB to 317KB)
+- ~~Dynamic handler imports~~ - Done (executor handlers use dynamic `import()` instead of static imports, handler registry returns `() => Promise<NodeHandler>`)
 
 ## Current State
 
-React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases and per-item progress tracking. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. 3D generation via Meshy and Kiln (Claude Agent SDK) works. Image compression/optimization node fully implemented (component + API + executor). Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic (`retry.ts` + `api.ts`). Executor refactored into 431-line main module + 8 handler modules (1,208 lines total in `lib/handlers/`). Per-node error display on failed nodes. Execution history panel with timeline, status icons, duration, and expandable error details. NodePalette has search/filter. Toolbar has Execute All / Stop / History toggle / MiniMap toggle / Fit View / Auto Layout. Undo/redo with snapshot-based history (max 50 snapshots), toolbar buttons + Ctrl+Z/Ctrl+Shift+Z working. Copy/paste nodes with Ctrl+C/V (multi-node + edge preservation). Delete/Backspace key removes selected nodes/edges. Node context menu with re-run, duplicate, delete, clear output. Keyboard shortcuts for save, load, select all, execute, cancel, undo, redo, copy, paste, delete. Auto-save to localStorage with recovery prompt. Bundle: main chunk 502KB/145KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/61KB gzip (separate), 4 lazy-loaded nodes. Test coverage: executor (378 lines), handlers (1,472 lines), validate (422 lines), store (298 lines), types (156 lines), API (137 lines). Total: 136 pass, 0 fail across 6 test files.
+React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). All node components lazy-loaded via `createLazyNode` helper with Suspense wrappers. Executor handlers use dynamic imports (`() => Promise<NodeHandler>`). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download, batch generates with consistency phrases and per-item progress tracking. 3D generation via Meshy and Kiln (Claude Agent SDK) fully working - kilnGen executor calls `/api/kiln/generate` with mode/category/style support. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. Image compression/optimization node fully implemented. Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic. Executor refactored into main module + 8 handler modules in `lib/handlers/`. Full UX: per-node error display, execution history panel, NodePalette with search/filter, undo/redo (Ctrl+Z/Shift+Z), copy/paste (Ctrl+C/V), delete key, node context menu, keyboard shortcuts, auto-save, minimap, fit view, auto layout.
 
-Key gaps: kilnGen executor not yet implemented, main chunk 502KB/145KB gzip (further splitting possible), no E2E tests, thin server test coverage (13 tests for API endpoints only).
+Bundle: main chunk 317KB/95KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/61KB gzip (separate), all 28 nodes lazy-loaded into individual chunks. SliceSheetNode is largest lazy chunk at 102KB/32KB gzip (includes JSZip).
+
+Test coverage: executor (411 lines), handlers (1,675 lines), validate (422 lines), store (298 lines), types (156 lines), server API (342 lines), E2E smoke (187 lines). Total: 152 pass, 1 skip across 7 test files (vitest). Playwright E2E: 9 smoke tests in `e2e/smoke.spec.ts`.
+
+Key gaps: server service layer untested (gemini.ts/fal.ts/claude.ts - 0 tests), E2E tests are shallow (UI rendering only, no workflow execution), service error handling minimal.
 
 ## Quality Bar
 

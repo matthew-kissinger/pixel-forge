@@ -31,60 +31,50 @@ export interface NodeHandlerContext {
 export type NodeHandler = (context: NodeHandlerContext) => Promise<void>;
 
 export type NodeHandlerMap = {
-  [K in NodeTypeName]: NodeHandler;
+  [K in NodeTypeName]: () => Promise<NodeHandler>;
 };
 
-// Import all handlers
-import * as inputHandlers from './input';
-import * as imageGenHandlers from './imageGen';
-import * as model3dHandlers from './model3d';
-import * as processingHandlers from './processing';
-import * as canvasHandlers from './canvas';
-import * as analysisHandlers from './analysis';
-import * as batchHandlers from './batch';
-import * as outputHandlers from './output';
-
 /**
- * Registry of all node handlers
+ * Registry of all node handlers with dynamic imports
  */
 export const handlers: NodeHandlerMap = {
   // Input nodes
-  textPrompt: inputHandlers.handleTextPrompt,
-  imageUpload: inputHandlers.handleImageUpload,
-  number: inputHandlers.handleNumber,
-  styleReference: inputHandlers.handleStyleReference,
-  seedControl: inputHandlers.handleSeedControl,
+  textPrompt: () => import('./input').then(m => m.handleTextPrompt),
+  imageUpload: () => import('./input').then(m => m.handleImageUpload),
+  number: () => import('./input').then(m => m.handleNumber),
+  styleReference: () => import('./input').then(m => m.handleStyleReference),
+  seedControl: () => import('./input').then(m => m.handleSeedControl),
 
   // Generation nodes
-  imageGen: imageGenHandlers.handleImageGen,
-  isometricTile: imageGenHandlers.handleIsometricTile,
-  spriteSheet: imageGenHandlers.handleSpriteSheet,
-  model3DGen: model3dHandlers.handleModel3DGen,
-  kilnGen: model3dHandlers.handleKilnGen,
-  batchGen: batchHandlers.handleBatchGen,
+  imageGen: () => import('./imageGen').then(m => m.handleImageGen),
+  isometricTile: () => import('./imageGen').then(m => m.handleIsometricTile),
+  spriteSheet: () => import('./imageGen').then(m => m.handleSpriteSheet),
+  model3DGen: () => import('./model3d').then(m => m.handleModel3DGen),
+  kilnGen: () => import('./model3d').then(m => m.handleKilnGen),
+  batchGen: () => import('./batch').then(m => m.handleBatchGen),
 
   // Processing nodes
-  removeBg: processingHandlers.handleRemoveBg,
-  resize: processingHandlers.handleResize,
-  crop: processingHandlers.handleCrop,
-  pixelate: processingHandlers.handlePixelate,
+  removeBg: () => import('./processing').then(m => m.handleRemoveBg),
+  resize: () => import('./processing').then(m => m.handleResize),
+  crop: () => import('./processing').then(m => m.handleCrop),
+  pixelate: () => import('./processing').then(m => m.handlePixelate),
 
   // Canvas operation nodes
-  tile: canvasHandlers.handleTile,
-  filter: canvasHandlers.handleFilter,
-  combine: canvasHandlers.handleCombine,
-  rotate: canvasHandlers.handleRotate,
-  colorPalette: canvasHandlers.handleColorPalette,
+  tile: () => import('./canvas').then(m => m.handleTile),
+  filter: () => import('./canvas').then(m => m.handleFilter),
+  combine: () => import('./canvas').then(m => m.handleCombine),
+  rotate: () => import('./canvas').then(m => m.handleRotate),
+  colorPalette: () => import('./canvas').then(m => m.handleColorPalette),
 
   // Analysis nodes
-  analyze: analysisHandlers.handleAnalyze,
-  iterate: analysisHandlers.handleIterate,
-  sliceSheet: analysisHandlers.handleSliceSheet,
-  compress: analysisHandlers.handleCompress,
+  analyze: () => import('./analysis').then(m => m.handleAnalyze),
+  iterate: () => import('./analysis').then(m => m.handleIterate),
+  sliceSheet: () => import('./analysis').then(m => m.handleSliceSheet),
+  compress: () => import('./analysis').then(m => m.handleCompress),
 
   // Output nodes
-  preview: outputHandlers.handlePreview,
-  save: outputHandlers.handleSave,
-  exportGLB: outputHandlers.handleExportGLB,
-  exportSheet: outputHandlers.handleExportSheet,
+  preview: () => import('./output').then(m => m.handlePreview),
+  save: () => import('./output').then(m => m.handleSave),
+  exportGLB: () => import('./output').then(m => m.handleExportGLB),
+  exportSheet: () => import('./output').then(m => m.handleExportSheet),
 };

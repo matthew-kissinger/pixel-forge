@@ -200,9 +200,14 @@ async function executeNode(
   const inputs = getInputsForNode(node.id);
 
   // Get handler from registry
-  const handler = handlers[nodeType];
-  if (!handler) {
+  const handlerLoader = handlers[nodeType];
+  if (!handlerLoader) {
     throw new Error(`Unknown node type: ${nodeType}`);
+  }
+
+  const handler = await handlerLoader();
+  if (!handler) {
+    throw new Error(`Failed to load handler for: ${nodeType}`);
   }
 
   // Create handler context

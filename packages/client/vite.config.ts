@@ -12,6 +12,9 @@ export default defineConfig({
           if (id.includes('node_modules/three')) {
             return 'three';
           }
+          if (id.includes('node_modules/@xyflow/react')) {
+            return 'react-flow';
+          }
         },
       },
     },

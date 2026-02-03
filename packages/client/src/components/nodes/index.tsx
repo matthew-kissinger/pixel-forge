@@ -1,7 +1,6 @@
 import { TextPromptNode } from './TextPromptNode';
 import { ImageGenNode } from './ImageGenNode';
 import { PreviewNode } from './PreviewNode';
-import { Model3DGenNode } from './Model3DGenNode';
 import { lazy, Suspense } from 'react';
 import { RemoveBgNode } from './RemoveBgNode';
 import { ResizeNode } from './ResizeNode';
@@ -20,26 +19,55 @@ import { RotateNode } from './RotateNode';
 import { IterateNode } from './IterateNode';
 import { AnalyzeNode } from './AnalyzeNode';
 import { SliceSheetNode } from './SliceSheetNode';
-import { BatchGenNode } from './BatchGenNode';
 import { StyleReferenceNode } from './StyleReferenceNode';
 import { SeedControlNode } from './SeedControlNode';
-import { SpriteSheetNode } from './SpriteSheetNode';
 import { ExportGLBNode } from './ExportGLBNode';
 import { ExportSheetNode } from './ExportSheetNode';
 
+// Lazy-load heavy components
 const LazyKilnGenNode = lazy(() =>
   import('./KilnGenNode').then((m) => ({ default: m.KilnGenNode }))
 );
 
+const LazyModel3DGenNode = lazy(() =>
+  import('./Model3DGenNode').then((m) => ({ default: m.Model3DGenNode }))
+);
+
+const LazyBatchGenNode = lazy(() =>
+  import('./BatchGenNode').then((m) => ({ default: m.BatchGenNode }))
+);
+
+const LazySpriteSheetNode = lazy(() =>
+  import('./SpriteSheetNode').then((m) => ({ default: m.SpriteSheetNode }))
+);
+
+const LoadingFallback = ({ label }: { label: string }) => (
+  <div className="bg-zinc-900 p-4 rounded-lg border-2 border-zinc-700 w-80 h-48 flex items-center justify-center text-zinc-500 text-sm">
+    Loading {label}...
+  </div>
+);
+
 const KilnGenNodeWrapper = (props: any) => (
-  <Suspense
-    fallback={
-      <div className="bg-zinc-900 p-4 rounded-lg border-2 border-zinc-700 w-80 h-48 flex items-center justify-center text-zinc-500 text-sm">
-        Loading 3D Engine...
-      </div>
-    }
-  >
+  <Suspense fallback={<LoadingFallback label="3D Engine" />}>
     <LazyKilnGenNode {...props} />
+  </Suspense>
+);
+
+const Model3DGenNodeWrapper = (props: any) => (
+  <Suspense fallback={<LoadingFallback label="3D Generator" />}>
+    <LazyModel3DGenNode {...props} />
+  </Suspense>
+);
+
+const BatchGenNodeWrapper = (props: any) => (
+  <Suspense fallback={<LoadingFallback label="Batch Generator" />}>
+    <LazyBatchGenNode {...props} />
+  </Suspense>
+);
+
+const SpriteSheetNodeWrapper = (props: any) => (
+  <Suspense fallback={<LoadingFallback label="Sprite Sheet" />}>
+    <LazySpriteSheetNode {...props} />
   </Suspense>
 );
 
@@ -70,10 +98,10 @@ export const nodeTypes = {
   // Generation
   imageGen: ImageGenNode,
   isometricTile: IsometricTileNode,
-  spriteSheet: SpriteSheetNode,
-  model3DGen: Model3DGenNode,
+  spriteSheet: SpriteSheetNodeWrapper,
+  model3DGen: Model3DGenNodeWrapper,
   kilnGen: KilnGenNodeWrapper,
-  batchGen: BatchGenNode,
+  batchGen: BatchGenNodeWrapper,
   // Processing
   removeBg: RemoveBgNode,
   resize: ResizeNode,

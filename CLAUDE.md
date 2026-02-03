@@ -238,6 +238,9 @@ See `docs/presets/` for reference formats:
 | `enemy-sprite` | Red #FF0000 | 512x512 | Top-down ship sprites |
 | `game-icon` | Red #FF0000 | 64x64 | UI icons |
 | `isometric-sheet` | Red #FF0000 | 2048x2048 | Multi-view sprite sheets |
+| `vegetation-sprite` | Red #FF0000 | 256x256 | Pixel art plant sprites for billboards |
+| `effect-strip` | Red #FF0000 | 1024x128 | 8-frame animation strips for VFX |
+| `soldier-sprite` | Red #FF0000 | 64x64 | Pixel art soldier billboard sprites |
 
 ## Skills
 

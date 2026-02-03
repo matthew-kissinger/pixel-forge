@@ -1,4 +1,5 @@
 import type { Edge, Node } from '@xyflow/react';
+import type { NodeData } from '../stores/workflow';
 
 const DEFAULT_HORIZONTAL_SPACING = 250;
 const DEFAULT_VERTICAL_SPACING = 100;
@@ -8,10 +9,10 @@ interface LayoutOptions {
   verticalSpacing?: number;
 }
 
-const getExecutionWaves = (nodes: Node[], edges: Edge[]): Node[][] => {
+const getExecutionWaves = (nodes: Node<NodeData>[], edges: Edge[]): Node<NodeData>[][] => {
   const dependents = new Map<string, Set<string>>();
   const dependencies = new Map<string, Set<string>>();
-  const nodeMap = new Map<string, Node>();
+  const nodeMap = new Map<string, Node<NodeData>>();
 
   nodes.forEach((node) => {
     nodeMap.set(node.id, node);
@@ -26,8 +27,8 @@ const getExecutionWaves = (nodes: Node[], edges: Edge[]): Node[][] => {
     if (targetDeps) targetDeps.add(edge.target);
   });
 
-  const waves: Node[][] = [];
-  const queue: Node[] = [];
+  const waves: Node<NodeData>[][] = [];
+  const queue: Node<NodeData>[] = [];
   const inDegree = new Map<string, number>();
 
   nodes.forEach((node) => {
@@ -40,7 +41,7 @@ const getExecutionWaves = (nodes: Node[], edges: Edge[]): Node[][] => {
   });
 
   while (queue.length > 0) {
-    const currentWave: Node[] = [];
+    const currentWave: Node<NodeData>[] = [];
     const waveSize = queue.length;
 
     for (let i = 0; i < waveSize; i++) {
@@ -76,10 +77,10 @@ const getExecutionWaves = (nodes: Node[], edges: Edge[]): Node[][] => {
 };
 
 export const autoLayoutNodes = (
-  nodes: Node[],
+  nodes: Node<NodeData>[],
   edges: Edge[],
   options: LayoutOptions = {}
-): Node[] => {
+): Node<NodeData>[] => {
   if (nodes.length === 0) return nodes;
 
   const horizontalSpacing = options.horizontalSpacing ?? DEFAULT_HORIZONTAL_SPACING;

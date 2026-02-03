@@ -1,14 +1,21 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useWorkflowStore } from '../stores/workflow';
 import { toast } from '../components/ui/Toast';
+import { logger } from '@pixel-forge/shared/logger';
 
 const AUTOSAVE_KEY = 'pixel-forge-autosave';
 const DEBOUNCE_MS = 2000;
 
-export function useAutoSave() {
+interface AutoSaveOptions {
+  allowRecovery?: boolean;
+}
+
+export function useAutoSave(options: AutoSaveOptions = {}) {
+  const allowRecovery = options.allowRecovery ?? true;
   const { exportWorkflow, importWorkflow, setLastAutoSave } = useWorkflowStore();
   const lastSavedJsonRef = useRef<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const recoveryHandledRef = useRef(false);
 
   const saveToLocalStorage = useCallback(() => {
     try {
@@ -22,7 +29,7 @@ export function useAutoSave() {
       // localStorage usually has 5MB limit. 
       // If our workflow is > 4MB, maybe we should warn or stop autosaving.
       if (json.length > 4 * 1024 * 1024) {
-        console.warn('Workflow too large for auto-save');
+        logger.warn('Workflow too large for auto-save');
         return;
       }
 
@@ -30,14 +37,16 @@ export function useAutoSave() {
       lastSavedJsonRef.current = json;
       const now = Date.now();
       setLastAutoSave(now);
-      console.log('Workflow auto-saved at', new Date(now).toLocaleTimeString());
+      logger.debug('Workflow auto-saved at', new Date(now).toLocaleTimeString());
     } catch (error) {
-      console.error('Failed to auto-save workflow:', error);
+      logger.error('Failed to auto-save workflow:', error);
     }
   }, [exportWorkflow, setLastAutoSave]);
 
   // Handle recovery on mount
   useEffect(() => {
+    if (!allowRecovery || recoveryHandledRef.current) return;
+    recoveryHandledRef.current = true;
     const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (saved) {
       try {
@@ -63,11 +72,11 @@ export function useAutoSave() {
           }
         }
       } catch (error) {
-        console.error('Failed to parse auto-saved workflow:', error);
+        logger.error('Failed to parse auto-saved workflow:', error);
         localStorage.removeItem(AUTOSAVE_KEY);
       }
     }
-  }, [importWorkflow, setLastAutoSave]);
+  }, [allowRecovery, importWorkflow, setLastAutoSave]);
 
   // Subscribe to changes
   useEffect(() => {

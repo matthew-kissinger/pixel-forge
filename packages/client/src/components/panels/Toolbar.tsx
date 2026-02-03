@@ -3,6 +3,7 @@ import { Save, FolderOpen, Trash2, FileJson, Play, Square } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow';
 import { toast } from '../ui/Toast';
 import { TemplateLoader } from './TemplateLoader';
+import { QuickGenerate } from './QuickGenerate';
 import { executeWorkflow } from '../../lib/executor';
 
 export function Toolbar() {
@@ -15,7 +16,6 @@ export function Toolbar() {
     importWorkflow,
     isExecuting,
     executionProgress,
-    executionCancelled,
     setExecuting,
     setExecutionProgress,
     setExecutionCancelled,
@@ -158,6 +158,11 @@ export function Toolbar() {
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {/* Quick Generate */}
+      <QuickGenerate />
+
+      <div className="h-6 w-px bg-[var(--border-color)]" />
 
       {/* Template Loader */}
       <TemplateLoader />

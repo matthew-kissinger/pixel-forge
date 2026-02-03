@@ -5,7 +5,9 @@
  */
 
 import type { Node, Edge } from '@xyflow/react';
+import { getPresetById, buildPresetPrompt } from '@pixel-forge/shared/presets';
 import type { NodeData } from '../stores/workflow';
+import type { ArtStyle2D } from '../types/nodes';
 import { calculateWorkflowLayout } from './nodeLayout';
 
 export interface WorkflowTemplate {
@@ -263,4 +265,114 @@ export function getTemplatesByCategory(
  */
 export function getTemplateById(id: string): WorkflowTemplate | undefined {
   return templates.find((t) => t.id === id);
+}
+
+/**
+ * Create a workflow from a preset and subject
+ */
+export function createWorkflowFromPreset(
+  presetId: string,
+  subject: string,
+  startPosition = { x: 320, y: 100 }
+): { nodes: Node<NodeData>[]; edges: Edge[] } | undefined {
+  const preset = getPresetById(presetId);
+  if (!preset) return undefined;
+
+  const fullPrompt = buildPresetPrompt(preset, subject);
+
+  // Map category/id to style
+  let style: ArtStyle2D = 'pixel-art';
+  if (preset.id === 'planet-texture') style = 'realistic';
+  else if (preset.id === 'isometric-sheet') style = 'isometric';
+  else if (preset.category === 'texture') style = 'painted';
+  else if (preset.id === 'game-icon') style = 'vector';
+
+  // Determine node sequence
+  const nodeSequence: Array<{ type: string; data: any }> = [
+    {
+      type: 'textPrompt',
+      data: {
+        nodeType: 'textPrompt',
+        label: 'Preset Prompt',
+        prompt: fullPrompt,
+      },
+    },
+    {
+      type: 'imageGen',
+      data: {
+        nodeType: 'imageGen',
+        label: 'Generate',
+        model: 'nano-banana',
+        style: style,
+        smartAspect: true,
+        autoRemoveBg: false,
+      },
+    },
+  ];
+
+  if (preset.autoRemoveBg) {
+    nodeSequence.push({
+      type: 'removeBg',
+      data: {
+        nodeType: 'removeBg',
+        label: 'Remove BG',
+      },
+    });
+  }
+
+  nodeSequence.push({
+    type: 'resize',
+    data: {
+      nodeType: 'resize',
+      label: 'Resize',
+      width: preset.outputSize.width,
+      height: preset.outputSize.height,
+      lockAspect: true,
+      mode: 'contain',
+      pixelPerfect: style === 'pixel-art',
+    },
+  });
+
+  nodeSequence.push({
+    type: 'preview',
+    data: {
+      nodeType: 'preview',
+      label: 'Preview',
+      inputType: 'any',
+    },
+  });
+
+  nodeSequence.push({
+    type: 'save',
+    data: {
+      nodeType: 'save',
+      label: 'Save',
+      fileName: subject.toLowerCase().replace(/\s+/g, '-'),
+      format: preset.format,
+      quality: 90,
+    },
+  });
+
+  const nodeTypes = nodeSequence.map((n) => n.type);
+  const positions = calculateWorkflowLayout(nodeTypes, startPosition);
+
+  const nodes: Node<NodeData>[] = nodeSequence.map((nodeDef, index) => ({
+    id: `preset_${preset.id}_${Date.now()}_${index}`,
+    type: nodeDef.type,
+    position: positions[index],
+    data: nodeDef.data,
+  }));
+
+  const edges: Edge[] = [];
+  for (let i = 0; i < nodes.length - 1; i++) {
+    edges.push({
+      id: `preset_${preset.id}_edge_${Date.now()}_${i}`,
+      source: nodes[i].id,
+      target: nodes[i + 1].id,
+      type: 'smoothstep',
+      animated: true,
+    });
+  }
+
+  return { nodes, edges };
 }

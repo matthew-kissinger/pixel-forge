@@ -50,6 +50,13 @@ const sliceSheetSchema = z.object({
   cols: z.number().int().min(1).max(50),
 });
 
+const batchGenerateSchema = z.object({
+  subjects: z.array(z.string().min(1)).min(1).max(50),
+  presetId: z.string().optional(),
+  consistencyPhrase: z.string().optional(),
+  seed: z.number().int().optional(),
+});
+
 imageRouter.post(
   '/generate',
   zValidator('json', generateSchema),
@@ -170,6 +177,82 @@ imageRouter.post(
       console.error('Smart generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Smart generation failed'
+      );
+    }
+  }
+);
+
+imageRouter.post(
+  '/batch-generate',
+  zValidator('json', batchGenerateSchema),
+  async (c) => {
+    const { subjects, presetId, consistencyPhrase, seed } = c.req.valid('json');
+
+    try {
+      const preset = presetId ? getPresetById(presetId) : undefined;
+
+      if (presetId && !preset) {
+        throw new BadRequestError(`Unknown preset: ${presetId}`);
+      }
+
+      const images: string[] = [];
+      const errors: string[] = [];
+
+      // Generate each subject with consistent settings
+      for (let i = 0; i < subjects.length; i++) {
+        const subject = subjects[i];
+
+        try {
+          // Build prompt with consistency
+          let prompt = subject;
+
+          if (consistencyPhrase) {
+            prompt = `${consistencyPhrase}. ${prompt}`;
+          }
+
+          const finalPrompt = preset ? buildPresetPrompt(preset, prompt) : prompt;
+
+          // Add seed variation if provided (seed + index for variation)
+          // Note: Gemini doesn't directly support seeds, but we can add it to metadata
+          // For now, we'll generate without seed support and rely on consistency phrase
+
+          const result = await generateImage(finalPrompt);
+
+          // Apply background removal if needed
+          const shouldRemoveBg = preset?.autoRemoveBg ?? false;
+          if (shouldRemoveBg && result.image) {
+            try {
+              const bgResult = await removeBackground(result.image);
+              images.push(bgResult.image);
+            } catch (bgError) {
+              console.warn(`Background removal failed for subject ${i + 1}:`, bgError);
+              images.push(result.image);
+            }
+          } else {
+            images.push(result.image);
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Generation failed';
+          console.error(`Failed to generate subject ${i + 1} (${subject}):`, errorMsg);
+          errors.push(`Subject ${i + 1}: ${errorMsg}`);
+          // Continue with remaining subjects
+        }
+      }
+
+      if (images.length === 0) {
+        throw new BadRequestError('All batch generations failed');
+      }
+
+      return c.json({
+        images,
+        errors: errors.length > 0 ? errors : undefined,
+        successCount: images.length,
+        totalCount: subjects.length,
+      });
+    } catch (error) {
+      console.error('Batch generation error:', error);
+      throw new BadRequestError(
+        error instanceof Error ? error.message : 'Batch generation failed'
       );
     }
   }

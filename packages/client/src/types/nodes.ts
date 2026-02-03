@@ -245,6 +245,21 @@ export interface AnalyzeNodeData extends BaseNodeDataFields {
   extractDimensions: boolean;
 }
 
+export interface SliceSheetNodeData extends BaseNodeDataFields {
+  nodeType: 'sliceSheet';
+  rows: number;
+  cols: number;
+  outputMode: 'individual' | 'zip';
+}
+
+export interface BatchGenNodeData extends BaseNodeDataFields {
+  nodeType: 'batchGen';
+  subjects: string;
+  presetId?: string;
+  consistencyPhrase?: string;
+  seed?: number;
+}
+
 // Output Nodes
 export interface PreviewNodeData extends BaseNodeDataFields {
   nodeType: 'preview';
@@ -287,6 +302,7 @@ export type NodeDataUnion =
   | SpriteSheetNodeData
   | Model3DGenNodeData
   | KilnGenNodeData
+  | BatchGenNodeData
   // Processing
   | RemoveBgNodeData
   | ResizeNodeData
@@ -299,6 +315,7 @@ export type NodeDataUnion =
   | RotateNodeData
   | IterateNodeData
   | AnalyzeNodeData
+  | SliceSheetNodeData
   // Output
   | PreviewNodeData
   | SaveNodeData
@@ -492,6 +509,21 @@ export const nodeDefinitions: NodeDefinition[] = [
       errors: [],
     },
   },
+  {
+    type: 'batchGen',
+    label: 'Batch Gen',
+    description: 'Generate multiple consistent assets from a list',
+    category: 'generate',
+    io: { inputs: [], output: 'image', multiInput: false },
+    defaultData: {
+      nodeType: 'batchGen',
+      label: 'Batch Gen',
+      subjects: '',
+      presetId: undefined,
+      consistencyPhrase: undefined,
+      seed: undefined,
+    },
+  },
 
   // Processing Nodes
   {
@@ -643,6 +675,20 @@ export const nodeDefinitions: NodeDefinition[] = [
       extractStats: true,
       extractPalette: true,
       extractDimensions: true,
+    },
+  },
+  {
+    type: 'sliceSheet',
+    label: 'Slice Sheet',
+    description: 'Slice sprite sheets into individual sprites',
+    category: 'process',
+    io: { inputs: ['image'], output: 'image' },
+    defaultData: {
+      nodeType: 'sliceSheet',
+      label: 'Slice Sheet',
+      rows: 6,
+      cols: 5,
+      outputMode: 'individual',
     },
   },
 

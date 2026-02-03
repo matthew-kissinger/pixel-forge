@@ -1,4 +1,4 @@
-import { useCallback, type DragEvent } from 'react';
+import { useCallback, type DragEvent, useState } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -22,14 +22,19 @@ import {
 } from './components/nodes';
 import { NodePalette } from './components/panels/NodePalette';
 import { Toolbar } from './components/panels/Toolbar';
+import { ExecutionHistory } from './components/panels/ExecutionHistory';
 import { ToastContainer, toast } from './components/ui/Toast';
 import { findNonOverlappingPosition } from './lib/nodeLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { NodeContextMenu } from './components/NodeContextMenu';
+import { executeSingleNode } from './lib/executor';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 let nodeIdCounter = 0;
 const generateNodeId = () => `node_${++nodeIdCounter}`;
 
 function FlowEditor() {
+  const workflowStore = useWorkflowStore();
   const {
     nodes,
     edges,
@@ -37,9 +42,77 @@ function FlowEditor() {
     onEdgesChange,
     onConnect,
     addNode,
-  } = useWorkflowStore();
+    clearNodeOutput,
+    setNodeStatus,
+    setNodeError,
+    nodeStatus,
+  } = workflowStore;
 
-  const { screenToFlowPosition, fitView } = useReactFlow();
+  const reactFlow = useReactFlow();
+  const { screenToFlowPosition, fitView } = reactFlow;
+
+  useKeyboardShortcuts(workflowStore, reactFlow);
+
+  const [menu, setMenu] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      event.preventDefault();
+      setMenu({
+        id: node.id,
+        x: event.clientX,
+        y: event.clientY,
+      });
+    },
+    [setMenu]
+  );
+
+  const onPaneClick = useCallback(() => setMenu(null), [setMenu]);
+
+  const handleRerun = useCallback(async (nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const store = useWorkflowStore.getState();
+    const result = await executeSingleNode(node, nodes, edges, store);
+    
+    if (result.success) {
+      toast.success(`Executed ${node.data.label}`);
+    } else {
+      toast.error(`Failed to execute ${node.data.label}: ${result.error}`);
+    }
+  }, [nodes, edges]);
+
+  const handleDuplicate = useCallback((nodeId: string) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const newNode: Node<NodeData> = {
+      ...node,
+      id: generateNodeId(),
+      position: { x: node.position.x + 30, y: node.position.y + 30 },
+      data: JSON.parse(JSON.stringify(node.data)),
+      selected: false,
+    };
+    addNode(newNode);
+    toast.info(`Duplicated ${node.data.label}`);
+  }, [nodes, addNode]);
+
+  const handleDelete = useCallback((nodeId: string) => {
+    onNodesChange([{ id: nodeId, type: 'remove' }]);
+    toast.info('Deleted node');
+  }, [onNodesChange]);
+
+  const handleClearOutput = useCallback((nodeId: string) => {
+    clearNodeOutput(nodeId);
+    setNodeStatus(nodeId, 'idle');
+    setNodeError(nodeId, null);
+    toast.info('Cleared output');
+  }, [clearNodeOutput, setNodeStatus, setNodeError]);
 
   const isValidConnection = useCallback(
     (connection: Edge | Connection) => {
@@ -131,6 +204,8 @@ function FlowEditor() {
       isValidConnection={isValidConnection}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onNodeContextMenu={onNodeContextMenu}
+      onPaneClick={onPaneClick}
       nodeTypes={nodeTypes}
       fitView
       proOptions={{ hideAttribution: true }}
@@ -165,18 +240,40 @@ function FlowEditor() {
         }}
         maskColor="rgba(0, 0, 0, 0.6)"
       />
+      {menu && (
+        <NodeContextMenu
+          x={menu.x}
+          y={menu.y}
+          nodeId={menu.id}
+          onClose={() => setMenu(null)}
+          onRerun={handleRerun}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
+          onClearOutput={handleClearOutput}
+          canRerun={nodeStatus[menu.id] === 'success' || nodeStatus[menu.id] === 'error'}
+        />
+      )}
     </ReactFlow>
   );
 }
 
 export default function App() {
+  const [isHistoryVisible, setIsHistoryVisible] = useState(false);
+
   return (
     <ErrorBoundary>
       <ReactFlowProvider>
         <div className="h-screen w-screen">
           <FlowEditor />
           <NodePalette />
-          <Toolbar />
+          <Toolbar
+            onToggleHistory={() => setIsHistoryVisible(!isHistoryVisible)}
+            isHistoryVisible={isHistoryVisible}
+          />
+          <ExecutionHistory
+            isVisible={isHistoryVisible}
+            onToggle={() => setIsHistoryVisible(false)}
+          />
           <ToastContainer />
         </div>
       </ReactFlowProvider>

@@ -7,7 +7,8 @@
 
 import type { Node, Edge } from '@xyflow/react';
 import type { NodeDataUnion, NodeTypeName } from '../types/nodes';
-import type { NodeOutput } from '../stores/workflow';
+import { getNodeDefinition } from '../types/nodes';
+import type { NodeOutput, ExecutionRecord } from '../stores/workflow';
 import { useWorkflowStore } from '../stores/workflow';
 
 type WorkflowStore = ReturnType<typeof useWorkflowStore.getState>;
@@ -1236,8 +1237,9 @@ export async function executeWorkflow(
   store: WorkflowStore,
   ctx: ExecutionContext = { getCancelled: () => false }
 ): Promise<ExecutionResult> {
+  const startedAt = Date.now();
   const errors: Array<{ nodeId: string; error: string }> = [];
-  const { setNodeStatus, setNodeError } = store;
+  const { setNodeStatus, setNodeError, addExecutionRecord } = store;
 
   // Get execution waves (nodes grouped by dependency depth)
   const waves = getExecutionWaves(nodes, edges);
@@ -1315,10 +1317,89 @@ export async function executeWorkflow(
     });
   }
 
+  const completedAt = Date.now();
+  const duration = completedAt - startedAt;
+  const failedNodes = errors.length;
+  const wasCancelled = ctx.getCancelled();
+
+  // Determine status
+  let status: 'success' | 'partial' | 'failed' | 'cancelled';
+  if (wasCancelled) {
+    status = 'cancelled';
+  } else if (failedNodes === 0) {
+    status = 'success';
+  } else if (executed > failedNodes) {
+    status = 'partial';
+  } else {
+    status = 'failed';
+  }
+
+  // Build execution record with node labels
+  const record: ExecutionRecord = {
+    id: crypto.randomUUID(),
+    startedAt,
+    completedAt,
+    duration,
+    totalNodes: total,
+    executedNodes: executed,
+    failedNodes,
+    errors: errors.map(({ nodeId, error }) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      const nodeType = node?.type as NodeTypeName | undefined;
+      const nodeLabel =
+        (node?.data as { label?: string })?.label ||
+        getNodeDefinition(nodeType || ('unknown' as NodeTypeName))?.label ||
+        nodeType ||
+        'Unknown';
+      return { nodeId, nodeLabel, error };
+    }),
+    status,
+  };
+
+  // Save to history
+  addExecutionRecord(record);
+
   return {
     success: errors.length === 0,
     errors,
     executed,
     total,
   };
+}
+
+/**
+ * Execute a single node manually
+ */
+export async function executeSingleNode(
+  node: Node,
+  allNodes: Node[],
+  edges: Edge[],
+  store: WorkflowStore
+): Promise<{ success: boolean; error?: string }> {
+  const { setNodeStatus, setNodeError, getInputsForNode } = store;
+  const ctx: ExecutionContext = { getCancelled: () => false };
+
+  try {
+    // Check if node has required inputs
+    const currentOutputs = store.nodeOutputs;
+    if (!hasRequiredInputs(node, edges, currentOutputs)) {
+      const nodeType = (node.data as NodeDataUnion).nodeType;
+      if (!['textPrompt', 'imageUpload', 'number', 'styleReference', 'seedControl', 'batchGen'].includes(nodeType)) {
+        throw new Error('Missing required inputs. Connect and run upstream nodes first.');
+      }
+    }
+
+    setNodeError(node.id, null);
+    setNodeStatus(node.id, 'running');
+    
+    await executeNode(node, store, edges, ctx);
+    
+    setNodeStatus(node.id, 'success');
+    return { success: true };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    setNodeError(node.id, errorMessage);
+    setNodeStatus(node.id, 'error');
+    return { success: false, error: errorMessage };
+  }
 }

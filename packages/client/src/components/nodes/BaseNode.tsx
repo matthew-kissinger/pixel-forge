@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useWorkflowStore, type NodeStatus, type BaseNodeData } from '../../stores/workflow';
 
-interface BaseNodeProps<T extends BaseNodeData> extends NodeProps {
+interface BaseNodeProps<T extends { label: string }> extends NodeProps {
   data: T;
   children: ReactNode;
   hasInput?: boolean;
@@ -20,7 +20,7 @@ const statusColors: Record<NodeStatus, string> = {
   error: 'border-[var(--error)]',
 };
 
-export function BaseNode<T extends BaseNodeData>({
+export function BaseNode<T extends { label: string }>({
   id,
   data,
   children,

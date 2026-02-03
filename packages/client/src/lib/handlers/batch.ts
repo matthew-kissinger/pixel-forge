@@ -5,7 +5,7 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { Extract } from '../../types/nodes';
+import type { NodeDataUnion } from '../../types/nodes';
 
 export async function handleBatchGen(context: NodeHandlerContext): Promise<void> {
   const { nodeData, setNodeOutput, node, ctx } = context;
@@ -64,14 +64,14 @@ export async function handleBatchGen(context: NodeHandlerContext): Promise<void>
   const canvas = document.createElement('canvas');
   canvas.width = cellWidth * cols + spacing * (cols - 1);
   canvas.height = cellHeight * rows + spacing * (rows - 1);
-  const ctx = canvas.getContext('2d')!;
+  const canvasCtx = canvas.getContext('2d')!;
 
   images.forEach((img, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const x = col * (cellWidth + spacing) + (cellWidth - img.width) / 2;
     const y = row * (cellHeight + spacing) + (cellHeight - img.height) / 2;
-    ctx.drawImage(img, x, y);
+    canvasCtx.drawImage(img, x, y);
   });
 
   setNodeOutput(node.id, {

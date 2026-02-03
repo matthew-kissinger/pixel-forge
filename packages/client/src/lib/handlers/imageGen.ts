@@ -5,7 +5,7 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { Extract } from '../../types/nodes';
+import type { NodeDataUnion } from '../../types/nodes';
 import { generateImage, type GenerateImageOptions } from '../api';
 
 export async function handleImageGen(context: NodeHandlerContext): Promise<void> {

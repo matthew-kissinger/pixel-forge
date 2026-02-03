@@ -5,7 +5,7 @@
  */
 
 import type { NodeHandlerContext } from './index';
-import type { Extract } from '../../types/nodes';
+import type { NodeDataUnion } from '../../types/nodes';
 import { generateModel, pollModelStatus } from '../api';
 
 export async function handleModel3DGen(context: NodeHandlerContext): Promise<void> {

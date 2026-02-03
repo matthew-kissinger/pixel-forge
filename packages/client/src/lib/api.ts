@@ -1,3 +1,5 @@
+import { retryWithBackoff } from './retry';
+
 const API_BASE = '/api';
 
 export type ArtStyle = 'pixel-art' | 'painted' | 'vector' | 'anime' | 'realistic' | 'isometric';
@@ -52,20 +54,53 @@ export interface CompressImageResponse {
 }
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
+  return retryWithBackoff(
+    async () => {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get('Content-Type') ?? '';
+        let message = `API error: ${response.status}`;
+
+        try {
+          if (contentType.includes('application/json')) {
+            const errorBody = (await response.json()) as { error?: string };
+            message = errorBody.error ?? message;
+          } else {
+            const errorText = await response.text();
+            if (errorText) message = errorText;
+          }
+        } catch {
+          // Keep default message
+        }
+
+        const error = new Error(message) as Error & {
+          status?: number;
+          retryAfter?: number;
+        };
+        error.status = response.status;
+
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          const retryAfterSeconds = retryAfter ? Number.parseInt(retryAfter, 10) : NaN;
+          if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+            error.retryAfter = retryAfterSeconds;
+          }
+        }
+
+        throw error;
+      }
+
+      return response.json();
     },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `API error: ${response.status}`);
-  }
-
-  return response.json();
+    { signal: options?.signal }
+  );
 }
 
 export async function generateImage(

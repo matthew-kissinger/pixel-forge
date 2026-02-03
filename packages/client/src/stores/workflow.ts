@@ -68,6 +68,7 @@ export interface WorkflowState {
   nodeOutputs: Record<string, NodeOutput>;
   nodeStatus: Record<string, NodeStatus>;
   nodeErrors: Record<string, string>;
+  batchProgress: Record<string, { current: number; total: number; label?: string }>;
 
   // Execution state
   isExecuting: boolean;
@@ -91,6 +92,10 @@ export interface WorkflowState {
   setNodeOutput: (nodeId: string, output: NodeOutput) => void;
   setNodeStatus: (nodeId: string, status: NodeStatus) => void;
   setNodeError: (nodeId: string, error: string | null) => void;
+  setBatchProgress: (
+    nodeId: string,
+    progress: { current: number; total: number; label?: string } | null
+  ) => void;
   clearNodeOutput: (nodeId: string) => void;
   getInputsForNode: (nodeId: string) => NodeOutput[];
   reset: () => void;
@@ -165,6 +170,7 @@ export const useWorkflowStore = create<WorkflowState>()(
     nodeOutputs: {},
     nodeStatus: {},
     nodeErrors: {},
+    batchProgress: {},
     isExecuting: false,
     executionProgress: { current: 0, total: 0 },
     executionCancelled: false,
@@ -264,6 +270,16 @@ export const useWorkflowStore = create<WorkflowState>()(
     set({ nodeErrors });
   },
 
+  setBatchProgress: (nodeId, progress) => {
+    const batchProgress = { ...get().batchProgress };
+    if (progress === null) {
+      delete batchProgress[nodeId];
+    } else {
+      batchProgress[nodeId] = progress;
+    }
+    set({ batchProgress });
+  },
+
   clearNodeOutput: (nodeId) => {
     const nodeOutputs = { ...get().nodeOutputs };
     delete nodeOutputs[nodeId];
@@ -287,6 +303,7 @@ export const useWorkflowStore = create<WorkflowState>()(
       nodeOutputs: {},
       nodeStatus: {},
       nodeErrors: {},
+      batchProgress: {},
       isExecuting: false,
       executionProgress: { current: 0, total: 0 },
       executionCancelled: false,
@@ -373,6 +390,7 @@ export const useWorkflowStore = create<WorkflowState>()(
       nodeOutputs: {},
       nodeStatus: data.nodes.reduce((acc, n) => ({ ...acc, [n.id]: 'idle' }), {}),
       nodeErrors: {},
+      batchProgress: {},
     });
   },
 

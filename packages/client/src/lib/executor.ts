@@ -279,6 +279,7 @@ async function executeNode(
     nodeOutputs,
     edges,
     setNodeOutput,
+    setBatchProgress: store.setBatchProgress,
     ctx,
   };
 

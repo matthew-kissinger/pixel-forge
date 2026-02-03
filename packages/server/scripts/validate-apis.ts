@@ -14,7 +14,7 @@ async function testHealthCheck() {
   console.log('\n--- Testing Health Check ---');
   try {
     const res = await fetch(`${API_BASE}/health`);
-    const data = await res.json();
+    const data = await res.json() as any;
     console.log('Status:', res.status);
     console.log('Response:', data);
     return res.ok;
@@ -32,7 +32,7 @@ async function testImageGeneration() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: 'pixel art sword, 16-bit style, transparent background' }),
     });
-    const data = await res.json();
+    const data = await res.json() as any;
     console.log('Status:', res.status);
 
     if (data.image) {
@@ -57,7 +57,7 @@ async function testModelGeneration() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: 'low poly sword, game asset' }),
     });
-    const data = await res.json();
+    const data = await res.json() as any;
     console.log('Status:', res.status);
     console.log('Response:', data);
 
@@ -71,7 +71,7 @@ async function testModelGeneration() {
         attempts++;
 
         const statusRes = await fetch(`${API_BASE}/api/model/status/${data.requestId}`);
-        const status = await statusRes.json();
+        const status = await statusRes.json() as any;
         console.log(`Attempt ${attempts}:`, status);
 
         if (status.status === 'completed') {

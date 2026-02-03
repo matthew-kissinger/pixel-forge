@@ -57,8 +57,8 @@ Output ONLY the TypeScript code, no explanation.`;
         }
       } else if (message.type === 'result') {
         console.log('\n\n=== RESULT ===');
-        console.log('Cost:', message.costUSD);
-        console.log('Session ID:', message.sessionId);
+        // costUSD is not supported by current SDK version
+        console.log('Session ID:', message.session_id);
       } else {
         // Log other message types
         console.log(`[${message.type}]`, JSON.stringify(message).slice(0, 200));

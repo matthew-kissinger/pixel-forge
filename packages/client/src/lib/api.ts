@@ -1,57 +1,24 @@
 import { retryWithBackoff } from './retry';
+import type {
+  ArtStyle,
+  AspectRatio,
+  GenerateImageOptions,
+  GenerateImageResponse,
+  SmartGenerateResponse,
+  GenerateModelResponse,
+  ModelStatusResponse,
+  RemoveBgResponse,
+  SliceSheetResponse,
+  CompressImageResponse,
+  GenerateKilnCodeOptions,
+  GenerateKilnCodeResponse,
+  ExportToFileOptions,
+  ExportToFileResponse,
+  BatchExportToFileOptions,
+  BatchExportToFileResponse,
+} from '@pixel-forge/shared';
 
 const API_BASE = '/api';
-
-export type ArtStyle = 'pixel-art' | 'painted' | 'vector' | 'anime' | 'realistic' | 'isometric';
-export type AspectRatio = '21:9' | '16:9' | '3:2' | '4:3' | '5:4' | '1:1' | '4:5' | '3:4' | '2:3' | '9:16';
-
-export interface GenerateImageOptions {
-  prompt: string;
-  style?: ArtStyle;
-  aspectRatio?: AspectRatio;
-  removeBackground?: boolean;
-  presetId?: string;
-}
-
-export interface GenerateImageResponse {
-  image: string; // base64 data URL
-}
-
-export interface SmartGenerateResponse {
-  image: string; // base64 data URL
-  selectedAspectRatio?: AspectRatio;
-  metadata?: {
-    category?: string;
-    estimatedSize?: string;
-  };
-}
-
-export interface GenerateModelResponse {
-  requestId: string;
-}
-
-export interface ModelStatusResponse {
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  progress?: number;
-  modelUrl?: string;
-  thumbnailUrl?: string;
-  error?: string;
-}
-
-export interface RemoveBgResponse {
-  image: string; // base64 data URL
-}
-
-export interface SliceSheetResponse {
-  sprites: string[]; // base64 data URLs
-}
-
-export interface CompressImageResponse {
-  image: string; // base64 data URL
-  originalSize: number;
-  compressedSize: number;
-  format: 'png' | 'webp' | 'jpeg';
-}
 
 async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
   return retryWithBackoff(
@@ -195,27 +162,6 @@ export async function pollModelStatus(
   throw new Error('Model generation timed out');
 }
 
-export interface GenerateKilnCodeOptions {
-  prompt: string;
-  mode?: 'glb' | 'tsl' | 'both';
-  category?: 'character' | 'prop' | 'vfx' | 'environment';
-  style?: 'low-poly' | 'stylized' | 'voxel';
-  includeAnimation?: boolean;
-  existingCode?: string;
-  referenceImageUrl?: string;
-}
-
-export interface GenerateKilnCodeResponse {
-  success: boolean;
-  code?: string;
-  effectCode?: string;
-  usage?: {
-    inputTokens: number;
-    outputTokens: number;
-  };
-  error?: string;
-}
-
 export async function generateKilnCode(
   options: GenerateKilnCodeOptions
 ): Promise<GenerateKilnCodeResponse> {
@@ -223,35 +169,6 @@ export async function generateKilnCode(
     method: 'POST',
     body: JSON.stringify(options),
   });
-}
-
-export interface ExportToFileOptions {
-  image: string; // base64 data URL
-  path: string; // relative path
-  format?: 'png' | 'jpeg' | 'webp';
-  quality?: number;
-}
-
-export interface ExportToFileResponse {
-  success: boolean;
-  path: string;
-  size: number;
-}
-
-export interface BatchExportToFileOptions {
-  images: ExportToFileOptions[];
-}
-
-export interface BatchExportToFileResponse {
-  success: boolean;
-  results: Array<{
-    success: boolean;
-    path?: string;
-    size?: number;
-    error?: string;
-  }>;
-  successCount: number;
-  totalCount: number;
 }
 
 export async function exportToFile(

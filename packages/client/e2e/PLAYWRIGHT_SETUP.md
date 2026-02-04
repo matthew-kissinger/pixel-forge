@@ -4,12 +4,12 @@
 
 This project includes E2E tests written with Playwright to validate the Pixel Forge UI functionality. The tests are located in:
 
-- `e2e/smoke.spec.ts` - 9 smoke tests for basic UI functionality
-- `e2e/workflow.spec.ts` - 4 workflow execution tests
+- `e2e/smoke.e2e.ts` - 9 smoke tests for basic UI functionality
+- `e2e/workflow.e2e.ts` - 4 workflow execution tests
 
 ## Test Coverage
 
-### Smoke Tests (`smoke.spec.ts`)
+### Smoke Tests (`smoke.e2e.ts`)
 
 1. **app loads and renders React Flow canvas** - Verifies React Flow initializes
 2. **toolbar is visible with key buttons** - Checks for Execute, Save, Load buttons
@@ -21,7 +21,7 @@ This project includes E2E tests written with Playwright to validate the Pixel Fo
 8. **node palette search works** - Tests search/filter in node palette
 9. **can collapse and expand node palette** - Tests UI layout toggles
 
-### Workflow Tests (`workflow.spec.ts`)
+### Workflow Tests (`workflow.e2e.ts`)
 
 1. **can add TextPrompt -> Preview nodes, connect, and execute** - Full workflow test
 2. **can load a preset workflow and verify it renders** - Tests preset loading
@@ -59,7 +59,7 @@ The Playwright configuration is in `playwright.config.ts`:
 bun run test:e2e
 
 # Run only smoke tests
-bunx playwright test e2e/smoke.spec.ts
+bunx playwright test e2e/smoke.e2e.ts
 
 # Run with UI for debugging
 bunx playwright test --ui
@@ -104,8 +104,8 @@ error while loading shared libraries: libnspr4.so: cannot open shared object fil
 
 | Test File | Tests | Status | Notes |
 |-----------|-------|--------|-------|
-| smoke.spec.ts | 9 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
-| workflow.spec.ts | 4 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
+| smoke.e2e.ts | 9 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
+| workflow.e2e.ts | 4 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
 
 ## Recommendations
 

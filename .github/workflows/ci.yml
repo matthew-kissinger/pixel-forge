@@ -20,7 +20,11 @@ jobs:
         run: bun install
       - name: Typecheck
         run: bun run typecheck
+      - name: Lint
+        run: bun run lint
       - name: Server tests
         run: cd packages/server && bun test
       - name: Client tests
         run: cd packages/client && bunx vitest run
+      - name: Build
+        run: bun run build

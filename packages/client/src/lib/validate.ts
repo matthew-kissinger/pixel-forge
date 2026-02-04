@@ -15,6 +15,12 @@ export interface ValidationError {
   severity: 'error' | 'warning';
 }
 
+export interface WorkflowValidationResult {
+  valid: boolean;
+  errors: { nodeId: string; message: string }[];
+  warnings: { nodeId: string; message: string }[];
+}
+
 /**
  * Node types that don't require inputs (input nodes)
  */
@@ -200,18 +206,18 @@ function checkTypeCompatibility(
 
 /**
  * Validate a workflow before execution
+ * Returns a structured result with errors and warnings separated
  */
-export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[] {
-  const errors: ValidationError[] = [];
+export function validateWorkflow(nodes: Node[], edges: Edge[]): WorkflowValidationResult {
+  const validationErrors: ValidationError[] = [];
 
   // Edge case: empty workflow
   if (nodes.length === 0) {
-    errors.push({
-      nodeId: '',
-      message: 'Workflow is empty',
-      severity: 'warning',
-    });
-    return errors;
+    return {
+      valid: false,
+      errors: [],
+      warnings: [{ nodeId: '', message: 'Workflow is empty' }],
+    };
   }
 
   // 1. Check for cycles
@@ -220,7 +226,7 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[
     const cycleNodeIds = Array.from(new Set(cycleNodes));
     for (const nodeId of cycleNodeIds) {
       const node = nodes.find((n) => n.id === nodeId);
-      errors.push({
+      validationErrors.push({
         nodeId,
         message: `Node is part of a cycle: "${node?.data.label || nodeId}"`,
         severity: 'error',
@@ -237,9 +243,10 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[
     
     if (!hasInputs) {
       const missingTypesStr = missingTypes.length > 0 ? ` (${missingTypes.join(', ')})` : '';
-      errors.push({
+      const nodeLabel = node.data.label || node.id;
+      validationErrors.push({
         nodeId: node.id,
-        message: `Missing required input${missingTypesStr}`,
+        message: `Node "${nodeLabel}" is missing required input${missingTypesStr}`,
         severity: 'error',
       });
     }
@@ -253,7 +260,7 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[
 
     if (!sourceNode || !targetNode) {
       // Edge references non-existent node - this is a data integrity issue
-      errors.push({
+      validationErrors.push({
         nodeId: edge.target || edge.source || '',
         message: `Edge references non-existent node`,
         severity: 'error',
@@ -262,7 +269,7 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[
     }
 
     const typeErrors = checkTypeCompatibility(sourceNode, targetNode, edges);
-    errors.push(...typeErrors);
+    validationErrors.push(...typeErrors);
   }
 
   // 4. Check for at least one output node
@@ -272,7 +279,7 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[
   });
 
   if (!hasOutputNode) {
-    errors.push({
+    validationErrors.push({
       nodeId: '',
       message: 'Workflow has no output nodes (preview, save, export, etc.)',
       severity: 'warning',
@@ -286,7 +293,7 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[
   });
 
   if (!hasGeneratorNode) {
-    errors.push({
+    validationErrors.push({
       nodeId: '',
       message: 'Workflow has no input or generation nodes',
       severity: 'error',
@@ -312,30 +319,73 @@ export function validateWorkflow(nodes: Node[], edges: Edge[]): ValidationError[
   });
 
   for (const node of disconnectedNodes) {
-    errors.push({
+    validationErrors.push({
       nodeId: node.id,
       message: `Node "${node.data.label}" is disconnected from the workflow`,
       severity: 'warning',
     });
   }
 
-  return errors;
+  // 7. Check for orphaned output nodes (output nodes with no input)
+  for (const node of nodes) {
+    const nodeData = node.data as NodeDataUnion;
+    const nodeType = nodeData.nodeType;
+    
+    if (OUTPUT_NODE_TYPES.has(nodeType)) {
+      const incomingEdges = edges.filter((e) => e.target === node.id);
+      if (incomingEdges.length === 0) {
+        validationErrors.push({
+          nodeId: node.id,
+          message: `Output node "${node.data.label}" has no connected input`,
+          severity: 'warning',
+        });
+      }
+    }
+  }
+
+  // Separate errors and warnings
+  const errors = validationErrors
+    .filter((e) => e.severity === 'error')
+    .map((e) => ({ nodeId: e.nodeId, message: e.message }));
+  const warnings = validationErrors
+    .filter((e) => e.severity === 'warning')
+    .map((e) => ({ nodeId: e.nodeId, message: e.message }));
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings,
+  };
 }
 
 /**
  * Get validation errors for a specific node
+ * Returns the old ValidationError[] format for backwards compatibility
  */
 export function getNodeValidationErrors(
   nodeId: string,
   nodes: Node[],
   edges: Edge[]
 ): ValidationError[] {
-  return validateWorkflow(nodes, edges).filter((error) => error.nodeId === nodeId);
+  const result = validateWorkflow(nodes, edges);
+  const allErrors: ValidationError[] = [
+    ...result.errors.map((e) => ({ ...e, severity: 'error' as const })),
+    ...result.warnings.map((e) => ({ ...e, severity: 'warning' as const })),
+  ];
+  return allErrors.filter((error) => error.nodeId === nodeId);
 }
 
 /**
  * Check if workflow has any blocking errors (errors that prevent execution)
+ * Works with both old ValidationError[] and new WorkflowValidationResult
  */
-export function hasBlockingErrors(errors: ValidationError[]): boolean {
-  return errors.some((error) => error.severity === 'error');
+export function hasBlockingErrors(
+  errorsOrResult: ValidationError[] | WorkflowValidationResult
+): boolean {
+  if ('valid' in errorsOrResult) {
+    // New format: WorkflowValidationResult
+    return !errorsOrResult.valid;
+  }
+  // Old format: ValidationError[]
+  return errorsOrResult.some((error) => error.severity === 'error');
 }

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { generateModel, getModelStatus } from '../services/fal';
 import { BadRequestError, NotFoundError } from '../lib/errors';
 import { logger } from '@pixel-forge/shared/logger';
-import type { Model3DStyle, GenerateModelResponse, ModelStatusResponse } from '@pixel-forge/shared';
+import type { GenerateModelResponse, ModelStatusResponse } from '@pixel-forge/shared';
 
 const modelRouter = new Hono();
 
@@ -20,7 +20,7 @@ modelRouter.post(
   '/generate',
   zValidator('json', generateSchema),
   async (c) => {
-    const { prompt, artStyle } = c.req.valid('json');
+    const { prompt } = c.req.valid('json');
 
     try {
       const result = await generateModel(prompt);

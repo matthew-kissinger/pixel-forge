@@ -182,10 +182,10 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Test remaining hooks** - `useKeyboardShortcuts.ts` (145 lines, hotkey logic) and `useWorkflowFromUrl.ts` (64 lines, URL hash loading) lack dedicated test files.
-- **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. `packages/server/scripts/validate-apis.ts` exists but isn't automated. Need gated integration tests (run when API keys are in env).
 - **Test `/api/kiln/stream` route** - The only server route without test coverage (SSE streaming endpoint).
-- **Push unpushed work** - 2 unpushed commits on main (useImageProcessor tests, server eslint config).
+- **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. `packages/server/scripts/validate-apis.ts` exists but isn't automated. Need gated integration tests (run when API keys are in env).
+- **Add E2E tests to CI** - 10 Playwright smoke tests exist in `e2e/smoke.spec.ts` but are not run in CI pipeline yet.
+- **Refactor Toolbar.tsx** - 614 lines, handles 15+ buttons and complex state. Extract sub-components for maintainability.
 
 ### Completed Goals
 
@@ -266,6 +266,8 @@ Build a **template/preset system** where:
 - ~~Bundle size tracking~~ - Done (check-bundle-size.ts script with CI step; committed)
 - ~~Test useImageProcessor hook~~ - Done (tests in `useImageProcessor.test.ts`; commit `f7af1f2`)
 - ~~Server ESLint config~~ - Done (`packages/server/eslint.config.js` with lint script; commit `5885e69`)
+- ~~Test useKeyboardShortcuts hook~~ - Done (28 tests; commit `004ba80`)
+- ~~Test useWorkflowFromUrl hook~~ - Done (7 tests; commit `6dff7cf`)
 
 ## Current State
 
@@ -273,13 +275,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk ~323KB/~97KB gzip, Three.js ~1.4MB/~380KB gzip (separate), React Flow ~188KB/~61KB gzip (separate), JSZip ~95KB/~29KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks. Total gzipped: ~613KB. Bundle size CI gate committed.
 
-Test coverage: client 285 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 14 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed with CI integration.
+Test coverage: client 320 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 16 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed but not in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed with CI integration.
 
 Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. Remaining untested hooks: useKeyboardShortcuts, useWorkflowFromUrl. `/api/kiln/stream` route untested.
+Key gaps: No integration tests against real APIs. `/api/kiln/stream` route untested. E2E tests not in CI pipeline.
 
 ## Quality Bar
 

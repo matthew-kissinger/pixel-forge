@@ -225,7 +225,7 @@ function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
     } else {
       toast.error(`Failed to execute ${node.data.label}: ${result.error}`);
     }
-  }, [nodes, edges, toast]);
+  }, [nodes, edges]);
 
   const handleDuplicate = useCallback((nodeId: string) => {
     const node = nodes.find((n) => n.id === nodeId);
@@ -240,19 +240,19 @@ function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
     };
     addNode(newNode);
     toast.info(`Duplicated ${node.data.label}`);
-  }, [nodes, addNode, toast]);
+  }, [nodes, addNode]);
 
   const handleDelete = useCallback((nodeId: string) => {
     onNodesChange([{ id: nodeId, type: 'remove' }]);
     toast.info('Deleted node');
-  }, [onNodesChange, toast]);
+  }, [onNodesChange]);
 
   const handleClearOutput = useCallback((nodeId: string) => {
     clearNodeOutput(nodeId);
     setNodeStatus(nodeId, 'idle');
     setNodeError(nodeId, null);
     toast.info('Cleared output');
-  }, [clearNodeOutput, setNodeStatus, setNodeError, toast]);
+  }, [clearNodeOutput, setNodeStatus, setNodeError]);
 
   const isValidConnection = useCallback(
     (connection: Edge | Connection) => {
@@ -289,7 +289,7 @@ function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
         toast.error('Invalid connection: incompatible types');
       }
     },
-    [isValidConnection, onConnect, toast]
+    [isValidConnection, onConnect]
   );
 
   const onDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {

@@ -7,6 +7,18 @@ import { generateImage, extractSpritesFromSheet } from '../services/gemini';
 import { removeBackground } from '../services/fal';
 import { BadRequestError, TooManyRequestsError } from '../lib/errors';
 import { logger } from '@pixel-forge/shared/logger';
+import type {
+  ArtStyle,
+  AspectRatio,
+  GenerateImageOptions,
+  GenerateImageResponse,
+  SmartGenerateResponse,
+  BatchGenerateRequest,
+  BatchGenerateResponse,
+  RemoveBgResponse,
+  CompressImageResponse,
+  SliceSheetResponse,
+} from '@pixel-forge/shared';
 
 const imageRouter = new Hono();
 
@@ -79,7 +91,7 @@ imageRouter.post(
   '/generate',
   zValidator('json', generateSchema),
   async (c) => {
-    const { prompt, removeBackground: shouldRemoveBg, presetId } = c.req.valid('json');
+    const { prompt, removeBackground: shouldRemoveBg, presetId } = c.req.valid('json') as GenerateImageOptions;
 
     try {
       const preset = presetId ? getPresetById(presetId) : undefined;
@@ -98,14 +110,14 @@ imageRouter.post(
       if (shouldRemoveBgFinal && result.image) {
         try {
           const bgResult = await removeBackground(result.image!);
-          return c.json({ image: bgResult.image });
+          return c.json<GenerateImageResponse>({ image: bgResult.image });
         } catch (bgError) {
           logger.warn('Background removal failed, returning original:', bgError);
-          return c.json(result);
+          return c.json<GenerateImageResponse>({ image: result.image });
         }
       }
 
-      return c.json(result);
+      return c.json<GenerateImageResponse>({ image: result.image });
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
@@ -125,7 +137,7 @@ imageRouter.post(
 
     try {
       const result = await removeBackground(image);
-      return c.json(result);
+      return c.json<RemoveBgResponse>(result);
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
@@ -175,11 +187,11 @@ imageRouter.post(
       const compressedSize = outputBuffer.length;
       const base64Output = outputBuffer.toString('base64');
 
-      return c.json({
+      return c.json<CompressImageResponse>({
         image: `data:image/${format};base64,${base64Output}`,
         originalSize,
         compressedSize,
-        format,
+        format: format as 'png' | 'webp' | 'jpeg',
       });
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
@@ -211,7 +223,7 @@ imageRouter.post(
         return `data:image/png;base64,${base64}`;
       });
 
-      return c.json({ sprites: spriteDataUrls });
+      return c.json<SliceSheetResponse>({ sprites: spriteDataUrls });
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);
       if (rateLimitResponse) return rateLimitResponse;
@@ -249,7 +261,7 @@ imageRouter.post(
         logger.warn('Background removal failed, using original:', bgError);
       }
 
-      return c.json({
+      return c.json<SmartGenerateResponse>({
         image: finalImage,
       });
     } catch (error) {
@@ -267,7 +279,7 @@ imageRouter.post(
   '/batch-generate',
   zValidator('json', batchGenerateSchema),
   async (c) => {
-    const { subjects, presetId, consistencyPhrase, seed } = c.req.valid('json');
+    const { subjects, presetId, consistencyPhrase, seed } = c.req.valid('json') as BatchGenerateRequest;
 
     try {
       const preset = presetId ? getPresetById(presetId) : undefined;
@@ -280,8 +292,8 @@ imageRouter.post(
       const errors: string[] = [];
 
       // Generate each subject with consistent settings
-      for (let i = 0; i < subjects.length; i++) {
-        const subject = subjects[i];
+      for (const [i, subject] of subjects.entries()) {
+        if (!subject) continue;
 
         try {
           // Build prompt with consistency
@@ -291,51 +303,23 @@ imageRouter.post(
             prompt = `${consistencyPhrase}. ${prompt}`;
           }
 
-                                  const finalPrompt = (preset ? buildPresetPrompt(preset, prompt as any) : prompt) as any;
+          const finalPrompt = preset ? buildPresetPrompt(preset, prompt) : prompt;
 
-                      
+          const result = await generateImage(finalPrompt);
 
-                                  // Add seed variation if provided (seed + index for variation)
-
-                                  // Note: Gemini doesn't directly support seeds, but we can add it to metadata
-
-                                  // For now, we'll generate without seed support and rely on consistency phrase
-
-                      
-
-                                  const result = await generateImage(finalPrompt);
-
-                      
-
-                                  // Apply background removal if needed
-
-                                  const shouldRemoveBg = preset?.autoRemoveBg ?? false;
-
-                                  if (shouldRemoveBg && (result as any).image) {
-
-                                    try {
-
-                                      const bgResult = await removeBackground((result as any).image);
-
-                                      images.push(bgResult.image);
-
-                                    } catch (bgError) {
-
-                                      logger.warn(`Background removal failed for subject ${i + 1}:`, bgError);
-
-                                      images.push((result as any).image);
-
-                                    }
-
-                                  } else {
-
-                                    images.push((result as any).image);
-
-                                  }
-
-                      
-
-          
+          // Apply background removal if needed
+          const shouldRemoveBg = preset?.autoRemoveBg ?? false;
+          if (shouldRemoveBg && result.image) {
+            try {
+              const bgResult = await removeBackground(result.image);
+              images.push(bgResult.image);
+            } catch (bgError) {
+              logger.warn(`Background removal failed for subject ${i + 1}:`, bgError);
+              images.push(result.image);
+            }
+          } else {
+            images.push(result.image);
+          }
         } catch (error) {
           if (error instanceof TooManyRequestsError) {
             throw error;
@@ -351,7 +335,7 @@ imageRouter.post(
         throw new BadRequestError('All batch generations failed');
       }
 
-      return c.json({
+      return c.json<BatchGenerateResponse>({
         images,
         errors: errors.length > 0 ? errors : undefined,
         successCount: images.length,

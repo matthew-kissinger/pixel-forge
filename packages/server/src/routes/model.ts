@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { generateModel, getModelStatus } from '../services/fal';
 import { BadRequestError, NotFoundError } from '../lib/errors';
 import { logger } from '@pixel-forge/shared/logger';
+import type { Model3DStyle, GenerateModelResponse, ModelStatusResponse } from '@pixel-forge/shared';
 
 const modelRouter = new Hono();
 
@@ -23,7 +24,7 @@ modelRouter.post(
 
     try {
       const result = await generateModel(prompt);
-      return c.json(result);
+      return c.json<GenerateModelResponse>(result);
     } catch (error) {
       logger.error('3D model generation error:', error);
       throw new BadRequestError(
@@ -48,7 +49,7 @@ modelRouter.get('/status/:id', async (c) => {
       throw new NotFoundError(`Request ${requestId} not found`);
     }
 
-    return c.json(status);
+    return c.json<ModelStatusResponse>(status as ModelStatusResponse);
   } catch (error) {
     if (error instanceof NotFoundError || error instanceof BadRequestError) {
       throw error;

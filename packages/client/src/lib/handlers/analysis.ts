@@ -153,18 +153,28 @@ export async function handleQualityCheck(context: NodeHandlerContext): Promise<v
   const mimeMatch = imageInput.data.match(/data:image\/([^;]+)/);
   const format = mimeMatch ? mimeMatch[1].toLowerCase() : 'unknown';
 
-  // Check transparency by loading image and checking alpha channel
+  // Check transparency by sampling a downsampled version of the image.
   const img = await loadImage(imageInput.data);
+  const MAX_SAMPLE = 256;
+  const sampleW = Math.min(width, MAX_SAMPLE);
+  const sampleH = Math.min(height, MAX_SAMPLE);
   const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = sampleW;
+  canvas.height = sampleH;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) {
     throw new Error('Failed to get canvas context');
   }
-  ctx.drawImage(img, 0, 0);
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const hasTransparency = Array.from(imageData.data).some((_, i) => i % 4 === 3 && imageData.data[i] < 255);
+  ctx.drawImage(img, 0, 0, sampleW, sampleH);
+  const imageData = ctx.getImageData(0, 0, sampleW, sampleH);
+  const pixelData = imageData.data;
+  let hasTransparency = false;
+  for (let i = 3; i < pixelData.length; i += 4) {
+    if (pixelData[i] < 255) {
+      hasTransparency = true;
+      break;
+    }
+  }
 
   // Perform validation checks
   const checks = {

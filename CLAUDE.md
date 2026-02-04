@@ -182,11 +182,12 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Commit and push lint fixes** - 17 uncommitted files with valid lint fixes (build, typecheck, src lint all pass). 5 unpushed commits on main. Need to commit lint fixes, delete `capture-lint.js`, and push.
-- **Fix test lint errors for CI** - `bun run lint` runs `eslint .` which includes `tests/` - 111 `no-explicit-any` errors in test mocks fail CI. Fix: add eslint config override to relax `no-explicit-any` in test files, or scope lint to `src/` only.
-- **Asset quality validation node** - No automated verification that generated assets meet quality bar (correct dimensions, file size, transparency, format). Previous task reported done but delivered nothing.
-- **Texture atlas export formats** - ExportSheetNode only does basic PNG/WebP download. Game engines need JSON atlas metadata (Phaser, Unity, Godot formats) for sprite sheets.
+- **Commit and push all changes** - 22 uncommitted files (lint fixes + new features) and 9 unpushed commits on main. Delete `capture-lint.js`, commit, and push.
+- **Fix remaining test lint errors for CI** - ESLint test override disables `no-explicit-any` but 49 `no-unused-vars` errors remain in test mocks (underscore-prefixed params like `_x`, `_y`). Add `no-unused-vars` override for test files to get CI green.
+- **Texture atlas export formats** - ExportSheetNode has basic JSON metadata (fileName, dimensions, format) but no game-engine-compatible atlas data. Needs frame offsets, sprite coordinates, and format support for Phaser, Unity, and Godot.
 - **Executor timeout test skipped** - `executor.test.ts` timeout test is `it.skip` because Bun's vitest shim lacks `vi.runAllTimersAsync()`.
+- **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. Need at least smoke-level integration tests (gated behind env vars).
+- **Node error boundary tests** - `NodeErrorBoundary` wraps all lazy-loaded nodes but has no test coverage.
 
 ### Completed Goals
 
@@ -197,8 +198,8 @@ Build a **template/preset system** where:
 - ~~Image compression node~~ - Done (`CompressNode` + `/api/image/compress` endpoint + executor handler)
 - ~~Workflow execution engine~~ - Done (`executor.ts` with topological sort, parallel wave execution, cancellation)
 - ~~More presets~~ - Done (vegetation-sprite, effect-strip, soldier-sprite added)
-- ~~Executor node coverage~~ - Done (all 28 node types have handlers: processing nodes use canvas ops, output nodes skip, kilnGen throws intentional error)
-- ~~Missing node components~~ - Done (all 28 node types have UI components: styleReference, seedControl, spriteSheet, exportGLB, exportSheet added)
+- ~~Executor node coverage~~ - Done (all node types have handlers: processing nodes use canvas ops, output nodes skip, kilnGen throws intentional error)
+- ~~Missing node components~~ - Done (all node types have UI components: styleReference, seedControl, spriteSheet, exportGLB, exportSheet added)
 - ~~Workflow UX polish~~ - Done (per-node error display, execution history panel with timeline/status/errors, search/filter in NodePalette)
 - ~~Undo/redo~~ - Done (snapshot-based in `workflow.ts`, tracks structural changes: add/remove nodes/edges, connect, reset, import)
 - ~~Keyboard shortcuts~~ - Done (`useKeyboardShortcuts.ts`: Ctrl+S save, Ctrl+O load, Ctrl+A select all, Ctrl+Enter execute, Esc cancel/deselect)
@@ -223,7 +224,7 @@ Build a **template/preset system** where:
 - ~~Typecheck scripts~~ - Done (`bun run typecheck` at root, client, and server levels)
 - ~~kilnGen executor~~ - Done (client API integration in `handlers/model3d.ts`, calls `/api/kiln/generate`, commit `01fcf72`)
 - ~~E2E smoke tests~~ - Done (Playwright config + 9 smoke tests in `e2e/smoke.spec.ts`: canvas render, toolbar, node palette, drag-add, keyboard shortcuts, save, search, collapse/expand)
-- ~~Lazy-load all node components~~ - Done (all 28 nodes lazy-loaded via `createLazyNode` helper with Suspense wrappers and loading spinners; main chunk reduced from 502KB to 317KB)
+- ~~Lazy-load all node components~~ - Done (all 30 nodes lazy-loaded via `createLazyNode` helper with Suspense wrappers and loading spinners; main chunk reduced from 502KB to 317KB)
 - ~~Dynamic handler imports~~ - Done (executor handlers use dynamic `import()` instead of static imports, handler registry returns `() => Promise<NodeHandler>`)
 - ~~Server service tests~~ - Done (58 pass, 0 fail across 4 bun:test files: api.test.ts, claude.test.ts, gemini.test.ts, fal.test.ts)
 - ~~Executor timeout test~~ - Done (fixed fake timer hang, commit `3026750`)
@@ -243,18 +244,21 @@ Build a **template/preset system** where:
 - ~~Fix 150 ESLint errors~~ - Done (src/ has 0 errors, 14 warnings; tests/ has 111 `no-explicit-any` errors in mock code; need eslint test overrides for CI)
 - ~~Server using shared types~~ - Done (all server routes import types from `@pixel-forge/shared`; `claude.ts` service still has local duplicates of KilnGenerateRequest/Response but route layer is clean)
 - ~~Build breakage~~ - Fixed (index.tsx `ComponentType<any>` restored with eslint-disable; build, typecheck, src lint all pass)
+- ~~Asset quality validation node~~ - Done (`QualityCheckNode.tsx` with dimension, file size, format, transparency, power-of-2 validation; handler in `analysis.ts:125-206`; type guard in `guards.ts`)
+- ~~Node error boundaries~~ - Done (`NodeErrorBoundary` wraps all lazy-loaded nodes for error isolation; commit `e54b361`)
+- ~~Deduplicate Kiln service types~~ - Done (server routes use `@pixel-forge/shared` types; commit `707d13a`)
 
 ## Current State
 
-React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). All node components lazy-loaded via `createLazyNode` helper with Suspense wrappers. Executor handlers use dynamic imports (`() => Promise<NodeHandler>`). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download (JSZip lazy-imported), batch generates with consistency phrases and per-item progress tracking. 3D generation via Meshy and Kiln (Claude Agent SDK) fully working - kilnGen executor calls `/api/kiln/generate` with mode/category/style support. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. Image compression/optimization node fully implemented. Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic. Executor refactored into main module + 8 handler modules in `lib/handlers/`. Server services have robust error handling: custom error types (`ServiceUnavailableError`, `BadRequestError`), per-operation timeouts (60s Gemini, 120s/30s FAL, 180s Claude), input validation, rate limit detection, and AbortController support. Server-side file export API with path validation, format conversion (PNG/JPEG/WebP via sharp), and batch operations. Full UX: per-node error display, execution history panel, NodePalette with search/filter, undo/redo (Ctrl+Z/Shift+Z), copy/paste (Ctrl+C/V), delete key, node context menu, keyboard shortcuts, auto-save, minimap, fit view, auto layout. CI pipeline via GitHub Actions (typecheck + tests on push/PR).
+React Flow editor with 30 node types fully implemented (type definitions, UI components, and executor handlers), including QualityCheckNode for asset validation. All node components lazy-loaded via `createLazyNode` helper with Suspense wrappers and NodeErrorBoundary for error isolation. Executor handlers use dynamic imports (`() => Promise<NodeHandler>`). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download (JSZip lazy-imported), batch generates with consistency phrases and per-item progress tracking. 3D generation via Meshy and Kiln (Claude Agent SDK) fully working - kilnGen executor calls `/api/kiln/generate` with mode/category/style support. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. Image compression/optimization node fully implemented. Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic. Executor refactored into main module + 8 handler modules in `lib/handlers/`. Server services have robust error handling: custom error types (`ServiceUnavailableError`, `BadRequestError`), per-operation timeouts (60s Gemini, 120s/30s FAL, 180s Claude), input validation, rate limit detection, and AbortController support. Server-side file export API with path validation, format conversion (PNG/JPEG/WebP via sharp), and batch operations. Full UX: per-node error display, execution history panel, NodePalette with search/filter, undo/redo (Ctrl+Z/Shift+Z), copy/paste (Ctrl+C/V), delete key, node context menu, keyboard shortcuts, auto-save, minimap, fit view, auto layout. CI pipeline via GitHub Actions (typecheck + lint + tests + build on push/PR).
 
-Bundle: main chunk 312KB/~95KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 184KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 28 nodes lazy-loaded into individual chunks. SliceSheetNode now 8KB (JSZip split to separate chunk).
+Bundle: main chunk 320KB/~96KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks.
 
-Test coverage: 219 pass, 1 skip across 9 test files (client 140 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build passes. E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
+Test coverage: 225 pass, 1 skip across 9 test files (client ~146 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build passes. E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
 
-Lint status: src/ clean (0 errors, 14 warnings). tests/ has 111 `no-explicit-any` errors in mock code - eslint config needs test file overrides. CI lint step (`eslint .`) fails due to test errors.
+Lint status: src/ clean (0 errors, 14 warnings). tests/ has `no-explicit-any` override but still 49 `no-unused-vars` errors in mock code (underscore-prefixed params). CI lint step fails due to remaining test errors.
 
-Key gaps: 17 uncommitted lint fix files + 5 unpushed commits, CI lint fails on test files, no asset quality validation node, no texture atlas export formats, no integration tests against real APIs.
+Key gaps: 22 uncommitted files + 9 unpushed commits, CI lint needs `no-unused-vars` test override, texture atlas export lacks game-engine formats, no integration tests against real APIs.
 
 ## Quality Bar
 
@@ -279,7 +283,7 @@ Assets should be:
 **Structure:**
 ```
 packages/
-├── client/    # React + React Flow editor (28 node components, 6 panels, Zustand store w/ undo/redo, 9 templates, executor)
+├── client/    # React + React Flow editor (30 node components, 6 panels, Zustand store w/ undo/redo, 9 templates, executor)
 ├── server/    # Hono API wrapping AI services (Gemini, FAL, Claude)
 └── shared/    # Shared types and presets (7 presets, prompt builders)
 ```

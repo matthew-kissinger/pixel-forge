@@ -19,15 +19,19 @@ mock.module('@pixel-forge/shared/logger', () => ({
   },
 }));
 
-// Import the module under test
-const claude = await import('../../src/services/claude');
+let moduleCounter = 0;
+let claude: typeof import('../../src/services/claude');
+const importClaude = async () => {
+  moduleCounter += 1;
+  return await import(`../../src/services/claude?test=${moduleCounter}`);
+};
 
 describe('Claude Service', () => {
   let fileSpy: any;
   let writeSpy: any;
   let mockFiles: Record<string, string> = {};
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockFiles = {};
     
     // Reset query implementation
@@ -48,6 +52,8 @@ describe('Claude Service', () => {
       }
       return 100;
     });
+
+    claude = await importClaude();
   });
 
   afterEach(() => {

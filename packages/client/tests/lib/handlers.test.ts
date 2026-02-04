@@ -20,15 +20,18 @@ class MockImage {
 }
 
 // Set Image on globalThis (works in both browser and Node-like environments)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
 (globalThis as any).Image = MockImage;
 
 // Mock Canvas and Context
 class MockCanvasRenderingContext2D {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   canvas: any;
   fillStyle: string = '';
   strokeStyle: string = '';
   lineWidth: number = 1;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   constructor(canvas: any) {
     this.canvas = canvas;
   }
@@ -36,14 +39,26 @@ class MockCanvasRenderingContext2D {
   fillRect(_x: number, _y: number, _w: number, _h: number) {}
   clearRect(_x: number, _y: number, _w: number, _h: number) {}
   strokeRect(_x: number, _y: number, _w: number, _h: number) {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   drawImage(..._args: any[]) {}
   getImageData(_x: number, _y: number, w: number, h: number) {
+    // Return image data with fully opaque pixels (alpha = 255) by default
+    // Tests can override this behavior if needed
+    const data = new Uint8ClampedArray(w * h * 4);
+    // Fill with fully opaque pixels (R=255, G=255, B=255, A=255)
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 255;     // R
+      data[i + 1] = 255; // G
+      data[i + 2] = 255; // B
+      data[i + 3] = 255; // A (fully opaque)
+    }
     return {
-      data: new Uint8ClampedArray(w * h * 4),
+      data,
       width: w,
       height: h,
     };
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   putImageData(_imageData: any, _x: number, _y: number) {}
   scale(_x: number, _y: number) {}
   rotate(_angle: number) {}
@@ -68,8 +83,10 @@ class MockHTMLCanvasElement {
     this.ctx = new MockCanvasRenderingContext2D(this);
   }
 
-  getContext(contextType: string) {
+  getContext(contextType: string, options?: { willReadFrequently?: boolean }) {
     if (contextType === '2d') {
+      // Update canvas dimensions in context when accessed
+      this.ctx.canvas = this;
       return this.ctx;
     }
     return null;
@@ -84,9 +101,11 @@ class MockHTMLCanvasElement {
 // happy-dom should provide document, but we'll override createElement anyway
 const mockCreateElement = function (tagName: string) {
   if (tagName === 'canvas') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
     return new MockHTMLCanvasElement() as any;
   }
   // Fallback for other elements - create a minimal DOM element
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   return {
     tagName: tagName.toUpperCase(),
     style: {},
@@ -132,6 +151,7 @@ vi.mock('../../src/lib/api', () => ({
 vi.mock('../../src/lib/image-utils', () => ({
   extractDominantColors: vi.fn(),
   getImageDimensions: vi.fn(),
+  loadImage: vi.fn(),
 }));
 
 import {
@@ -147,6 +167,7 @@ import {
 import {
   extractDominantColors,
   getImageDimensions,
+  loadImage,
 } from '../../src/lib/image-utils';
 
 // Helper to create a test image data URL
@@ -1374,6 +1395,196 @@ describe('Analysis Handlers', () => {
       await expect(analysisHandlers.handleCompress(context)).rejects.toThrow(
         'Missing image input'
       );
+    });
+  });
+
+  describe('handleQualityCheck', () => {
+    beforeEach(() => {
+      // Mock loadImage to return a mock image
+      const mockImage = {
+        naturalWidth: 256,
+        naturalHeight: 256,
+        width: 256,
+        height: 256,
+      };
+      (loadImage as ReturnType<typeof vi.fn>).mockResolvedValue(mockImage);
+    });
+
+    it('should pass validation and pass image through on success', async () => {
+      const imageData = createTestImageDataUrl(256, 256);
+      (getImageDimensions as ReturnType<typeof vi.fn>).mockResolvedValue({ width: 256, height: 256 });
+
+      const context = createMockContext({
+        node: {
+          id: 'quality-1',
+          type: 'qualityCheck',
+          position: { x: 0, y: 0 },
+          data: {
+            nodeType: 'qualityCheck',
+            maxFileSize: 51200,
+            allowedFormats: ['png', 'webp', 'jpeg'],
+            requirePowerOf2: true,
+            requireTransparency: false,
+            minWidth: 0,
+            maxWidth: 4096,
+            minHeight: 0,
+            maxHeight: 4096,
+            label: 'Test',
+          },
+        },
+        inputs: [{ type: 'image', data: imageData, timestamp: Date.now() }],
+      });
+
+      await analysisHandlers.handleQualityCheck(context);
+
+      expect(getImageDimensions).toHaveBeenCalledWith(imageData);
+      expect(context.setNodeOutput).toHaveBeenCalledWith('quality-1', {
+        type: 'image',
+        data: imageData,
+        timestamp: expect.any(Number),
+      });
+    });
+
+    it('should throw error if image input is missing', async () => {
+      const context = createMockContext({
+        node: {
+          id: 'quality-2',
+          type: 'qualityCheck',
+          position: { x: 0, y: 0 },
+          data: { nodeType: 'qualityCheck', label: 'Test' },
+        },
+        inputs: [],
+      });
+
+      await expect(analysisHandlers.handleQualityCheck(context)).rejects.toThrow(
+        'Missing image input'
+      );
+    });
+
+    it('should fail validation for non-power-of-2 dimensions when required', async () => {
+      const imageData = createTestImageDataUrl(100, 100);
+      (getImageDimensions as ReturnType<typeof vi.fn>).mockResolvedValue({ width: 100, height: 100 });
+
+      const context = createMockContext({
+        node: {
+          id: 'quality-3',
+          type: 'qualityCheck',
+          position: { x: 0, y: 0 },
+          data: {
+            nodeType: 'qualityCheck',
+            maxFileSize: 51200,
+            allowedFormats: ['png', 'webp', 'jpeg'],
+            requirePowerOf2: true,
+            requireTransparency: false,
+            minWidth: 0,
+            maxWidth: 4096,
+            minHeight: 0,
+            maxHeight: 4096,
+            label: 'Test',
+          },
+        },
+        inputs: [{ type: 'image', data: imageData, timestamp: Date.now() }],
+      });
+
+      await expect(analysisHandlers.handleQualityCheck(context)).rejects.toThrow(
+        'Quality check failed'
+      );
+      expect(context.setNodeOutput).not.toHaveBeenCalled();
+    });
+
+    it('should fail validation for file size exceeding maximum', async () => {
+      const imageData = createTestImageDataUrl(256, 256);
+      (getImageDimensions as ReturnType<typeof vi.fn>).mockResolvedValue({ width: 256, height: 256 });
+
+      // Create a large data URL to simulate large file size
+      const largeDataUrl = `data:image/png;base64,${'A'.repeat(100000)}`;
+      const context = createMockContext({
+        node: {
+          id: 'quality-4',
+          type: 'qualityCheck',
+          position: { x: 0, y: 0 },
+          data: {
+            nodeType: 'qualityCheck',
+            maxFileSize: 1000, // Very small limit
+            allowedFormats: ['png', 'webp', 'jpeg'],
+            requirePowerOf2: false,
+            requireTransparency: false,
+            minWidth: 0,
+            maxWidth: 4096,
+            minHeight: 0,
+            maxHeight: 4096,
+            label: 'Test',
+          },
+        },
+        inputs: [{ type: 'image', data: largeDataUrl, timestamp: Date.now() }],
+      });
+
+      await expect(analysisHandlers.handleQualityCheck(context)).rejects.toThrow(
+        'File size'
+      );
+      expect(context.setNodeOutput).not.toHaveBeenCalled();
+    });
+
+    it('should fail validation for disallowed format', async () => {
+      const imageData = 'data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+      (getImageDimensions as ReturnType<typeof vi.fn>).mockResolvedValue({ width: 256, height: 256 });
+
+      const context = createMockContext({
+        node: {
+          id: 'quality-5',
+          type: 'qualityCheck',
+          position: { x: 0, y: 0 },
+          data: {
+            nodeType: 'qualityCheck',
+            maxFileSize: 51200,
+            allowedFormats: ['png', 'webp', 'jpeg'], // GIF not allowed
+            requirePowerOf2: false,
+            requireTransparency: false,
+            minWidth: 0,
+            maxWidth: 4096,
+            minHeight: 0,
+            maxHeight: 4096,
+            label: 'Test',
+          },
+        },
+        inputs: [{ type: 'image', data: imageData, timestamp: Date.now() }],
+      });
+
+      await expect(analysisHandlers.handleQualityCheck(context)).rejects.toThrow(
+        'Format'
+      );
+      expect(context.setNodeOutput).not.toHaveBeenCalled();
+    });
+
+    it('should fail validation for dimensions outside allowed range', async () => {
+      const imageData = createTestImageDataUrl(5000, 5000);
+      (getImageDimensions as ReturnType<typeof vi.fn>).mockResolvedValue({ width: 5000, height: 5000 });
+
+      const context = createMockContext({
+        node: {
+          id: 'quality-6',
+          type: 'qualityCheck',
+          position: { x: 0, y: 0 },
+          data: {
+            nodeType: 'qualityCheck',
+            maxFileSize: 51200,
+            allowedFormats: ['png', 'webp', 'jpeg'],
+            requirePowerOf2: false,
+            requireTransparency: false,
+            minWidth: 0,
+            maxWidth: 4096, // 5000 exceeds this
+            minHeight: 0,
+            maxHeight: 4096,
+            label: 'Test',
+          },
+        },
+        inputs: [{ type: 'image', data: imageData, timestamp: Date.now() }],
+      });
+
+      await expect(analysisHandlers.handleQualityCheck(context)).rejects.toThrow(
+        'Dimensions'
+      );
+      expect(context.setNodeOutput).not.toHaveBeenCalled();
     });
   });
 

@@ -255,6 +255,18 @@ export interface AnalyzeNodeData extends BaseNodeDataFields {
   extractDimensions: boolean;
 }
 
+export interface QualityCheckNodeData extends BaseNodeDataFields {
+  nodeType: 'qualityCheck';
+  maxFileSize: number; // bytes, default 51200 (50KB)
+  allowedFormats: string[]; // default ['png', 'webp', 'jpeg']
+  requirePowerOf2: boolean; // default true
+  requireTransparency: boolean; // default false
+  minWidth: number; // default 0
+  maxWidth: number; // default 4096
+  minHeight: number; // default 0
+  maxHeight: number; // default 4096
+}
+
 export interface SliceSheetNodeData extends BaseNodeDataFields {
   nodeType: 'sliceSheet';
   rows: number;
@@ -328,6 +340,7 @@ export type NodeDataUnion =
   | RotateNodeData
   | IterateNodeData
   | AnalyzeNodeData
+  | QualityCheckNodeData
   | SliceSheetNodeData
   // Output
   | PreviewNodeData
@@ -704,6 +717,25 @@ export const nodeDefinitions: NodeDefinition[] = [
       extractStats: true,
       extractPalette: true,
       extractDimensions: true,
+    },
+  },
+  {
+    type: 'qualityCheck',
+    label: 'Quality Check',
+    description: 'Validate assets meet game-ready standards',
+    category: 'process',
+    io: { inputs: ['image'], output: 'image' },
+    defaultData: {
+      nodeType: 'qualityCheck',
+      label: 'Quality Check',
+      maxFileSize: 51200, // 50KB
+      allowedFormats: ['png', 'webp', 'jpeg'],
+      requirePowerOf2: true,
+      requireTransparency: false,
+      minWidth: 0,
+      maxWidth: 4096,
+      minHeight: 0,
+      maxHeight: 4096,
     },
   },
   {

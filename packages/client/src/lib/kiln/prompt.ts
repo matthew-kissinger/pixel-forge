@@ -256,6 +256,7 @@ export function createUserPrompt(
 export function createEditPrompt(
   currentCode: string,
   editRequest: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Parameter kept for API compatibility
   _mode: RenderMode = 'glb'
 ): string {
   return `Current code:\n${currentCode}\n\nEdit: ${editRequest}\n\nOutput complete modified code only.`;

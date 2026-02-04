@@ -288,7 +288,7 @@ export function createWorkflowFromPreset(
   else if (preset.id === 'game-icon') style = 'vector';
 
   // Determine node sequence
-  const nodeSequence: Array<{ type: string; data: any }> = [
+  const nodeSequence: Array<{ type: string; data: NodeData }> = [
     {
       type: 'textPrompt',
       data: {

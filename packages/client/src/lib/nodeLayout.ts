@@ -82,7 +82,7 @@ export function findNonOverlappingPosition(
   nodes: Node[]
 ): Position {
   // Snap to grid first
-  let pos = snapToGrid(suggestedPos);
+  const pos = snapToGrid(suggestedPos);
 
   // If no overlap, return immediately
   if (!wouldOverlap(pos, nodes)) {

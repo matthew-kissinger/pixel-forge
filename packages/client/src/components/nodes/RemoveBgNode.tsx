@@ -6,9 +6,7 @@ import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
 import { logger } from '@pixel-forge/shared/logger';
 import { removeBackground } from '../../lib/api';
 
-export interface RemoveBgData extends BaseNodeData {
-  // No additional options for now
-}
+export type RemoveBgData = BaseNodeData;
 
 export function RemoveBgNode(props: NodeProps) {
   const { id, data } = props;

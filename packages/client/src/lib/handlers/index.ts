@@ -71,6 +71,7 @@ export const handlers: NodeHandlerMap = {
   iterate: () => import('./analysis').then(m => m.handleIterate),
   sliceSheet: () => import('./analysis').then(m => m.handleSliceSheet),
   compress: () => import('./analysis').then(m => m.handleCompress),
+  qualityCheck: () => import('./analysis').then(m => m.handleQualityCheck),
 
   // Output nodes
   preview: () => import('./output').then(m => m.handlePreview),

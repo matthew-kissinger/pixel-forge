@@ -104,7 +104,7 @@ export function Toolbar({
     URL.revokeObjectURL(url);
 
     toast.success('Workflow saved');
-  }, [exportWorkflow]);
+  }, [exportWorkflow, toast]);
 
   const handleLoad = useCallback(() => {
     fileInputRef.current?.click();
@@ -144,7 +144,7 @@ export function Toolbar({
       logger.error('Failed to share workflow:', error);
       toast.error('Failed to create workflow URL');
     }
-  }, [exportWorkflow]);
+  }, [exportWorkflow, toast, logger]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,7 +169,7 @@ export function Toolbar({
         fileInputRef.current.value = '';
       }
     },
-    [importWorkflow]
+    [importWorkflow, toast, logger]
   );
 
   const handleClear = useCallback(() => {
@@ -182,7 +182,7 @@ export function Toolbar({
       reset();
       toast.success('Canvas cleared');
     }
-  }, [nodes.length, reset]);
+  }, [nodes.length, reset, toast]);
 
   const handleExportOutputs = useCallback(() => {
     const outputs = Object.entries(nodeOutputs);
@@ -202,7 +202,7 @@ export function Toolbar({
     });
 
     toast.success(`Exported ${outputs.length} output(s)`);
-  }, [nodeOutputs]);
+  }, [nodeOutputs, toast]);
 
   const handleExecuteAll = useCallback(async () => {
     if (nodes.length === 0) {
@@ -253,6 +253,8 @@ export function Toolbar({
     setExecuting,
     setExecutionProgress,
     setExecutionCancelled,
+    toast,
+    logger,
   ]);
 
   const handleFitView = useCallback(() => {
@@ -271,7 +273,7 @@ export function Toolbar({
     requestAnimationFrame(() => {
       reactFlow.fitView({ padding: 0.2, duration: 300 });
     });
-  }, [nodes, edges, reactFlow, setNodes]);
+  }, [nodes, edges, reactFlow, setNodes, toast]);
 
   const handleValidate = useCallback(() => {
     if (nodes.length === 0) {
@@ -302,7 +304,7 @@ export function Toolbar({
     } else {
       toast.success('Validation passed - workflow is ready to execute');
     }
-  }, [nodes, edges]);
+  }, [nodes, edges, toast]);
 
   useEffect(() => {
     const handleSaveShortcut = () => handleSave();

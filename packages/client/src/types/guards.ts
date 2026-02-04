@@ -27,6 +27,7 @@ import type {
   RotateNodeData,
   IterateNodeData,
   AnalyzeNodeData,
+  QualityCheckNodeData,
   PreviewNodeData,
   SaveNodeData,
   ExportGLBNodeData,
@@ -267,6 +268,21 @@ export function isAnalyzeNodeData(data: unknown): data is AnalyzeNodeData {
   );
 }
 
+export function isQualityCheckNodeData(data: unknown): data is QualityCheckNodeData {
+  if (!isNodeDataUnion(data) || data.nodeType !== 'qualityCheck') return false;
+  const d = data as QualityCheckNodeData;
+  return (
+    isNumber(d.maxFileSize) &&
+    Array.isArray(d.allowedFormats) &&
+    isBoolean(d.requirePowerOf2) &&
+    isBoolean(d.requireTransparency) &&
+    isNumber(d.minWidth) &&
+    isNumber(d.maxWidth) &&
+    isNumber(d.minHeight) &&
+    isNumber(d.maxHeight)
+  );
+}
+
 // Output Nodes
 export function isPreviewNodeData(data: unknown): data is PreviewNodeData {
   return isNodeDataUnion(data) && data.nodeType === 'preview';
@@ -359,6 +375,7 @@ export const nodeTypeGuards = {
   rotate: isRotateNodeData,
   iterate: isIterateNodeData,
   analyze: isAnalyzeNodeData,
+  qualityCheck: isQualityCheckNodeData,
   preview: isPreviewNodeData,
   save: isSaveNodeData,
   exportGLB: isExportGLBNodeData,

@@ -20,18 +20,15 @@ class MockImage {
 }
 
 // Set Image on globalThis (works in both browser and Node-like environments)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
 (globalThis as any).Image = MockImage;
 
 // Mock Canvas and Context
 class MockCanvasRenderingContext2D {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   canvas: any;
   fillStyle: string = '';
   strokeStyle: string = '';
   lineWidth: number = 1;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   constructor(canvas: any) {
     this.canvas = canvas;
   }
@@ -39,7 +36,6 @@ class MockCanvasRenderingContext2D {
   fillRect(_x: number, _y: number, _w: number, _h: number) {}
   clearRect(_x: number, _y: number, _w: number, _h: number) {}
   strokeRect(_x: number, _y: number, _w: number, _h: number) {}
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   drawImage(..._args: any[]) {}
   getImageData(_x: number, _y: number, w: number, h: number) {
     // Return image data with fully opaque pixels (alpha = 255) by default
@@ -58,7 +54,6 @@ class MockCanvasRenderingContext2D {
       height: h,
     };
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   putImageData(_imageData: any, _x: number, _y: number) {}
   scale(_x: number, _y: number) {}
   rotate(_angle: number) {}
@@ -101,11 +96,9 @@ class MockHTMLCanvasElement {
 // happy-dom should provide document, but we'll override createElement anyway
 const mockCreateElement = function (tagName: string) {
   if (tagName === 'canvas') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
     return new MockHTMLCanvasElement() as any;
   }
   // Fallback for other elements - create a minimal DOM element
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   return {
     tagName: tagName.toUpperCase(),
     style: {},

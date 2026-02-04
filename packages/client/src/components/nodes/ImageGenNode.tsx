@@ -5,7 +5,8 @@ import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
 import { logger } from '@pixel-forge/shared/logger';
 import { PRESETS, getPresetById } from '@pixel-forge/shared/presets';
-import { generateImage, type ArtStyle, type AspectRatio } from '../../lib/api';
+import type { ArtStyle, AspectRatio } from '@pixel-forge/shared';
+import { generateImage } from '../../lib/api';
 
 // Style presets with descriptions
 const STYLE_PRESETS: { value: ArtStyle; label: string; description: string }[] = [

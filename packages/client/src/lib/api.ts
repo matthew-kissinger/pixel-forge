@@ -1,7 +1,5 @@
 import { retryWithBackoff } from './retry';
 import type {
-  ArtStyle,
-  AspectRatio,
   GenerateImageOptions,
   GenerateImageResponse,
   SmartGenerateResponse,
@@ -14,7 +12,6 @@ import type {
   GenerateKilnCodeResponse,
   ExportToFileOptions,
   ExportToFileResponse,
-  BatchExportToFileOptions,
   BatchExportToFileResponse,
 } from '@pixel-forge/shared';
 

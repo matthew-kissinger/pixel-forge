@@ -182,12 +182,13 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Build broken on HEAD** - Commit `6699f61` (shared API types) broke `bun run build`. Types moved to `@pixel-forge/shared` but `api.ts` doesn't re-export them; `ImageGenNode.tsx`, `Model3DGenNode.tsx`, and `imageGen.ts` handler import `ArtStyle`, `AspectRatio`, `ModelStatusResponse`, `GenerateImageOptions` from `../../lib/api` which no longer exports them. Typecheck passes (noEmit mode) but Vite build fails. Must fix before anything else.
-- **150 lint errors** - Mostly `no-unused-vars` (75) and `no-explicit-any` (60). Uncommitted CI yml adds lint step which would fail. Either fix lint errors or remove lint step before committing.
-- **1 unpushed commit** - `6699f61` shared API types commit not yet on origin/main.
-- **Server not using shared types** - `packages/shared/api-types.ts` exists but server still defines its own request/response types inline.
+- **Build broken** - `createLazyNode` in `index.tsx` changed `ComponentType<any>` to `ComponentType<unknown>` (uncommitted lint fix), causing Vite build failure. The `NodeProps` type isn't assignable to `ComponentType<unknown>`. Fix: revert to `ComponentType<any>` with eslint-disable or use a proper generic. Typecheck (`tsc --noEmit`) passes but `bun run build` fails.
+- **19 remaining lint errors** - Down from 150 (cursor fixed 131). Remaining: 7 unused vars (`_onToggle`, `_context`, `_mode`), 1 prefer-const, 1 react-refresh export, plus some in test/handler files. CI yml adds lint step which would fail.
+- **10 uncommitted files** - Lint fixes from cursor task not committed: App.tsx, KilnGenNode.tsx, Model3DGenNode.tsx, index.tsx, Toolbar.tsx, templates.ts, workflow.ts, handlers.test.ts, setup.ts, ci.yml. The `index.tsx` change is build-breaking; the rest are valid lint fixes.
+- **CI yml adds lint+build** - `.github/workflows/ci.yml` has uncommitted changes adding lint and build steps. Cannot commit until both pass.
 - **Executor timeout test skipped** - `executor.test.ts` timeout test is `it.skip` because Bun's vitest shim lacks `vi.runAllTimersAsync()`.
 - **No actual asset generation validation** - No automated verification that generated assets meet quality bar.
+- **capture-lint.js** - Untracked file (`packages/client/capture-lint.js`) from lint debugging - should be deleted.
 
 ### Completed Goals
 
@@ -240,7 +241,9 @@ Build a **template/preset system** where:
 - ~~Export handler tests~~ - Done (handleSave coverage added; commit `b0286b1`)
 - ~~Validation refactor~~ - Done (`validateWorkflow` returns `WorkflowValidationResult` with `.valid`, `.errors[]`, `.warnings[]`; executor and Toolbar integrated; commit `2cfa489`)
 - ~~E2E excluded from bun test~~ - Done (E2E files no longer loaded by `bun test`; commit `629c485`)
-- ~~Shared API types (partial)~~ - Done (`packages/shared/api-types.ts` with all request/response types; client imports wired but build broken due to missing re-exports from `api.ts`; server not yet consuming shared types; commit `6699f61`)
+- ~~Shared API types~~ - Done (`packages/shared/api-types.ts` with all request/response types; client and all 4 server routes import from `@pixel-forge/shared`; commits `6699f61`, `b25feb0`, `248639b`)
+- ~~Fix 150 ESLint errors~~ - Mostly done (131 of 150 fixed; 19 remain: unused vars, prefer-const, react-refresh; uncommitted lint fixes in 10 files)
+- ~~Server using shared types~~ - Done (all server routes import types from `@pixel-forge/shared`; `claude.ts` service still has local duplicates of KilnGenerateRequest/Response but route layer is clean)
 
 ## Current State
 
@@ -248,9 +251,9 @@ React Flow editor with all 28 node types fully implemented (type definitions, UI
 
 Bundle: main chunk 312KB/~95KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 184KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 28 nodes lazy-loaded into individual chunks. SliceSheetNode now 8KB (JSZip split to separate chunk).
 
-Test coverage: 219 pass, 1 skip across 9 test files (client 140 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build broken (shared API type import issue). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
+Test coverage: 219 pass, 1 skip across 9 test files (client 140 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build broken (createLazyNode ComponentType<unknown> issue in uncommitted lint fixes). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
 
-Key gaps: Production build broken (shared API type re-exports), 150 lint errors blocking CI lint step, server not consuming shared API types, 1 unpushed commit, no integration tests against real APIs, no automated asset quality validation.
+Key gaps: Production build broken (createLazyNode type in uncommitted lint fix), 19 lint errors remaining (down from 150), 10 uncommitted files from lint fix task, CI lint+build steps uncommitted, no integration tests against real APIs, no automated asset quality validation.
 
 ## Quality Bar
 

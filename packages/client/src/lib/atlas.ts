@@ -86,7 +86,7 @@ export function generateUnityAtlas(options: AtlasGenerationOptions): string {
         name: `sprite_${frameIndex}`,
         rect: {
           x: col * frameWidth,
-          y: row * frameHeight,
+          y: sheetHeight - (row + 1) * frameHeight,
           width: frameWidth,
           height: frameHeight,
         },

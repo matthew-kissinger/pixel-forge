@@ -118,26 +118,26 @@ describe('Atlas Format Generators', () => {
       const result = generateUnityAtlas(baseOptions);
       const parsed = JSON.parse(result);
 
-      // First sprite should be at (0, 0)
+      // First sprite should be at (0, 192)
       expect(parsed.sprites[0].rect).toEqual({
         x: 0,
-        y: 0,
+        y: 192,
         width: 64,
         height: 64,
       });
 
-      // Second sprite should be at (64, 0)
+      // Second sprite should be at (64, 192)
       expect(parsed.sprites[1].rect).toEqual({
         x: 64,
-        y: 0,
+        y: 192,
         width: 64,
         height: 64,
       });
 
-      // Fifth sprite should be at (0, 64) - start of second row
+      // Fifth sprite should be at (0, 128) - start of second row from top
       expect(parsed.sprites[4].rect).toEqual({
         x: 0,
-        y: 64,
+        y: 128,
         width: 64,
         height: 64,
       });

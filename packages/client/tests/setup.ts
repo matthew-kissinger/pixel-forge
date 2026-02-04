@@ -83,7 +83,6 @@ class MockCanvasRenderingContext2D {
   fillRect(_x: number, _y: number, _w: number, _h: number) {}
   clearRect(_x: number, _y: number, _w: number, _h: number) {}
   strokeRect(_x: number, _y: number, _w: number, _h: number) {}
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   drawImage(..._args: any[]) {}
   getImageData(_x: number, _y: number, w: number, h: number) {
     return {
@@ -92,7 +91,6 @@ class MockCanvasRenderingContext2D {
       height: h,
     };
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   putImageData(_imageData: any, _x: number, _y: number) {}
   scale(_x: number, _y: number) {}
   rotate(_angle: number) {}
@@ -130,18 +128,14 @@ class MockHTMLCanvasElement {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- Set Image on all possible globals
 // @ts-expect-error - Set Image on all possible globals
 if (typeof window !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   window.Image = MockImage as any;
 }
 if (typeof global !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   global.Image = MockImage as any;
 }
 if (typeof globalThis !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
   globalThis.Image = MockImage as any;
 }
 
@@ -149,7 +143,6 @@ if (typeof globalThis !== 'undefined') {
 const originalCreateElement = document.createElement.bind(document);
 document.createElement = function (tagName: string) {
   if (tagName === 'canvas') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Test mock
     return new MockHTMLCanvasElement() as any;
   }
   return originalCreateElement(tagName);

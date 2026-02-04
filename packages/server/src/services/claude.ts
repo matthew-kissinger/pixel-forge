@@ -14,15 +14,18 @@
 
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { logger } from '@pixel-forge/shared/logger';
+import type { 
+  GenerateKilnCodeOptions, 
+  GenerateKilnCodeResponse,
+  KilnRenderMode as RenderMode,
+  KilnAssetCategory as AssetCategory,
+  KilnAssetStyle as AssetStyle
+} from '@pixel-forge/shared';
 import { ServiceUnavailableError, BadRequestError } from '../lib/errors';
 
 // =============================================================================
 // Types
 // =============================================================================
-
-export type RenderMode = 'glb' | 'tsl' | 'both';
-export type AssetCategory = 'character' | 'prop' | 'vfx' | 'environment';
-export type AssetStyle = 'low-poly' | 'stylized' | 'voxel' | 'detailed' | 'realistic';
 
 // Timeout constants
 const CLAUDE_TIMEOUT_MS = 180000; // 180 seconds for complex agent tasks
@@ -53,25 +56,14 @@ export interface AssetBudget {
   maxMaterials?: number;
 }
 
-export interface KilnGenerateRequest {
-  prompt: string;
+export interface KilnGenerateRequest extends GenerateKilnCodeOptions {
   mode: RenderMode;
   category: AssetCategory;
-  style?: AssetStyle;
   budget?: AssetBudget;
-  includeAnimation?: boolean;
-  existingCode?: string;
-  referenceImageUrl?: string;
 }
 
-export interface KilnGenerateResponse {
-  success: boolean;
-  code?: string;           // GLB geometry code (or TSL if mode='tsl')
-  effectCode?: string;     // TSL effect code (when mode='both' or 'tsl')
-  outputDir?: string;      // Directory where files were written
-  error?: string;
+export interface KilnGenerateResponse extends GenerateKilnCodeResponse {
   sessionId?: string;
-  usage?: { inputTokens: number; outputTokens: number };
 }
 
 // =============================================================================

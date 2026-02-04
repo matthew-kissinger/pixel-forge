@@ -178,7 +178,7 @@ describe('nodeLayout', () => {
       // -100 + 100 = 0. 0 < 0 is false. So it is NOT considered invisible (i.e. it IS visible).
       
       let viewport = { x: 201, y: 0, zoom: 1 };
-      let canvas = { width: 500, height: 500 };
+      const canvas = { width: 500, height: 500 };
       expect(isNodeVisible(node, viewport, canvas)).toBe(false);
       
       viewport = { x: 200, y: 0, zoom: 1 };

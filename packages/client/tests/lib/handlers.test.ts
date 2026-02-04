@@ -1401,6 +1401,27 @@ describe('Analysis Handlers', () => {
         height: 256,
       };
       (loadImage as ReturnType<typeof vi.fn>).mockResolvedValue(mockImage);
+
+      // Mock canvas to avoid slow pixel scanning on large dimensions
+      const mockCanvas = {
+        width: 0,
+        height: 0,
+        getContext: () => ({
+          drawImage: vi.fn(),
+          getImageData: () => ({
+            data: new Uint8ClampedArray([255, 255, 255, 255]), // minimal 1-pixel data, all opaque
+          }),
+        }),
+      };
+      const originalCreateElement = document.createElement.bind(document);
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+        if (tag === 'canvas') return mockCanvas as any;
+        return originalCreateElement(tag);
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
     });
 
     it('should pass validation and pass image through on success', async () => {

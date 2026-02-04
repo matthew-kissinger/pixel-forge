@@ -309,38 +309,41 @@ describe('Workflow Executor', () => {
   });
 
   describe('Timeout', () => {
-    it.skip('should fail a node that exceeds timeout', async () => {
+    it('should fail a node that exceeds timeout', async () => {
       vi.useFakeTimers();
 
-      // Use batchGen which is allowed to have no inputs
-      (handlers as any).batchGen = vi.fn().mockImplementation(() => new Promise(() => {})); 
+      try {
+        // Handler loader resolves to a handler function that never completes
+        const neverResolve = vi.fn().mockImplementation(() => new Promise(() => {}));
+        (handlers as any).batchGen = vi.fn().mockResolvedValue(neverResolve);
 
-      const nodes: Node[] = [
-        { id: 'A', type: 'batchGen', position: { x: 0, y: 0 }, data: { nodeType: 'batchGen', label: 'A' } },
-      ];
+        const nodes: Node[] = [
+          { id: 'A', type: 'batchGen', position: { x: 0, y: 0 }, data: { nodeType: 'batchGen', label: 'A' } },
+        ];
 
-      vi.spyOn(useWorkflowStore, 'getState').mockReturnValue({
-        nodeStatus: {},
-        nodeOutputs: {},
-        setNodeStatus: mockSetNodeStatus,
-        setNodeError: mockSetNodeError,
-        addExecutionRecord: mockAddExecutionRecord,
-        setNodeOutput: mockSetNodeOutput,
-        setBatchProgress: mockSetBatchProgress,
-        getInputsForNode: mockGetInputsForNode,
-      } as any);
+        vi.spyOn(useWorkflowStore, 'getState').mockReturnValue({
+          nodeStatus: {},
+          nodeOutputs: {},
+          setNodeStatus: mockSetNodeStatus,
+          setNodeError: mockSetNodeError,
+          addExecutionRecord: mockAddExecutionRecord,
+          setNodeOutput: mockSetNodeOutput,
+          setBatchProgress: mockSetBatchProgress,
+          getInputsForNode: mockGetInputsForNode,
+        } as any);
 
-      const promise = executeWorkflow(nodes, [], useWorkflowStore.getState() as any);
-      
-      // Fast forward time - batchGen has 120s timeout
-      await advanceTimers(121000);
+        const promise = executeWorkflow(nodes, [], useWorkflowStore.getState() as any);
 
-      const result = await promise;
-      expect(result.success).toBe(false);
-      expect(result.errors[0].error).toContain('timed out');
-      expect(mockSetNodeStatus).toHaveBeenCalledWith('A', 'error');
-      
-      vi.useRealTimers();
+        // Run all timers to completion - this will trigger the setTimeout in withTimeout
+        await vi.runAllTimersAsync();
+
+        const result = await promise;
+        expect(result.success).toBe(false);
+        expect(result.errors[0].error).toContain('timed out');
+        expect(mockSetNodeStatus).toHaveBeenCalledWith('A', 'error');
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

@@ -21,35 +21,10 @@ import type {
   KilnAssetCategory as AssetCategory,
   KilnAssetStyle as AssetStyle
 } from '@pixel-forge/shared';
-import { ServiceUnavailableError, BadRequestError } from '../lib/errors';
 
 // =============================================================================
 // Types
 // =============================================================================
-
-// Timeout constants
-const CLAUDE_TIMEOUT_MS = 180000; // 180 seconds for complex agent tasks
-
-/**
- * Create timeout-wrapped promise for async generators
- */
-async function withTimeoutGenerator<T>(
-  generator: AsyncGenerator<T>,
-  timeoutMs: number,
-  operation: string
-): Promise<void> {
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new ServiceUnavailableError(`${operation} timed out after ${timeoutMs}ms`)), timeoutMs)
-  );
-
-  const generatorPromise = (async () => {
-    for await (const _ of generator) {
-      // Consume generator
-    }
-  })();
-
-  await Promise.race([generatorPromise, timeoutPromise]);
-}
 
 export interface AssetBudget {
   maxTriangles?: number;
@@ -703,7 +678,9 @@ export async function* streamKilnCode(
     });
 
     for await (const message of q) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (message.type === 'assistant' && (message as any).message?.content) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const content = (message as any).message.content;
         for (const block of content) {
           if (block.type === 'text') {

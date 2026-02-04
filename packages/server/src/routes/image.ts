@@ -8,8 +8,6 @@ import { removeBackground } from '../services/fal';
 import { BadRequestError, TooManyRequestsError } from '../lib/errors';
 import { logger } from '@pixel-forge/shared/logger';
 import type {
-  ArtStyle,
-  AspectRatio,
   GenerateImageOptions,
   GenerateImageResponse,
   SmartGenerateResponse,
@@ -279,7 +277,7 @@ imageRouter.post(
   '/batch-generate',
   zValidator('json', batchGenerateSchema),
   async (c) => {
-    const { subjects, presetId, consistencyPhrase, seed } = c.req.valid('json') as BatchGenerateRequest;
+    const { subjects, presetId, consistencyPhrase } = c.req.valid('json') as BatchGenerateRequest;
 
     try {
       const preset = presetId ? getPresetById(presetId) : undefined;

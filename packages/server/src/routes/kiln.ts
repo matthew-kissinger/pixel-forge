@@ -18,7 +18,7 @@ import {
   type RefactorRequest,
 } from '../services/claude';
 import { BadRequestError } from '../lib/errors';
-import type { GenerateKilnCodeOptions, GenerateKilnCodeResponse } from '@pixel-forge/shared';
+import type { GenerateKilnCodeResponse } from '@pixel-forge/shared';
 
 export const kilnRouter = new Hono();
 

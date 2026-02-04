@@ -160,77 +160,8 @@ async function removeChromaKey(
 }
 
 // Backwards compatibility alias
-async function removeGreenScreen(imageBuffer: Buffer, tolerance: number = 30): Promise<Buffer> {
-  return removeChromaKey(imageBuffer, 'green', tolerance);
-}
-
 async function removeRedScreen(imageBuffer: Buffer, tolerance: number = 30): Promise<Buffer> {
   return removeChromaKey(imageBuffer, 'red', tolerance);
-}
-
-// Advanced alpha extraction using dual-image comparison
-async function extractAlphaFromDualImages(
-  whiteBackground: Buffer,
-  blackBackground: Buffer
-): Promise<Buffer> {
-  const whiteImg = sharp(whiteBackground);
-  const blackImg = sharp(blackBackground);
-
-  const [whiteData, blackData] = await Promise.all([
-    whiteImg.raw().toBuffer({ resolveWithObject: true }),
-    blackImg.raw().toBuffer({ resolveWithObject: true }),
-  ]);
-
-  const { width, height } = whiteData.info;
-  const rgbaData = Buffer.alloc(width * height * 4);
-
-  for (let i = 0; i < width * height; i++) {
-    const wIdx = i * 3;
-    const bIdx = i * 3;
-    const dstIdx = i * 4;
-
-    const wR = whiteData.data[wIdx] ?? 0;
-    const wG = whiteData.data[wIdx + 1] ?? 0;
-    const wB = whiteData.data[wIdx + 2] ?? 0;
-
-    const bR = blackData.data[bIdx] ?? 0;
-    const bG = blackData.data[bIdx + 1] ?? 0;
-    const bB = blackData.data[bIdx + 2] ?? 0;
-
-    // Calculate alpha from difference between white and black backgrounds
-    // On white bg: result = fg * a + 255 * (1-a)
-    // On black bg: result = fg * a + 0 * (1-a) = fg * a
-    // Difference: white - black = 255 * (1-a)
-    // So: a = 1 - (white - black) / 255
-
-    const diffR = wR - bR;
-    const diffG = wG - bG;
-    const diffB = wB - bB;
-    const avgDiff = (diffR + diffG + diffB) / 3;
-
-    const alpha = Math.round(255 - avgDiff);
-
-    if (alpha < 10) {
-      // Fully transparent
-      rgbaData[dstIdx] = 0;
-      rgbaData[dstIdx + 1] = 0;
-      rgbaData[dstIdx + 2] = 0;
-      rgbaData[dstIdx + 3] = 0;
-    } else {
-      // Recover original color: fg = black_result / a
-      const a = alpha / 255;
-      rgbaData[dstIdx] = Math.min(255, Math.round(bR / a));
-      rgbaData[dstIdx + 1] = Math.min(255, Math.round(bG / a));
-      rgbaData[dstIdx + 2] = Math.min(255, Math.round(bB / a));
-      rgbaData[dstIdx + 3] = alpha;
-    }
-  }
-
-  return sharp(rgbaData, {
-    raw: { width, height, channels: 4 },
-  })
-    .png()
-    .toBuffer();
 }
 
 // ===========================================

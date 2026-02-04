@@ -182,10 +182,10 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Server service tests broken** - gemini.test.ts (3 fail) and fal.test.ts (1 fail) exist but have issues: Bun mock API mismatches (`mock.fn` not available), sharp mock not tracking `extract()` calls, and missing dimension validation not throwing. 6 TypeScript errors in test files block `bun run typecheck` for server. claude.ts (918 lines) has 0 test coverage.
-- **Client executor timeout test failing** - `executor.test.ts:312` "should fail a node that exceeds timeout" was unskipped but hangs on `vi.useFakeTimers()` and times out at 5s.
-- **E2E test coverage shallow** - Playwright smoke tests exist (9 tests in `e2e/smoke.spec.ts`) but only cover basic UI rendering and navigation. Workflow execution E2E tests written (`workflow.spec.ts`) but Playwright not installed - `@playwright/test` in devDependencies but browsers not downloaded.
-- **Uncommitted service improvements** - gemini.ts, fal.ts, claude.ts have uncommitted error handling improvements (timeouts, input validation, custom error types) that need to be committed alongside their fixed tests.
+- **E2E tests not runnable on hub** - Playwright config + smoke tests + workflow execution tests exist (`e2e/smoke.spec.ts`, `e2e/workflow.spec.ts`) but `@playwright/test` browsers not installed on the hub machine. Need to either install browsers or set up a CI environment.
+- **No CI pipeline** - No GitHub Actions or other CI config. Tests, typecheck, and lint only run manually. Need automated checks on push/PR.
+- **Integration test gap** - All server tests mock external APIs. No integration tests verify actual Gemini/FAL/Claude API behavior end-to-end. Service error handling (timeouts, retries) is tested at unit level but not under real network conditions.
+- **No actual asset generation validation** - The app builds and tests pass, but no automated verification that generated assets meet the quality bar (correct size, proper transparency, no artifacts). Need to generate real assets for Asteroid-Miner/terror-in-the-jungle and validate them in-game.
 
 ### Completed Goals
 
@@ -224,16 +224,21 @@ Build a **template/preset system** where:
 - ~~E2E smoke tests~~ - Done (Playwright config + 9 smoke tests in `e2e/smoke.spec.ts`: canvas render, toolbar, node palette, drag-add, keyboard shortcuts, save, search, collapse/expand)
 - ~~Lazy-load all node components~~ - Done (all 28 nodes lazy-loaded via `createLazyNode` helper with Suspense wrappers and loading spinners; main chunk reduced from 502KB to 317KB)
 - ~~Dynamic handler imports~~ - Done (executor handlers use dynamic `import()` instead of static imports, handler registry returns `() => Promise<NodeHandler>`)
+- ~~Server service tests~~ - Done (58 pass, 0 fail across 4 bun:test files: api.test.ts, claude.test.ts, gemini.test.ts, fal.test.ts)
+- ~~Executor timeout test~~ - Done (fixed fake timer hang, commit `3026750`)
+- ~~Service error handling~~ - Done (gemini.ts: 60s timeout + input validation + custom errors; fal.ts: 120s/30s timeouts + AbortController + input validation; claude.ts: 180s timeout wrapper; commit `df3fcfe`)
+- ~~SliceSheetNode JSZip lazy-load~~ - Done (JSZip split to separate lazy chunk via dynamic `import()`, commit `df3fcfe`)
+- ~~E2E test infrastructure~~ - Done (Playwright config + 9 smoke tests in `e2e/smoke.spec.ts` + workflow execution tests in `e2e/workflow.spec.ts`; browsers not installed on hub)
 
 ## Current State
 
-React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). All node components lazy-loaded via `createLazyNode` helper with Suspense wrappers. Executor handlers use dynamic imports (`() => Promise<NodeHandler>`). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download (JSZip lazy-imported), batch generates with consistency phrases and per-item progress tracking. 3D generation via Meshy and Kiln (Claude Agent SDK) fully working - kilnGen executor calls `/api/kiln/generate` with mode/category/style support. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. Image compression/optimization node fully implemented. Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic. Executor refactored into main module + 8 handler modules in `lib/handlers/`. Full UX: per-node error display, execution history panel, NodePalette with search/filter, undo/redo (Ctrl+Z/Shift+Z), copy/paste (Ctrl+C/V), delete key, node context menu, keyboard shortcuts, auto-save, minimap, fit view, auto layout.
+React Flow editor with all 28 node types fully implemented (type definitions, UI components, and executor handlers). All node components lazy-loaded via `createLazyNode` helper with Suspense wrappers. Executor handlers use dynamic imports (`() => Promise<NodeHandler>`). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download (JSZip lazy-imported), batch generates with consistency phrases and per-item progress tracking. 3D generation via Meshy and Kiln (Claude Agent SDK) fully working - kilnGen executor calls `/api/kiln/generate` with mode/category/style support. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. Image compression/optimization node fully implemented. Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic. Executor refactored into main module + 8 handler modules in `lib/handlers/`. Server services have robust error handling: custom error types (`ServiceUnavailableError`, `BadRequestError`), per-operation timeouts (60s Gemini, 120s/30s FAL, 180s Claude), input validation, rate limit detection, and AbortController support. Full UX: per-node error display, execution history panel, NodePalette with search/filter, undo/redo (Ctrl+Z/Shift+Z), copy/paste (Ctrl+C/V), delete key, node context menu, keyboard shortcuts, auto-save, minimap, fit view, auto layout.
 
 Bundle: main chunk 312KB/~95KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 184KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 28 nodes lazy-loaded into individual chunks. SliceSheetNode now 8KB (JSZip split to separate chunk).
 
-Test coverage: client 130 pass, 1 fail (executor timeout test) across 5 vitest files. Server 39 pass, 4 fail across 3 bun:test files (API endpoints all pass, service tests partially broken). Server typecheck fails with 6 errors in test files. E2E: 9 smoke tests + workflow execution tests written, Playwright not installed.
+Test coverage: client 131 pass, 0 fail across 5 vitest files. Server 58 pass, 0 fail across 4 bun:test files (api.test.ts + 3 service test files). TypeScript typecheck clean (both client and server). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub.
 
-Key gaps: server service tests broken (gemini 3 fail, fal 1 fail, claude 0 tests), executor timeout test hanging on fake timers, uncommitted service error handling improvements need tests fixed before commit, E2E tests not runnable (Playwright not installed).
+Key gaps: no CI pipeline (tests/typecheck/lint only run manually), E2E tests not runnable without Playwright browser install, no integration tests against real APIs, no automated asset quality validation.
 
 ## Quality Bar
 

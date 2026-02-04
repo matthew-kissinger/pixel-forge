@@ -12,7 +12,8 @@
     "lint": "bun run --filter '*' lint",
     "typecheck": "bun run --filter '*' typecheck",
     "test": "bun run --filter '*' test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:bundle-size": "bun run scripts/check-bundle-size.ts"
   },
   "devDependencies": {
     "typescript": "^5.9.3"

@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "./index.ts",
   "exports": {
+    ".": "./index.ts",
+    "./api-types": "./api-types.ts",
     "./presets": "./presets.ts",
     "./logger": "./logger.ts"
   }

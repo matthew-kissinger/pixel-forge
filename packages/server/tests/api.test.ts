@@ -508,3 +508,174 @@ describe('Kiln API', () => {
     expect(data.code).toBeDefined();
   });
 });
+
+describe('Export API', () => {
+  const testImage = `data:image/png;base64,${samplePngBase64}`;
+
+  test('POST /api/export/save requires image', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'test.png' }),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test('POST /api/export/save requires path', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: testImage }),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test('POST /api/export/save rejects path traversal with ..', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: testImage,
+          path: '../../../etc/passwd',
+        }),
+      })
+    );
+    expect(res.status).toBe(400);
+
+    const data = await res.json() as any;
+    expect(data.error).toContain('..');
+  });
+
+  test('POST /api/export/save saves file successfully', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: testImage,
+          path: 'test-output.png',
+          format: 'png',
+          quality: 90,
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.path).toBeDefined();
+    expect(data.size).toBeGreaterThan(0);
+  });
+
+  test('POST /api/export/save supports jpeg format', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: testImage,
+          path: 'test-output.jpg',
+          format: 'jpeg',
+          quality: 80,
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+  });
+
+  test('POST /api/export/save supports webp format', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: testImage,
+          path: 'test-output.webp',
+          format: 'webp',
+          quality: 85,
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+  });
+
+  test('POST /api/export/batch-save requires images array', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/batch-save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test('POST /api/export/batch-save rejects empty images array', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/batch-save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ images: [] }),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test('POST /api/export/batch-save saves multiple files', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/batch-save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          images: [
+            { image: testImage, path: 'batch-1.png', format: 'png' },
+            { image: testImage, path: 'batch-2.png', format: 'png' },
+          ],
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBe(2);
+    expect(data.successCount).toBe(2);
+    expect(data.totalCount).toBe(2);
+  });
+
+  test('POST /api/export/batch-save handles partial failures', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/export/batch-save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          images: [
+            { image: testImage, path: 'good.png', format: 'png' },
+            { image: testImage, path: '../bad.png', format: 'png' }, // Path traversal
+          ],
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json() as any;
+    expect(data.success).toBe(true);
+    expect(data.results.length).toBe(2);
+    expect(data.successCount).toBe(1); // Only first succeeds
+    expect(data.results[0].success).toBe(true);
+    expect(data.results[1].success).toBe(false);
+    expect(data.results[1].error).toBeDefined();
+  });
+});

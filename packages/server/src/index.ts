@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 import { imageRouter } from './routes/image';
 import { modelRouter } from './routes/model';
 import { kilnRouter } from './routes/kiln';
+import { exportRouter } from './routes/export';
 import { isAppError, getErrorMessage } from './lib/errors';
 import { logger as pixelLogger } from '@pixel-forge/shared/logger';
 
@@ -35,6 +36,7 @@ app.get('/health', (c) => {
 app.route('/api/image', imageRouter);
 app.route('/api/model', modelRouter);
 app.route('/api/kiln', kilnRouter);
+app.route('/api/export', exportRouter);
 
 // 404 handler
 app.notFound((c) => {

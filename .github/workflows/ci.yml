@@ -26,6 +26,16 @@ jobs:
         run: cd packages/server && bun test
       - name: Client tests
         run: cd packages/client && bunx vitest run
+      - name: Client coverage
+        run: cd packages/client && bunx vitest run --coverage
+        continue-on-error: true
+      - name: Upload client coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: client-coverage
+          path: packages/client/coverage
+          if-no-files-found: ignore
       - name: Build
         run: bun run build
       - name: Install Playwright browsers

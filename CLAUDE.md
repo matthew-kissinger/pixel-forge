@@ -182,9 +182,9 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Test remaining hooks and utilities** - `useAutoSave.ts` (85 lines, localStorage + recovery), `useKeyboardShortcuts.ts` (140 lines, hotkey logic), `image-utils.ts` (544 lines, canvas ops), `share.ts` (67 lines, URL hash encoding) all lack dedicated test files.
+- **Test remaining hooks** - `useKeyboardShortcuts.ts` (145 lines, hotkey logic), `useImageProcessor.ts` (237 lines, canvas processing), `useWorkflowFromUrl.ts` (64 lines, URL hash loading) lack dedicated test files.
 - **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. `packages/server/scripts/validate-apis.ts` exists but isn't automated. Need gated integration tests (run when API keys are in env).
-- **Bundle size tracking** - Three.js chunk is 1.4MB/380KB gzip. No CI gate to prevent further bloat. Consider bundle size assertion in CI.
+- **Push unpushed work** - 3 unpushed commits (image-utils tests, useAutoSave tests, share tests) + uncommitted bundle size check script and CI step.
 
 ### Completed Goals
 
@@ -259,20 +259,24 @@ Build a **template/preset system** where:
 - ~~Fix handleQualityCheck test timeout~~ - Done (canvas mock in test beforeEach; commit `1aecd09`; also downsampled transparency check in production: commit `30b3737`)
 - ~~Commit E2E tests and Playwright config~~ - Done (10 smoke tests in `e2e/smoke.spec.ts`, playwright config, `test:e2e` script; commit `510c52f`)
 - ~~Clean up lint warnings~~ - Done (removed unnecessary deps from useCallback hooks; commit `70f2522`; 0 errors, 0 warnings)
+- ~~Test useAutoSave hook~~ - Done (18 tests with localStorage mocking; commit `63f6a76`)
+- ~~Test image-utils.ts~~ - Done (canvas utility function tests; commit `6125b03`)
+- ~~Test share.ts~~ - Done (URL encoding and workflow compression tests; commit `b6d5203`)
+- ~~Bundle size tracking~~ - Done (check-bundle-size.ts script with CI step; uncommitted, pending push)
 
 ## Current State
 
 React Flow editor with 30 node types fully implemented (type definitions, UI components, and executor handlers), including QualityCheckNode for asset validation and ColorPaletteNode for palette swaps. All node components lazy-loaded via `createLazyNode` helper with Suspense wrappers and NodeErrorBoundary for error isolation. Executor handlers use dynamic imports (`() => Promise<NodeHandler>`). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download (JSZip lazy-imported), batch generates with consistency phrases and per-item progress tracking. 3D generation via Meshy and Kiln (Claude Agent SDK) fully working - kilnGen executor calls `/api/kiln/generate` with mode/category/style support. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. Image compression/optimization node fully implemented. Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic. Executor refactored into main module + 8 handler modules in `lib/handlers/`. Server services have robust error handling: custom error types (`ServiceUnavailableError`, `BadRequestError`), per-operation timeouts (60s Gemini, 120s/30s FAL, 180s Claude), input validation, rate limit detection, and AbortController support. Server-side file export API with path validation, format conversion (PNG/JPEG/WebP via sharp), and batch operations. Texture atlas export in Phaser 3, Unity, and Godot formats. Demo mode (`?demo=true`) for offline preview with sample data. Full UX: per-node error display, execution history panel, NodePalette with search/filter, undo/redo (Ctrl+Z/Shift+Z), copy/paste (Ctrl+C/V), delete key, node context menu, keyboard shortcuts, auto-save, minimap, fit view, auto layout. CI pipeline via GitHub Actions (typecheck + lint + tests + build on push/PR).
 
-Bundle: main chunk 323KB/~97KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/~61KB gzip (separate), JSZip 97KB/~30KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks.
+Bundle: main chunk 316KB/~95KB gzip, Three.js 1.3MB/373KB gzip (separate), React Flow 183KB/~60KB gzip (separate), JSZip 95KB/~29KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks. Total gzipped: 613KB. Bundle size CI gate added (uncommitted).
 
-Test coverage: client 208 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 10 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed). TypeScript typecheck clean (both client and server). Production build passes.
+Test coverage: client 262 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 13 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script added (`scripts/check-bundle-size.ts`) with CI integration (uncommitted).
 
 Lint status: 0 errors, 0 warnings. Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs, hooks and utilities untested (useAutoSave, useKeyboardShortcuts, image-utils, share), no bundle size tracking in CI.
+Key gaps: No integration tests against real APIs. Remaining untested hooks: useKeyboardShortcuts, useImageProcessor, useWorkflowFromUrl. Bundle size check script exists but uncommitted.
 
 ## Quality Bar
 

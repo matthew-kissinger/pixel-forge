@@ -182,9 +182,8 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Build broken** - `bun run build` fails: `output.ts:59` references `context.onProgress` but `NodeHandlerContext` has `ctx.onProgress`. Introduced in export feature commit `a21f4ed`. Typecheck passes (`tsc --noEmit`) but `tsc -b` (used by build) catches it.
-- **61 commits unpushed** - `origin/main` is 61 commits behind local. Disk failure on hub means all work lost. Need to push.
-- **E2E tests not runnable on hub** - Playwright config + smoke tests + workflow execution tests exist (`e2e/smoke.spec.ts`, `e2e/workflow.spec.ts`) but `@playwright/test` browsers not installed on the hub machine. Need to either install browsers or set up a CI environment.
+- **Uncommitted validation refactor** - 5 modified files in working tree: `validate.ts` returns `WorkflowValidationResult` instead of `ValidationError[]`, `executor.ts` and `Toolbar.tsx` updated to use new format. But: (a) build fails - `hasBlockingErrors` import unused, `errorMessage` variable unused; (b) 3 validate tests fail - error messages changed from `Missing required input` to `is missing required input` (lowercase m) so substring match breaks; (c) executor timeout test still fails (`vi.runAllTimersAsync` not available in bun's vitest). Need to fix and commit.
+- **E2E tests not runnable on hub** - Playwright config + smoke tests + workflow execution tests exist (`e2e/smoke.spec.ts`, `e2e/workflow.spec.ts`) but `@playwright/test` browsers not installed on the hub machine. E2E files also get loaded by `bun test` causing 2 "Unhandled error" warnings. Need to either install browsers or exclude E2E from bun test.
 - **Integration test gap** - All server tests mock external APIs. No integration tests verify actual Gemini/FAL/Claude API behavior end-to-end. Service error handling (timeouts, retries) is tested at unit level but not under real network conditions.
 - **No actual asset generation validation** - The app builds and tests pass, but no automated verification that generated assets meet the quality bar (correct size, proper transparency, no artifacts). Need to generate real assets for Asteroid-Miner/terror-in-the-jungle and validate them in-game.
 
@@ -233,6 +232,10 @@ Build a **template/preset system** where:
 - ~~CI pipeline~~ - Done (GitHub Actions: `.github/workflows/ci.yml` - typecheck + server tests + client tests on push/PR to main)
 - ~~Server-side file export~~ - Done (`/api/export/save` and `/api/export/batch-save` endpoints with path validation, format conversion via sharp, security checks; commit `a21f4ed`)
 - ~~Expanded API test coverage~~ - Done (generate-smart, compress, batch-generate routes; server now at 79 tests across 4 files; commit `08b9269`)
+- ~~Fix build-breaking TypeScript error~~ - Done (`output.ts:59` onProgress reference fixed; commit `781d459`)
+- ~~Push unpushed commits~~ - Done (origin/main now up to date)
+- ~~Workflow validation before execution~~ - Done (validate.ts checks cycles, required inputs, type compatibility, disconnected nodes; Toolbar validate button; commit `9bf9a5c0`)
+- ~~Export handler tests~~ - Done (handleSave coverage added; commit `b0286b1`)
 
 ## Current State
 
@@ -240,9 +243,9 @@ React Flow editor with all 28 node types fully implemented (type definitions, UI
 
 Bundle: main chunk 312KB/~95KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 184KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 28 nodes lazy-loaded into individual chunks. SliceSheetNode now 8KB (JSZip split to separate chunk).
 
-Test coverage: client 131 pass, 0 fail across 5 vitest files. Server 79 pass, 0 fail across 4 bun:test files (api.test.ts + 3 service test files). TypeScript typecheck clean (both client and server). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub.
+Test coverage: client 137 pass, 6 fail across 7 test files (3 validate test failures from uncommitted refactor, 1 executor timeout test, 2 E2E load errors). Server 79 pass, 0 fail across 4 bun:test files (api.test.ts + 3 service test files). TypeScript typecheck clean (both client and server). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub.
 
-Key gaps: **build broken** (`output.ts:59` TypeScript error from export feature - `context.onProgress` should be `context.ctx.onProgress`), 61 commits unpushed to origin, E2E tests not runnable without Playwright browser install, no integration tests against real APIs, no automated asset quality validation.
+Key gaps: **uncommitted validation refactor** with broken tests and build warnings (5 modified files), E2E tests not runnable without Playwright browser install, no integration tests against real APIs, no automated asset quality validation.
 
 ## Quality Bar
 

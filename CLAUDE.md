@@ -182,11 +182,10 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Push 16 unpushed commits** - Working tree is clean but origin/main is 16 commits behind local main.
-- **Fix handleQualityCheck test timeout** - `handlers.test.ts:1552` creates 5000x5000 canvas for transparency check which times out at 5s. Need to mock canvas/getImageData or skip transparency scan for large test images. This is the 1 failing test blocking clean CI.
-- **Commit E2E tests and Playwright config** - `e2e/smoke.spec.ts` (10 tests) and `playwright.config.ts` exist as untracked files. Need to commit and verify they run with `bun run test:e2e`.
-- **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. Need at least smoke-level integration tests (gated behind env vars).
-- **Clean up lint warnings** - 14 warnings in src/ from react-hooks/exhaustive-deps (toast/logger in dependency arrays). Fixable by removing unnecessary deps.
+- **Test critical untested modules** - `autoLayout.ts` (119 lines, topological sort), `nodeLayout.ts` (256 lines, collision detection), `retry.ts` (115 lines, exponential backoff), `useAutoSave.ts` (localStorage + recovery prompt) all have zero tests.
+- **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. `packages/server/scripts/validate-apis.ts` exists but isn't automated. Need gated integration tests (run when API keys are in env).
+- **Clean up build log artifacts** - 6 `build_output*.log` files in `packages/client/` should be deleted and gitignored.
+- **Bundle size tracking** - Three.js chunk is 1.4MB/380KB gzip. No CI gate to prevent further bloat. Consider bundle size assertion in CI.
 
 ### Completed Goals
 
@@ -255,6 +254,10 @@ Build a **template/preset system** where:
 - ~~NodeErrorBoundary tests~~ - Done (6 tests in `NodeErrorBoundary.test.tsx`, pass under vitest/happy-dom; commit `d9c8725`)
 - ~~PresetLauncher visual cards~~ - Done (category cards with visual preset previews; commit `94d4d26`)
 - ~~Clean up unused eslint-disable~~ - Done (removed stale directives; commit `a24c829`)
+- ~~Push unpushed commits~~ - Done (all commits on origin/main)
+- ~~Fix handleQualityCheck test timeout~~ - Done (canvas mock in test beforeEach; commit `1aecd09`; also downsampled transparency check in production: commit `30b3737`)
+- ~~Commit E2E tests and Playwright config~~ - Done (10 smoke tests in `e2e/smoke.spec.ts`, playwright config, `test:e2e` script; commit `510c52f`)
+- ~~Clean up lint warnings~~ - Done (removed unnecessary deps from useCallback hooks; commit `70f2522`; 0 errors, 0 warnings)
 
 ## Current State
 
@@ -262,13 +265,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk 323KB/~97KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/~61KB gzip (separate), JSZip 97KB/~30KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks.
 
-Test coverage: client 172 pass, 1 fail (handleQualityCheck timeout), 1 skip (executor timeout) across 7 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (uncommitted). TypeScript typecheck clean (both client and server). Production build passes.
+Test coverage: client 173 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 7 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed). TypeScript typecheck clean (both client and server). Production build passes.
 
-Lint status: 0 errors, 14 warnings (all react-hooks/exhaustive-deps in src/ - toast/logger in dependency arrays). CI lint step passes.
+Lint status: 0 errors, 0 warnings. Fully clean.
 
-Known bugs: `handleQualityCheck` handler creates full-size canvas for transparency check - causes timeout on large images (5000x5000). The `analysis.ts:157-167` transparency check should use downsampled canvas or skip for dimensions above a threshold.
+Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: 16 unpushed commits on main, E2E tests uncommitted, no integration tests against real APIs, 1 failing client test (handler timeout).
+Key gaps: No integration tests against real APIs, critical lib modules untested (autoLayout, nodeLayout, retry, useAutoSave), no bundle size tracking in CI, 6 stale build log files in packages/client/.
 
 ## Quality Bar
 

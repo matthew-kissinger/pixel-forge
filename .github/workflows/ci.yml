@@ -28,5 +28,9 @@ jobs:
         run: cd packages/client && bunx vitest run
       - name: Build
         run: bun run build
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: E2E smoke tests
+        run: npx playwright test --project=chromium
       - name: Bundle size check
         run: bun run check:bundle-size

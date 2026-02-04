@@ -1,12 +1,13 @@
 /**
  * Image Generation Node Handlers
- * 
+ *
  * Handlers for image generation nodes: imageGen, isometricTile, spriteSheet
  */
 
 import type { NodeHandlerContext } from './index';
 import type { NodeDataUnion } from '../../types/nodes';
-import { generateImage, type GenerateImageOptions } from '../api';
+import type { GenerateImageOptions } from '@pixel-forge/shared';
+import { generateImage } from '../api';
 
 export async function handleImageGen(context: NodeHandlerContext): Promise<void> {
   const { nodeData, inputs, setNodeOutput, node } = context;

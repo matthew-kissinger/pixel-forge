@@ -4,7 +4,8 @@ import { Box } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
 import { logger } from '@pixel-forge/shared/logger';
-import { generateModel, pollModelStatus, type ModelStatusResponse } from '../../lib/api';
+import type { ModelStatusResponse } from '@pixel-forge/shared';
+import { generateModel, pollModelStatus } from '../../lib/api';
 
 export interface Model3DGenData extends BaseNodeData {
   artStyle: 'low-poly' | 'realistic' | 'sculpture';

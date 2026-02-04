@@ -305,7 +305,13 @@ export function isExportSheetNodeData(
 ): data is ExportSheetNodeData {
   if (!isNodeDataUnion(data) || data.nodeType !== 'exportSheet') return false;
   const d = data as ExportSheetNodeData;
-  return isBoolean(d.includeMetadata) && isString(d.format);
+  return (
+    isBoolean(d.includeMetadata) &&
+    isString(d.format) &&
+    (d.atlasFormat === undefined || ['none', 'phaser', 'unity', 'godot'].includes(d.atlasFormat)) &&
+    (d.columns === undefined || (typeof d.columns === 'number' && d.columns > 0)) &&
+    (d.rows === undefined || (typeof d.rows === 'number' && d.rows > 0))
+  );
 }
 
 // =============================================================================

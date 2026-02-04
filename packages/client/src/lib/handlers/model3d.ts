@@ -17,6 +17,15 @@ export async function handleModel3DGen(context: NodeHandlerContext): Promise<voi
 
   if (ctx.getCancelled()) throw new Error('Execution cancelled');
 
+  if (ctx.demoMode) {
+    setNodeOutput(node.id, {
+      type: 'model',
+      data: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/Box/glTF-Binary/Box.glb',
+      timestamp: Date.now(),
+    });
+    return;
+  }
+
   const result = await generateModel(promptInput.data);
   
   if (ctx.getCancelled()) throw new Error('Execution cancelled');
@@ -55,6 +64,15 @@ export async function handleKilnGen(context: NodeHandlerContext): Promise<void> 
   }
 
   if (ctx.getCancelled()) throw new Error('Execution cancelled');
+
+  if (ctx.demoMode) {
+    setNodeOutput(node.id, {
+      type: 'text',
+      data: '// Demo Mode Kiln Code\nexport function createModel() {\n  return new THREE.Mesh(\n    new THREE.BoxGeometry(1, 1, 1),\n    new THREE.MeshStandardMaterial({ color: 0x00ff00 })\n  );\n}',
+      timestamp: Date.now(),
+    });
+    return;
+  }
 
   // Call Kiln API to generate code
   const result = await generateKilnCode({

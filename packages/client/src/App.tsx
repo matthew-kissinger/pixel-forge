@@ -1,4 +1,4 @@
-import { useCallback, type DragEvent, useState, useRef } from 'react';
+import { useCallback, type DragEvent, useState, useRef, useEffect } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -33,6 +33,7 @@ import { executeSingleNode } from './lib/executor';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useWorkflowFromUrl } from './hooks/useWorkflowFromUrl';
+import { templates, templateToFlow } from './lib/templates';
 
 let nodeIdCounter = 0;
 const generateNodeId = () => `node_${++nodeIdCounter}`;
@@ -54,10 +55,35 @@ function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
     setNodeStatus,
     setNodeError,
     nodeStatus,
+    demoMode,
+    setNodes,
   } = workflowStore;
 
   const reactFlow = useReactFlow();
   const { screenToFlowPosition, fitView } = reactFlow;
+
+  // Auto-load demo template if empty and in demo mode
+  useEffect(() => {
+    if (demoMode && nodes.length === 0) {
+      const demoTemplate = templates.find(t => t.id === 'demo-pipeline');
+      if (demoTemplate) {
+        const { nodes: templateNodes, edges: templateEdges } = templateToFlow(demoTemplate);
+        setNodes(templateNodes);
+        
+        // Use a small delay for edges to ensure nodes are registered
+        setTimeout(() => {
+          templateEdges.forEach(edge => onConnect({
+            ...edge,
+            sourceHandle: edge.sourceHandle ?? null,
+            targetHandle: edge.targetHandle ?? null,
+          }));
+          reactFlow.fitView({ padding: 0.2 });
+        }, 100);
+        
+        toast.success('Loaded demo pipeline');
+      }
+    }
+  }, [demoMode, nodes.length, setNodes, onConnect, reactFlow]);
 
   // Clipboard state for copy/paste
   const clipboardRef = useRef<{ nodes: Node<NodeData>[]; edges: Edge[] }>({

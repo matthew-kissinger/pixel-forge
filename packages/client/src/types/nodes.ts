@@ -307,6 +307,10 @@ export interface ExportSheetNodeData extends BaseNodeDataFields {
   nodeType: 'exportSheet';
   includeMetadata: boolean;
   format: 'png' | 'webp';
+  atlasFormat: 'none' | 'phaser' | 'unity' | 'godot';
+  columns: number;
+  rows: number;
+  fileName?: string;
 }
 
 // =============================================================================
@@ -803,6 +807,9 @@ export const nodeDefinitions: NodeDefinition[] = [
       label: 'Export Sheet',
       includeMetadata: true,
       format: 'png',
+      atlasFormat: 'none',
+      columns: 4,
+      rows: 4,
     },
   },
 ];

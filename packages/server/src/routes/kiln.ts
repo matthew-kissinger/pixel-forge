@@ -65,17 +65,17 @@ kilnRouter.post('/generate', async (c) => {
     );
   }
 
-  const request: GenerateKilnCodeOptions = {
+  const request: KilnGenerateRequest = {
     prompt: parsed.data.prompt,
-    mode: parsed.data.mode as any,
-    category: parsed.data.category as any,
-    style: parsed.data.style as any,
+    mode: parsed.data.mode,
+    category: parsed.data.category,
+    style: parsed.data.style,
     includeAnimation: parsed.data.includeAnimation,
     existingCode: parsed.data.existingCode,
     referenceImageUrl: parsed.data.referenceImageUrl,
   };
 
-  const result = await generateKilnCode(request as any);
+  const result = await generateKilnCode(request);
 
   if (!result.success) {
     return c.json<GenerateKilnCodeResponse>({ success: false, error: result.error }, 500);

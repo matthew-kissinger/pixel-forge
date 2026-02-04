@@ -80,11 +80,15 @@ export interface ModelStatusResponse {
 
 // --- Kiln (3D Code Generation) ---
 
+export type KilnRenderMode = 'glb' | 'tsl' | 'both';
+export type KilnAssetCategory = 'character' | 'prop' | 'vfx' | 'environment';
+export type KilnAssetStyle = 'low-poly' | 'stylized' | 'voxel' | 'detailed' | 'realistic';
+
 export interface GenerateKilnCodeOptions {
   prompt: string;
-  mode?: 'glb' | 'tsl' | 'both';
-  category?: 'character' | 'prop' | 'vfx' | 'environment';
-  style?: 'low-poly' | 'stylized' | 'voxel';
+  mode?: KilnRenderMode;
+  category?: KilnAssetCategory;
+  style?: KilnAssetStyle;
   includeAnimation?: boolean;
   existingCode?: string;
   referenceImageUrl?: string;

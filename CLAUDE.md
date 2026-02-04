@@ -182,13 +182,11 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Build broken** - `createLazyNode` in `index.tsx` changed `ComponentType<any>` to `ComponentType<unknown>` (uncommitted lint fix), causing Vite build failure. The `NodeProps` type isn't assignable to `ComponentType<unknown>`. Fix: revert to `ComponentType<any>` with eslint-disable or use a proper generic. Typecheck (`tsc --noEmit`) passes but `bun run build` fails.
-- **19 remaining lint errors** - Down from 150 (cursor fixed 131). Remaining: 7 unused vars (`_onToggle`, `_context`, `_mode`), 1 prefer-const, 1 react-refresh export, plus some in test/handler files. CI yml adds lint step which would fail.
-- **10 uncommitted files** - Lint fixes from cursor task not committed: App.tsx, KilnGenNode.tsx, Model3DGenNode.tsx, index.tsx, Toolbar.tsx, templates.ts, workflow.ts, handlers.test.ts, setup.ts, ci.yml. The `index.tsx` change is build-breaking; the rest are valid lint fixes.
-- **CI yml adds lint+build** - `.github/workflows/ci.yml` has uncommitted changes adding lint and build steps. Cannot commit until both pass.
+- **Commit and push lint fixes** - 17 uncommitted files with valid lint fixes (build, typecheck, src lint all pass). 5 unpushed commits on main. Need to commit lint fixes, delete `capture-lint.js`, and push.
+- **Fix test lint errors for CI** - `bun run lint` runs `eslint .` which includes `tests/` - 111 `no-explicit-any` errors in test mocks fail CI. Fix: add eslint config override to relax `no-explicit-any` in test files, or scope lint to `src/` only.
+- **Asset quality validation node** - No automated verification that generated assets meet quality bar (correct dimensions, file size, transparency, format). Previous task reported done but delivered nothing.
+- **Texture atlas export formats** - ExportSheetNode only does basic PNG/WebP download. Game engines need JSON atlas metadata (Phaser, Unity, Godot formats) for sprite sheets.
 - **Executor timeout test skipped** - `executor.test.ts` timeout test is `it.skip` because Bun's vitest shim lacks `vi.runAllTimersAsync()`.
-- **No actual asset generation validation** - No automated verification that generated assets meet quality bar.
-- **capture-lint.js** - Untracked file (`packages/client/capture-lint.js`) from lint debugging - should be deleted.
 
 ### Completed Goals
 
@@ -242,8 +240,9 @@ Build a **template/preset system** where:
 - ~~Validation refactor~~ - Done (`validateWorkflow` returns `WorkflowValidationResult` with `.valid`, `.errors[]`, `.warnings[]`; executor and Toolbar integrated; commit `2cfa489`)
 - ~~E2E excluded from bun test~~ - Done (E2E files no longer loaded by `bun test`; commit `629c485`)
 - ~~Shared API types~~ - Done (`packages/shared/api-types.ts` with all request/response types; client and all 4 server routes import from `@pixel-forge/shared`; commits `6699f61`, `b25feb0`, `248639b`)
-- ~~Fix 150 ESLint errors~~ - Mostly done (131 of 150 fixed; 19 remain: unused vars, prefer-const, react-refresh; uncommitted lint fixes in 10 files)
+- ~~Fix 150 ESLint errors~~ - Done (src/ has 0 errors, 14 warnings; tests/ has 111 `no-explicit-any` errors in mock code; need eslint test overrides for CI)
 - ~~Server using shared types~~ - Done (all server routes import types from `@pixel-forge/shared`; `claude.ts` service still has local duplicates of KilnGenerateRequest/Response but route layer is clean)
+- ~~Build breakage~~ - Fixed (index.tsx `ComponentType<any>` restored with eslint-disable; build, typecheck, src lint all pass)
 
 ## Current State
 
@@ -251,9 +250,11 @@ React Flow editor with all 28 node types fully implemented (type definitions, UI
 
 Bundle: main chunk 312KB/~95KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 184KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 28 nodes lazy-loaded into individual chunks. SliceSheetNode now 8KB (JSZip split to separate chunk).
 
-Test coverage: 219 pass, 1 skip across 9 test files (client 140 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build broken (createLazyNode ComponentType<unknown> issue in uncommitted lint fixes). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
+Test coverage: 219 pass, 1 skip across 9 test files (client 140 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build passes. E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
 
-Key gaps: Production build broken (createLazyNode type in uncommitted lint fix), 19 lint errors remaining (down from 150), 10 uncommitted files from lint fix task, CI lint+build steps uncommitted, no integration tests against real APIs, no automated asset quality validation.
+Lint status: src/ clean (0 errors, 14 warnings). tests/ has 111 `no-explicit-any` errors in mock code - eslint config needs test file overrides. CI lint step (`eslint .`) fails due to test errors.
+
+Key gaps: 17 uncommitted lint fix files + 5 unpushed commits, CI lint fails on test files, no asset quality validation node, no texture atlas export formats, no integration tests against real APIs.
 
 ## Quality Bar
 

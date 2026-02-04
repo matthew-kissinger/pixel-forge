@@ -32,10 +32,11 @@ function createEdge(sourceId: string, targetId: string): Edge {
 describe('Workflow Validation', () => {
   describe('Empty workflow', () => {
     it('should return warning for empty workflow', () => {
-      const errors = validateWorkflow([], []);
-      expect(errors.length).toBeGreaterThan(0);
-      expect(errors[0].severity).toBe('warning');
-      expect(errors[0].message).toContain('empty');
+      const result = validateWorkflow([], []);
+      expect(result.valid).toBe(false);
+      expect(result.warnings.length).toBeGreaterThan(0);
+      expect(result.warnings[0].message).toContain('empty');
+      expect(result.errors.length).toBe(0);
     });
   });
 
@@ -51,9 +52,9 @@ describe('Workflow Validation', () => {
         createEdge('gen1', 'preview1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const blocking = errors.filter((e) => e.severity === 'error');
-      expect(blocking.length).toBe(0);
+      const result = validateWorkflow(nodes, edges);
+      expect(result.valid).toBe(true);
+      expect(result.errors.length).toBe(0);
     });
 
     it('should return no errors for valid workflow with input node', () => {
@@ -67,9 +68,9 @@ describe('Workflow Validation', () => {
         createEdge('resize1', 'preview1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const blocking = errors.filter((e) => e.severity === 'error');
-      expect(blocking.length).toBe(0);
+      const result = validateWorkflow(nodes, edges);
+      expect(result.valid).toBe(true);
+      expect(result.errors.length).toBe(0);
     });
   });
 
@@ -84,10 +85,11 @@ describe('Workflow Validation', () => {
         createEdge('b', 'a'), // Cycle!
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const cycleErrors = errors.filter((e) => e.message.includes('cycle'));
+      const result = validateWorkflow(nodes, edges);
+      const cycleErrors = result.errors.filter((e) => e.message.includes('cycle'));
       expect(cycleErrors.length).toBeGreaterThan(0);
-      expect(hasBlockingErrors(errors)).toBe(true);
+      expect(result.valid).toBe(false);
+      expect(hasBlockingErrors(result)).toBe(true);
     });
 
     it('should detect longer cycle A -> B -> C -> A', () => {
@@ -102,10 +104,11 @@ describe('Workflow Validation', () => {
         createEdge('c', 'a'), // Cycle!
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const cycleErrors = errors.filter((e) => e.message.includes('cycle'));
+      const result = validateWorkflow(nodes, edges);
+      const cycleErrors = result.errors.filter((e) => e.message.includes('cycle'));
       expect(cycleErrors.length).toBeGreaterThan(0);
-      expect(hasBlockingErrors(errors)).toBe(true);
+      expect(result.valid).toBe(false);
+      expect(hasBlockingErrors(result)).toBe(true);
     });
 
     it('should not flag non-cyclic graphs', () => {
@@ -120,8 +123,8 @@ describe('Workflow Validation', () => {
         // No cycle
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const cycleErrors = errors.filter((e) => e.message.includes('cycle'));
+      const result = validateWorkflow(nodes, edges);
+      const cycleErrors = result.errors.filter((e) => e.message.includes('cycle'));
       expect(cycleErrors.length).toBe(0);
     });
   });
@@ -136,12 +139,13 @@ describe('Workflow Validation', () => {
         createEdge('gen1', 'preview1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const missingInputErrors = errors.filter((e) => 
-        e.message.includes('Missing required input') && e.nodeId === 'gen1'
+      const result = validateWorkflow(nodes, edges);
+      const missingInputErrors = result.errors.filter((e) =>
+        e.message.includes('is missing required input') && e.nodeId === 'gen1'
       );
       expect(missingInputErrors.length).toBeGreaterThan(0);
-      expect(hasBlockingErrors(errors)).toBe(true);
+      expect(result.valid).toBe(false);
+      expect(hasBlockingErrors(result)).toBe(true);
     });
 
     it('should detect missing input for processing node', () => {
@@ -150,12 +154,13 @@ describe('Workflow Validation', () => {
       ];
       const edges = [];
 
-      const errors = validateWorkflow(nodes, edges);
-      const missingInputErrors = errors.filter((e) => 
-        e.message.includes('Missing required input') && e.nodeId === 'resize1'
+      const result = validateWorkflow(nodes, edges);
+      const missingInputErrors = result.errors.filter((e) =>
+        e.message.includes('is missing required input') && e.nodeId === 'resize1'
       );
       expect(missingInputErrors.length).toBeGreaterThan(0);
-      expect(hasBlockingErrors(errors)).toBe(true);
+      expect(result.valid).toBe(false);
+      expect(hasBlockingErrors(result)).toBe(true);
     });
 
     it('should not require inputs for input nodes', () => {
@@ -166,9 +171,9 @@ describe('Workflow Validation', () => {
       ];
       const edges = [];
 
-      const errors = validateWorkflow(nodes, edges);
-      const missingInputErrors = errors.filter((e) => 
-        e.message.includes('Missing required input') &&
+      const result = validateWorkflow(nodes, edges);
+      const missingInputErrors = result.errors.filter((e) =>
+        e.message.includes('is missing required input') &&
         (e.nodeId === 'text1' || e.nodeId === 'upload1' || e.nodeId === 'num1')
       );
       expect(missingInputErrors.length).toBe(0);
@@ -185,10 +190,11 @@ describe('Workflow Validation', () => {
         createEdge('text1', 'resize1'), // text -> image processing (invalid)
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const typeErrors = errors.filter((e) => e.message.includes('Type mismatch'));
+      const result = validateWorkflow(nodes, edges);
+      const typeErrors = result.errors.filter((e) => e.message.includes('Type mismatch'));
       expect(typeErrors.length).toBeGreaterThan(0);
-      expect(hasBlockingErrors(errors)).toBe(true);
+      expect(result.valid).toBe(false);
+      expect(hasBlockingErrors(result)).toBe(true);
     });
 
     it('should allow valid type connections', () => {
@@ -202,8 +208,8 @@ describe('Workflow Validation', () => {
         createEdge('gen1', 'resize1'), // image -> resize (valid)
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const typeErrors = errors.filter((e) => e.message.includes('Type mismatch'));
+      const result = validateWorkflow(nodes, edges);
+      const typeErrors = result.errors.filter((e) => e.message.includes('Type mismatch'));
       expect(typeErrors.length).toBe(0);
     });
   });
@@ -218,12 +224,11 @@ describe('Workflow Validation', () => {
         createEdge('text1', 'gen1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const outputErrors = errors.filter((e) => 
+      const result = validateWorkflow(nodes, edges);
+      const outputWarnings = result.warnings.filter((e) => 
         e.message.includes('no output nodes')
       );
-      expect(outputErrors.length).toBeGreaterThan(0);
-      expect(outputErrors[0].severity).toBe('warning');
+      expect(outputWarnings.length).toBeGreaterThan(0);
     });
 
     it('should not warn if output node exists', () => {
@@ -237,11 +242,11 @@ describe('Workflow Validation', () => {
         createEdge('gen1', 'preview1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const outputErrors = errors.filter((e) => 
+      const result = validateWorkflow(nodes, edges);
+      const outputWarnings = result.warnings.filter((e) => 
         e.message.includes('no output nodes')
       );
-      expect(outputErrors.length).toBe(0);
+      expect(outputWarnings.length).toBe(0);
     });
   });
 
@@ -255,13 +260,13 @@ describe('Workflow Validation', () => {
         createEdge('resize1', 'preview1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const generatorErrors = errors.filter((e) => 
+      const result = validateWorkflow(nodes, edges);
+      const generatorErrors = result.errors.filter((e) => 
         e.message.includes('no input or generation nodes')
       );
       expect(generatorErrors.length).toBeGreaterThan(0);
-      expect(generatorErrors[0].severity).toBe('error');
-      expect(hasBlockingErrors(errors)).toBe(true);
+      expect(result.valid).toBe(false);
+      expect(hasBlockingErrors(result)).toBe(true);
     });
 
     it('should not error if generator node exists', () => {
@@ -273,8 +278,8 @@ describe('Workflow Validation', () => {
         createEdge('text1', 'gen1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const generatorErrors = errors.filter((e) => 
+      const result = validateWorkflow(nodes, edges);
+      const generatorErrors = result.errors.filter((e) => 
         e.message.includes('no input or generation nodes')
       );
       expect(generatorErrors.length).toBe(0);
@@ -289,12 +294,11 @@ describe('Workflow Validation', () => {
       ];
       const edges = [];
 
-      const errors = validateWorkflow(nodes, edges);
-      const disconnectedErrors = errors.filter((e) => 
+      const result = validateWorkflow(nodes, edges);
+      const disconnectedWarnings = result.warnings.filter((e) => 
         e.message.includes('disconnected') && e.nodeId === 'resize1'
       );
-      expect(disconnectedErrors.length).toBeGreaterThan(0);
-      expect(disconnectedErrors[0].severity).toBe('warning');
+      expect(disconnectedWarnings.length).toBeGreaterThan(0);
     });
 
     it('should not warn about disconnected input nodes', () => {
@@ -303,11 +307,11 @@ describe('Workflow Validation', () => {
       ];
       const edges = [];
 
-      const errors = validateWorkflow(nodes, edges);
-      const disconnectedErrors = errors.filter((e) => 
+      const result = validateWorkflow(nodes, edges);
+      const disconnectedWarnings = result.warnings.filter((e) => 
         e.message.includes('disconnected') && e.nodeId === 'text1'
       );
-      expect(disconnectedErrors.length).toBe(0);
+      expect(disconnectedWarnings.length).toBe(0);
     });
 
     it('should not warn about disconnected output nodes', () => {
@@ -316,33 +320,51 @@ describe('Workflow Validation', () => {
       ];
       const edges = [];
 
-      const errors = validateWorkflow(nodes, edges);
-      const disconnectedErrors = errors.filter((e) => 
+      const result = validateWorkflow(nodes, edges);
+      const disconnectedWarnings = result.warnings.filter((e) => 
         e.message.includes('disconnected') && e.nodeId === 'preview1'
       );
-      expect(disconnectedErrors.length).toBe(0);
+      expect(disconnectedWarnings.length).toBe(0);
     });
   });
 
   describe('hasBlockingErrors', () => {
-    it('should return true if errors exist', () => {
+    it('should return true if errors exist (new format)', () => {
+      const result = {
+        valid: false,
+        errors: [{ nodeId: 'node1', message: 'Error' }],
+        warnings: [{ nodeId: 'node2', message: 'Warning' }],
+      };
+      expect(hasBlockingErrors(result)).toBe(true);
+    });
+
+    it('should return false if only warnings exist (new format)', () => {
+      const result = {
+        valid: true,
+        errors: [],
+        warnings: [
+          { nodeId: 'node1', message: 'Warning 1' },
+          { nodeId: 'node2', message: 'Warning 2' },
+        ],
+      };
+      expect(hasBlockingErrors(result)).toBe(false);
+    });
+
+    it('should return false if valid (new format)', () => {
+      const result = {
+        valid: true,
+        errors: [],
+        warnings: [],
+      };
+      expect(hasBlockingErrors(result)).toBe(false);
+    });
+
+    it('should work with old ValidationError[] format for backwards compatibility', () => {
       const errors = [
         { nodeId: 'node1', message: 'Error', severity: 'error' as const },
         { nodeId: 'node2', message: 'Warning', severity: 'warning' as const },
       ];
       expect(hasBlockingErrors(errors)).toBe(true);
-    });
-
-    it('should return false if only warnings exist', () => {
-      const errors = [
-        { nodeId: 'node1', message: 'Warning 1', severity: 'warning' as const },
-        { nodeId: 'node2', message: 'Warning 2', severity: 'warning' as const },
-      ];
-      expect(hasBlockingErrors(errors)).toBe(false);
-    });
-
-    it('should return false if no errors', () => {
-      expect(hasBlockingErrors([])).toBe(false);
     });
   });
 
@@ -393,9 +415,9 @@ describe('Workflow Validation', () => {
         createEdge('combine1', 'preview1'),
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const blocking = errors.filter((e) => e.severity === 'error');
-      expect(blocking.length).toBe(0);
+      const result = validateWorkflow(nodes, edges);
+      expect(result.valid).toBe(true);
+      expect(result.errors.length).toBe(0);
     });
 
     it('should detect multiple issues in complex workflow', () => {
@@ -408,15 +430,48 @@ describe('Workflow Validation', () => {
         createEdge('gen1', 'resize1'), // Valid connection but both missing inputs
       ];
 
-      const errors = validateWorkflow(nodes, edges);
-      const blocking = errors.filter((e) => e.severity === 'error');
-      expect(blocking.length).toBeGreaterThan(0);
-      
+      const result = validateWorkflow(nodes, edges);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+
       // Should have errors for missing inputs
-      const missingInputErrors = errors.filter((e) => 
-        e.message.includes('Missing required input')
+      const missingInputErrors = result.errors.filter((e) =>
+        e.message.includes('is missing required input')
       );
       expect(missingInputErrors.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Orphaned output nodes', () => {
+    it('should warn about output node with no input', () => {
+      const nodes = [
+        createNode('preview1', 'preview', 'Preview'), // Output node with no input
+      ];
+      const edges = [];
+
+      const result = validateWorkflow(nodes, edges);
+      const orphanedWarnings = result.warnings.filter((e) => 
+        e.message.includes('has no connected input') && e.nodeId === 'preview1'
+      );
+      expect(orphanedWarnings.length).toBeGreaterThan(0);
+    });
+
+    it('should not warn if output node has input', () => {
+      const nodes = [
+        createNode('text1', 'textPrompt', 'Prompt'),
+        createNode('gen1', 'imageGen', 'Generate'),
+        createNode('preview1', 'preview', 'Preview'),
+      ];
+      const edges = [
+        createEdge('text1', 'gen1'),
+        createEdge('gen1', 'preview1'),
+      ];
+
+      const result = validateWorkflow(nodes, edges);
+      const orphanedWarnings = result.warnings.filter((e) => 
+        e.message.includes('has no connected input') && e.nodeId === 'preview1'
+      );
+      expect(orphanedWarnings.length).toBe(0);
     });
   });
 });

@@ -286,22 +286,19 @@ export function Toolbar({
       setNodeError(node.id, null);
     });
 
-    const validationErrors = validateWorkflow(nodes, edges);
+    const validationResult = validateWorkflow(nodes, edges);
     
     // Set validation errors on nodes
-    for (const validationError of validationErrors) {
-      if (validationError.nodeId) {
-        setNodeError(validationError.nodeId, validationError.message);
+    for (const error of validationResult.errors) {
+      if (error.nodeId) {
+        setNodeError(error.nodeId, error.message);
       }
     }
 
-    const blockingErrors = validationErrors.filter((e) => e.severity === 'error');
-    const warnings = validationErrors.filter((e) => e.severity === 'warning');
-
-    if (blockingErrors.length > 0) {
-      toast.error(`Validation failed: ${blockingErrors.length} error(s), ${warnings.length} warning(s)`);
-    } else if (warnings.length > 0) {
-      toast.info(`Validation passed with ${warnings.length} warning(s)`);
+    if (!validationResult.valid) {
+      toast.error(`Validation failed: ${validationResult.errors.length} error(s), ${validationResult.warnings.length} warning(s)`);
+    } else if (validationResult.warnings.length > 0) {
+      toast.info(`Validation passed with ${validationResult.warnings.length} warning(s)`);
     } else {
       toast.success('Validation passed - workflow is ready to execute');
     }

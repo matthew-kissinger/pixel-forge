@@ -11,7 +11,8 @@ import { getNodeDefinition } from '../types/nodes';
 import type { NodeOutput, ExecutionRecord } from '../stores/workflow';
 import { useWorkflowStore } from '../stores/workflow';
 import { handlers, type NodeHandlerContext, type ExecutionContext } from './handlers';
-import { validateWorkflow, hasBlockingErrors } from './validate';
+import { validateWorkflow } from './validate';
+import { logger } from '@pixel-forge/shared/logger';
 
 type WorkflowStore = ReturnType<typeof useWorkflowStore.getState>;
 
@@ -244,7 +245,7 @@ export async function executeWorkflow(
   const { setNodeStatus, setNodeError, addExecutionRecord } = store;
 
   // Pre-execution validation
-  const validationErrors = validateWorkflow(nodes, edges);
+  const validationResult = validateWorkflow(nodes, edges);
   
   // Clear previous validation errors
   nodes.forEach((node) => {
@@ -252,18 +253,22 @@ export async function executeWorkflow(
   });
 
   // Set validation errors on nodes
-  for (const validationError of validationErrors) {
-    if (validationError.nodeId) {
-      setNodeError(validationError.nodeId, validationError.message);
+  for (const error of validationResult.errors) {
+    if (error.nodeId) {
+      setNodeError(error.nodeId, error.message);
     }
   }
 
+  // Log warnings but don't block execution
+  if (validationResult.warnings.length > 0) {
+    logger.warn('Workflow validation warnings:', validationResult.warnings);
+  }
+
   // If there are blocking errors, abort execution
-  if (hasBlockingErrors(validationErrors)) {
-    const blockingErrors = validationErrors.filter((e) => e.severity === 'error');
+  if (!validationResult.valid) {
     return {
       success: false,
-      errors: blockingErrors.map((e) => ({
+      errors: validationResult.errors.map((e) => ({
         nodeId: e.nodeId,
         error: e.message,
       })),

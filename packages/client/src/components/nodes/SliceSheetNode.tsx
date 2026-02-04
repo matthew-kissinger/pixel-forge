@@ -1,7 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { Scissors, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-import JSZip from 'jszip';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
 import { logger } from '@pixel-forge/shared/logger';
@@ -138,6 +137,7 @@ export function SliceSheetNode(props: NodeProps) {
   const downloadZip = async () => {
     if (sprites.length === 0) return;
     
+    const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     const folder = zip.folder('sprites');
     

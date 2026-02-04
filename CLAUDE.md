@@ -182,12 +182,11 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Push 12 unpushed commits** - Working tree is clean but origin/main is 12 commits behind local main.
-- **Fix Unity atlas Y-coordinate bug** - `atlas.ts:89` uses top-left origin (`y: row * frameHeight`) but Unity expects bottom-left origin. Sprites will be addressed incorrectly in Unity imports.
+- **Push 16 unpushed commits** - Working tree is clean but origin/main is 16 commits behind local main.
+- **Fix handleQualityCheck test timeout** - `handlers.test.ts:1552` creates 5000x5000 canvas for transparency check which times out at 5s. Need to mock canvas/getImageData or skip transparency scan for large test images. This is the 1 failing test blocking clean CI.
+- **Commit E2E tests and Playwright config** - `e2e/smoke.spec.ts` (10 tests) and `playwright.config.ts` exist as untracked files. Need to commit and verify they run with `bun run test:e2e`.
 - **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. Need at least smoke-level integration tests (gated behind env vars).
-- **NodeErrorBoundary tests** - `NodeErrorBoundary` wraps all lazy-loaded nodes but has no test coverage.
-- **Clean up unused eslint-disable directives** - 28 warnings from stale `eslint-disable` comments in test setup and handler files. Fixable with `eslint --fix`.
-- **Executor timeout test skipped** - `executor.test.ts` timeout test is `it.skip` because Bun's vitest shim lacks `vi.runAllTimersAsync()`.
+- **Clean up lint warnings** - 14 warnings in src/ from react-hooks/exhaustive-deps (toast/logger in dependency arrays). Fixable by removing unnecessary deps.
 
 ### Completed Goals
 
@@ -223,14 +222,14 @@ Build a **template/preset system** where:
 - ~~Code-split React Flow~~ - Done (187KB separate chunk, 4 heavy nodes lazy-loaded: KilnGen, BatchGen, SpriteSheet, Model3DGen)
 - ~~Typecheck scripts~~ - Done (`bun run typecheck` at root, client, and server levels)
 - ~~kilnGen executor~~ - Done (client API integration in `handlers/model3d.ts`, calls `/api/kiln/generate`, commit `01fcf72`)
-- ~~E2E smoke tests~~ - Removed (Playwright config was set up but test files no longer exist in repo)
+- ~~E2E smoke tests~~ - Done (10 tests in `e2e/smoke.spec.ts`, Playwright config at root, `bun run test:e2e` script added)
 - ~~Lazy-load all node components~~ - Done (all 30 nodes lazy-loaded via `createLazyNode` helper with Suspense wrappers and loading spinners; main chunk reduced from 502KB to 317KB)
 - ~~Dynamic handler imports~~ - Done (executor handlers use dynamic `import()` instead of static imports, handler registry returns `() => Promise<NodeHandler>`)
 - ~~Server service tests~~ - Done (58 pass, 0 fail across 4 bun:test files: api.test.ts, claude.test.ts, gemini.test.ts, fal.test.ts)
 - ~~Executor timeout test~~ - Done (fixed fake timer hang, commit `3026750`)
 - ~~Service error handling~~ - Done (gemini.ts: 60s timeout + input validation + custom errors; fal.ts: 120s/30s timeouts + AbortController + input validation; claude.ts: 180s timeout wrapper; commit `df3fcfe`)
 - ~~SliceSheetNode JSZip lazy-load~~ - Done (JSZip split to separate lazy chunk via dynamic `import()`, commit `df3fcfe`)
-- ~~E2E test infrastructure~~ - Partial (Playwright config exists but test files were removed from repo)
+- ~~E2E test infrastructure~~ - Done (Playwright config, 10 smoke tests in e2e/, webServer auto-start)
 - ~~CI pipeline~~ - Done (GitHub Actions: `.github/workflows/ci.yml` - typecheck + server tests + client tests on push/PR to main)
 - ~~Server-side file export~~ - Done (`/api/export/save` and `/api/export/batch-save` endpoints with path validation, format conversion via sharp, security checks; commit `a21f4ed`)
 - ~~Expanded API test coverage~~ - Done (generate-smart, compress, batch-generate routes; server now at 79 tests across 4 files; commit `08b9269`)
@@ -239,7 +238,7 @@ Build a **template/preset system** where:
 - ~~Workflow validation before execution~~ - Done (validate.ts checks cycles, required inputs, type compatibility, disconnected nodes; Toolbar validate button; commit `9bf9a5c0`)
 - ~~Export handler tests~~ - Done (handleSave coverage added; commit `b0286b1`)
 - ~~Validation refactor~~ - Done (`validateWorkflow` returns `WorkflowValidationResult` with `.valid`, `.errors[]`, `.warnings[]`; executor and Toolbar integrated; commit `2cfa489`)
-- ~~E2E excluded from bun test~~ - Moot (E2E files no longer exist; commit `629c485`)
+- ~~E2E excluded from bun test~~ - Done (vitest config excludes `e2e/**`; commit `629c485`)
 - ~~Shared API types~~ - Done (`packages/shared/api-types.ts` with all request/response types; client and all 4 server routes import from `@pixel-forge/shared`; commits `6699f61`, `b25feb0`, `248639b`)
 - ~~Fix 150 ESLint errors~~ - Done (src/ has 0 errors, 14 warnings; tests/ has 111 `no-explicit-any` errors in mock code; need eslint test overrides for CI)
 - ~~Server using shared types~~ - Done (all server routes import types from `@pixel-forge/shared`; `claude.ts` service still has local duplicates of KilnGenerateRequest/Response but route layer is clean)
@@ -252,20 +251,24 @@ Build a **template/preset system** where:
 - ~~Texture atlas export formats~~ - Done (Phaser 3 JSON Hash, Unity Sprite Atlas JSON, Godot .tres in `atlas.ts`; ExportSheetNode has format selector; 21 tests in `atlas.test.ts`)
 - ~~Color palette node~~ - Done (`ColorPaletteNode.tsx` with classic game palettes: pico8, gameboy, nes, etc., optional dithering; handler in `canvas.ts`)
 - ~~Demo mode~~ - Done (`?demo=true` URL param bypasses API calls with sample data for offline preview; commit `a0653a0`)
+- ~~Fix Unity atlas Y-coordinate bug~~ - Done (atlas.ts uses bottom-left origin for Unity format; commit `6084709`)
+- ~~NodeErrorBoundary tests~~ - Done (6 tests in `NodeErrorBoundary.test.tsx`, pass under vitest/happy-dom; commit `d9c8725`)
+- ~~PresetLauncher visual cards~~ - Done (category cards with visual preset previews; commit `94d4d26`)
+- ~~Clean up unused eslint-disable~~ - Done (removed stale directives; commit `a24c829`)
 
 ## Current State
 
 React Flow editor with 30 node types fully implemented (type definitions, UI components, and executor handlers), including QualityCheckNode for asset validation and ColorPaletteNode for palette swaps. All node components lazy-loaded via `createLazyNode` helper with Suspense wrappers and NodeErrorBoundary for error isolation. Executor handlers use dynamic imports (`() => Promise<NodeHandler>`). Generates images via Gemini nano-banana-pro, removes backgrounds via FAL BiRefNet, slices sprite sheets with ZIP download (JSZip lazy-imported), batch generates with consistency phrases and per-item progress tracking. 3D generation via Meshy and Kiln (Claude Agent SDK) fully working - kilnGen executor calls `/api/kiln/generate` with mode/category/style support. Workflow save/load works. 9 pre-built templates across 5 categories. 7 generation presets. Image compression/optimization node fully implemented. Workflow execution engine with topological sort, parallel wave execution, progress tracking, cancellation, execution timeout (per-node), and execution history. API calls wrapped with exponential backoff retry logic. Executor refactored into main module + 8 handler modules in `lib/handlers/`. Server services have robust error handling: custom error types (`ServiceUnavailableError`, `BadRequestError`), per-operation timeouts (60s Gemini, 120s/30s FAL, 180s Claude), input validation, rate limit detection, and AbortController support. Server-side file export API with path validation, format conversion (PNG/JPEG/WebP via sharp), and batch operations. Texture atlas export in Phaser 3, Unity, and Godot formats. Demo mode (`?demo=true`) for offline preview with sample data. Full UX: per-node error display, execution history panel, NodePalette with search/filter, undo/redo (Ctrl+Z/Shift+Z), copy/paste (Ctrl+C/V), delete key, node context menu, keyboard shortcuts, auto-save, minimap, fit view, auto layout. CI pipeline via GitHub Actions (typecheck + lint + tests + build on push/PR).
 
-Bundle: main chunk 320KB/~96KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks.
+Bundle: main chunk 323KB/~97KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/~61KB gzip (separate), JSZip 97KB/~30KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks.
 
-Test coverage: 246 pass, 1 skip across 10 test files (client ~167 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build passes.
+Test coverage: client 172 pass, 1 fail (handleQualityCheck timeout), 1 skip (executor timeout) across 7 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (uncommitted). TypeScript typecheck clean (both client and server). Production build passes.
 
-Lint status: 0 errors, 28 warnings (14 in src/ from react-hooks/exhaustive-deps, 14 in tests/ from unused eslint-disable directives). CI lint step passes.
+Lint status: 0 errors, 14 warnings (all react-hooks/exhaustive-deps in src/ - toast/logger in dependency arrays). CI lint step passes.
 
-Known bugs: Unity atlas Y-coordinate uses top-left origin but Unity expects bottom-left (`atlas.ts:89`).
+Known bugs: `handleQualityCheck` handler creates full-size canvas for transparency check - causes timeout on large images (5000x5000). The `analysis.ts:157-167` transparency check should use downsampled canvas or skip for dimensions above a threshold.
 
-Key gaps: 12 unpushed commits on main, no integration tests against real APIs, no NodeErrorBoundary test coverage.
+Key gaps: 16 unpushed commits on main, E2E tests uncommitted, no integration tests against real APIs, 1 failing client test (handler timeout).
 
 ## Quality Bar
 

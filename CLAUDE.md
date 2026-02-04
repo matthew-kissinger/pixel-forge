@@ -182,13 +182,14 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Test critical untested modules** - `autoLayout.ts` (119 lines, topological sort), `nodeLayout.ts` (256 lines, collision detection), `retry.ts` (115 lines, exponential backoff), `useAutoSave.ts` (localStorage + recovery prompt) all have zero tests.
+- **Test remaining hooks and utilities** - `useAutoSave.ts` (85 lines, localStorage + recovery), `useKeyboardShortcuts.ts` (140 lines, hotkey logic), `image-utils.ts` (544 lines, canvas ops), `share.ts` (67 lines, URL hash encoding) all lack dedicated test files.
 - **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. `packages/server/scripts/validate-apis.ts` exists but isn't automated. Need gated integration tests (run when API keys are in env).
-- **Clean up build log artifacts** - 6 `build_output*.log` files in `packages/client/` should be deleted and gitignored.
 - **Bundle size tracking** - Three.js chunk is 1.4MB/380KB gzip. No CI gate to prevent further bloat. Consider bundle size assertion in CI.
 
 ### Completed Goals
 
+- ~~Test critical lib modules~~ - Done (`autoLayout.ts` 6 tests, `nodeLayout.ts` 13 tests, `retry.ts` 20 tests; commits `d1ddd31`, `83d68dd`, `d418eea2`)
+- ~~Clean up build log artifacts~~ - Done (deleted, `*.log` gitignored)
 - ~~Planet texture preset~~ - Done (7 presets in `packages/shared/presets.ts`)
 - ~~Sprite sheet slicing~~ - Done (`SliceSheetNode`, multiple sprites + ZIP download)
 - ~~Batch consistency~~ - Done (`BatchGenNode` with consistency phrases)
@@ -265,13 +266,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk 323KB/~97KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 188KB/~61KB gzip (separate), JSZip 97KB/~30KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks.
 
-Test coverage: client 173 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 7 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed). TypeScript typecheck clean (both client and server). Production build passes.
+Test coverage: client 208 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 10 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed). TypeScript typecheck clean (both client and server). Production build passes.
 
 Lint status: 0 errors, 0 warnings. Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs, critical lib modules untested (autoLayout, nodeLayout, retry, useAutoSave), no bundle size tracking in CI, 6 stale build log files in packages/client/.
+Key gaps: No integration tests against real APIs, hooks and utilities untested (useAutoSave, useKeyboardShortcuts, image-utils, share), no bundle size tracking in CI.
 
 ## Quality Bar
 

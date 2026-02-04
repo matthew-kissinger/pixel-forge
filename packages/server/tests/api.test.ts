@@ -3,9 +3,14 @@ import app from '../src/index';
 
 // Mock the AI services to avoid real API calls in tests
 mock.module('../src/services/gemini', () => ({
-  generateImage: async (prompt: string) => ({
-    image: `data:image/png;base64,mockImageDataFor_${prompt.substring(0, 10)}`,
-  }),
+  generateImage: async (prompt: string) => {
+    if (prompt.includes('FAIL_GEN')) {
+      throw new Error('Generation failed');
+    }
+    return {
+      image: `data:image/png;base64,mockImageDataFor_${prompt.substring(0, 10)}`,
+    };
+  },
   extractSpritesFromSheet: async (_buffer: Buffer, rows: number, cols: number) => {
     const count = rows * cols;
     return Array.from({ length: count }, (_, index) => Buffer.from(`sprite-${index}`));
@@ -22,9 +27,14 @@ mock.module('../src/services/fal', () => ({
     modelUrl: 'https://example.com/model.glb',
     thumbnailUrl: 'https://example.com/thumb.png',
   }),
-  removeBackground: async (image: string) => ({
-    image: `data:image/png;base64,mockRemovedBg`,
-  }),
+  removeBackground: async (image: string) => {
+    if (image.includes('FAIL_BG')) {
+      throw new Error('Background removal failed');
+    }
+    return {
+      image: `data:image/png;base64,mockRemovedBg`,
+    };
+  },
 }));
 
 mock.module('../src/services/claude', () => ({
@@ -139,6 +149,53 @@ describe('Image API', () => {
     expect(data.format).toBe('png');
   });
 
+  test('POST /api/image/compress handles different formats and quality', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/compress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: `data:image/png;base64,${samplePngBase64}`,
+          format: 'webp',
+          quality: 50,
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.format).toBe('webp');
+    expect(data.image).toStartWith('data:image/webp');
+  });
+
+  test('POST /api/image/compress handles resizing', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/compress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: `data:image/png;base64,${samplePngBase64}`,
+          maxWidth: 100,
+          maxHeight: 100,
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  test('POST /api/image/compress rejects invalid formats', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/compress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: `data:image/png;base64,${samplePngBase64}`,
+          format: 'gif',
+        }),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
   test('POST /api/image/slice-sheet requires image, rows, cols', async () => {
     const res = await app.fetch(
       new Request(`${baseUrl}/api/image/slice-sheet`, {
@@ -170,6 +227,58 @@ describe('Image API', () => {
     expect(data.sprites[0]).toStartWith('data:image/');
   });
 
+  test('POST /api/image/generate-smart requires prompt', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/generate-smart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test('POST /api/image/generate-smart returns image with background removed', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/generate-smart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'smart test' }),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json() as any;
+    expect(data.image).toBeDefined();
+    expect(data.image).toBe('data:image/png;base64,mockRemovedBg');
+  });
+
+  test('POST /api/image/generate-smart handles background removal failure gracefully', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/generate-smart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'FAIL_BG_removal' }),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const data = await res.json() as any;
+    expect(data.image).toBeDefined();
+    expect(data.image).toStartWith('data:image/png;base64,mockImageDataFor_FAIL_BG_re');
+  });
+
+  test('POST /api/image/generate-smart handles generation failure', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/generate-smart`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'FAIL_GEN_error' }),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
   test('POST /api/image/batch-generate requires subjects', async () => {
     const res = await app.fetch(
       new Request(`${baseUrl}/api/image/batch-generate`, {
@@ -197,6 +306,65 @@ describe('Image API', () => {
     const data = await res.json() as any;
     expect(Array.isArray(data.images)).toBe(true);
     expect(data.images.length).toBe(2);
+  });
+
+  test('POST /api/image/batch-generate handles presetId', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/batch-generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subjects: ['one'],
+          presetId: 'enemy-sprite',
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  test('POST /api/image/batch-generate rejects unknown presetId', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/batch-generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subjects: ['one'],
+          presetId: 'unknown-preset-id',
+        }),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test('POST /api/image/batch-generate rejects empty subjects array', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/batch-generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subjects: [],
+        }),
+      })
+    );
+    expect(res.status).toBe(400);
+  });
+
+  test('POST /api/image/batch-generate handles partial failures', async () => {
+    const res = await app.fetch(
+      new Request(`${baseUrl}/api/image/batch-generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subjects: ['success-one', 'FAIL_GEN_failure'],
+        }),
+      })
+    );
+    expect(res.status).toBe(200);
+    const data = await res.json() as any;
+    expect(data.images.length).toBe(1);
+    expect(data.errors.length).toBe(1);
+    expect(data.successCount).toBe(1);
+    expect(data.totalCount).toBe(2);
   });
 });
 

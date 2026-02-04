@@ -182,12 +182,12 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **4 unpushed commits** - origin/main is 4 commits behind local main. Need to push to avoid data loss.
-- **CI missing build step** - GitHub Actions runs typecheck + tests but doesn't verify production build (`bun run build`). A passing typecheck doesn't guarantee bundling works.
-- **CI missing lint step** - No `bun run lint` in CI pipeline.
-- **Executor timeout test skipped** - `executor.test.ts` timeout test is `it.skip` because Bun's vitest shim lacks `vi.runAllTimersAsync()`. Functionality works at runtime but has no unit test coverage.
-- **No actual asset generation validation** - The app builds and tests pass, but no automated verification that generated assets meet the quality bar (correct size, proper transparency, no artifacts). Need to generate real assets for Asteroid-Miner/terror-in-the-jungle and validate them in-game.
-- **Shared API types** - Client and server define request/response schemas independently. No shared type definitions for API contracts.
+- **Build broken on HEAD** - Commit `6699f61` (shared API types) broke `bun run build`. Types moved to `@pixel-forge/shared` but `api.ts` doesn't re-export them; `ImageGenNode.tsx`, `Model3DGenNode.tsx`, and `imageGen.ts` handler import `ArtStyle`, `AspectRatio`, `ModelStatusResponse`, `GenerateImageOptions` from `../../lib/api` which no longer exports them. Typecheck passes (noEmit mode) but Vite build fails. Must fix before anything else.
+- **150 lint errors** - Mostly `no-unused-vars` (75) and `no-explicit-any` (60). Uncommitted CI yml adds lint step which would fail. Either fix lint errors or remove lint step before committing.
+- **1 unpushed commit** - `6699f61` shared API types commit not yet on origin/main.
+- **Server not using shared types** - `packages/shared/api-types.ts` exists but server still defines its own request/response types inline.
+- **Executor timeout test skipped** - `executor.test.ts` timeout test is `it.skip` because Bun's vitest shim lacks `vi.runAllTimersAsync()`.
+- **No actual asset generation validation** - No automated verification that generated assets meet quality bar.
 
 ### Completed Goals
 
@@ -240,6 +240,7 @@ Build a **template/preset system** where:
 - ~~Export handler tests~~ - Done (handleSave coverage added; commit `b0286b1`)
 - ~~Validation refactor~~ - Done (`validateWorkflow` returns `WorkflowValidationResult` with `.valid`, `.errors[]`, `.warnings[]`; executor and Toolbar integrated; commit `2cfa489`)
 - ~~E2E excluded from bun test~~ - Done (E2E files no longer loaded by `bun test`; commit `629c485`)
+- ~~Shared API types (partial)~~ - Done (`packages/shared/api-types.ts` with all request/response types; client imports wired but build broken due to missing re-exports from `api.ts`; server not yet consuming shared types; commit `6699f61`)
 
 ## Current State
 
@@ -247,9 +248,9 @@ React Flow editor with all 28 node types fully implemented (type definitions, UI
 
 Bundle: main chunk 312KB/~95KB gzip, Three.js 1.4MB/380KB gzip (separate), React Flow 184KB/~61KB gzip (separate), JSZip 96KB/~28KB gzip (lazy), all 28 nodes lazy-loaded into individual chunks. SliceSheetNode now 8KB (JSZip split to separate chunk).
 
-Test coverage: client 140 pass, 1 skip across 5 test files (executor timeout test skipped due to Bun vitest timer limitations). Server 79 pass, 0 fail across 4 bun:test files (api.test.ts + 3 service test files). TypeScript typecheck clean (both client and server). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
+Test coverage: 219 pass, 1 skip across 9 test files (client 140 pass + server 79 pass; executor timeout test skipped due to Bun vitest timer limitations). TypeScript typecheck clean (both client and server). Production build broken (shared API type import issue). E2E: 9 smoke tests + workflow execution tests written, Playwright browsers not installed on hub, E2E files excluded from bun test runner.
 
-Key gaps: CI pipeline missing build verification and lint steps, 4 unpushed commits, no integration tests against real APIs, no automated asset quality validation, no shared API type definitions between client/server.
+Key gaps: Production build broken (shared API type re-exports), 150 lint errors blocking CI lint step, server not consuming shared API types, 1 unpushed commit, no integration tests against real APIs, no automated asset quality validation.
 
 ## Quality Bar
 

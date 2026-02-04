@@ -12,6 +12,12 @@ import sharp from 'sharp';
 import path from 'path';
 import { BadRequestError } from '../lib/errors';
 import { logger } from '@pixel-forge/shared/logger';
+import type {
+  ExportToFileOptions,
+  ExportToFileResponse,
+  BatchExportToFileOptions,
+  BatchExportToFileResponse,
+} from '@pixel-forge/shared';
 
 const exportRouter = new Hono();
 
@@ -89,7 +95,7 @@ const batchSaveSchema = z.object({
  * }
  */
 exportRouter.post('/save', zValidator('json', saveSchema), async (c) => {
-  const { image, path: relativePath, format, quality } = c.req.valid('json');
+  const { image, path: relativePath, format, quality } = c.req.valid('json') as ExportToFileOptions;
 
   try {
     // Validate and resolve the path
@@ -126,7 +132,7 @@ exportRouter.post('/save', zValidator('json', saveSchema), async (c) => {
 
     logger.info(`Saved file to: ${fullPath} (${size} bytes)`);
 
-    return c.json({
+    return c.json<ExportToFileResponse>({
       success: true,
       path: fullPath,
       size,
@@ -168,7 +174,7 @@ exportRouter.post('/save', zValidator('json', saveSchema), async (c) => {
  * }
  */
 exportRouter.post('/batch-save', zValidator('json', batchSaveSchema), async (c) => {
-  const { images } = c.req.valid('json');
+  const { images } = c.req.valid('json') as BatchExportToFileOptions;
 
   try {
     // Process all images in parallel
@@ -231,7 +237,7 @@ exportRouter.post('/batch-save', zValidator('json', batchSaveSchema), async (c) 
 
     const successCount = mappedResults.filter((r) => r.success).length;
 
-    return c.json({
+    return c.json<BatchExportToFileResponse>({
       success: true,
       results: mappedResults,
       successCount,

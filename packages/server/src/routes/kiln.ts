@@ -18,6 +18,7 @@ import {
   type RefactorRequest,
 } from '../services/claude';
 import { BadRequestError } from '../lib/errors';
+import type { GenerateKilnCodeOptions, GenerateKilnCodeResponse } from '@pixel-forge/shared';
 
 export const kilnRouter = new Hono();
 
@@ -64,23 +65,23 @@ kilnRouter.post('/generate', async (c) => {
     );
   }
 
-  const request: KilnGenerateRequest = {
+  const request: GenerateKilnCodeOptions = {
     prompt: parsed.data.prompt,
-    mode: parsed.data.mode,
-    category: parsed.data.category,
-    style: parsed.data.style,
+    mode: parsed.data.mode as any,
+    category: parsed.data.category as any,
+    style: parsed.data.style as any,
     includeAnimation: parsed.data.includeAnimation,
     existingCode: parsed.data.existingCode,
     referenceImageUrl: parsed.data.referenceImageUrl,
   };
 
-  const result = await generateKilnCode(request);
+  const result = await generateKilnCode(request as any);
 
   if (!result.success) {
-    return c.json({ success: false, error: result.error }, 500);
+    return c.json<GenerateKilnCodeResponse>({ success: false, error: result.error }, 500);
   }
 
-  return c.json({
+  return c.json<GenerateKilnCodeResponse>({
     success: true,
     code: result.code,
     effectCode: result.effectCode,

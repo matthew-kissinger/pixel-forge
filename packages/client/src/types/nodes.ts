@@ -282,6 +282,7 @@ export interface SaveNodeData extends BaseNodeDataFields {
   fileName: string;
   format: 'png' | 'jpg' | 'webp' | 'glb' | 'txt';
   quality: number;
+  outputPath?: string; // Optional: if set, saves to disk via export API instead of browser download
 }
 
 export interface ExportGLBNodeData extends BaseNodeDataFields {

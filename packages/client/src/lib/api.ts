@@ -224,3 +224,53 @@ export async function generateKilnCode(
     body: JSON.stringify(options),
   });
 }
+
+export interface ExportToFileOptions {
+  image: string; // base64 data URL
+  path: string; // relative path
+  format?: 'png' | 'jpeg' | 'webp';
+  quality?: number;
+}
+
+export interface ExportToFileResponse {
+  success: boolean;
+  path: string;
+  size: number;
+}
+
+export interface BatchExportToFileOptions {
+  images: ExportToFileOptions[];
+}
+
+export interface BatchExportToFileResponse {
+  success: boolean;
+  results: Array<{
+    success: boolean;
+    path?: string;
+    size?: number;
+    error?: string;
+  }>;
+  successCount: number;
+  totalCount: number;
+}
+
+export async function exportToFile(
+  image: string,
+  path: string,
+  format: 'png' | 'jpeg' | 'webp' = 'png',
+  quality = 90
+): Promise<ExportToFileResponse> {
+  return apiFetch<ExportToFileResponse>('/export/save', {
+    method: 'POST',
+    body: JSON.stringify({ image, path, format, quality }),
+  });
+}
+
+export async function batchExportToFile(
+  images: ExportToFileOptions[]
+): Promise<BatchExportToFileResponse> {
+  return apiFetch<BatchExportToFileResponse>('/export/batch-save', {
+    method: 'POST',
+    body: JSON.stringify({ images }),
+  });
+}

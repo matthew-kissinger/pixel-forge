@@ -1,6 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 import { TextPromptNode } from './TextPromptNode';
 import { PreviewNode } from './PreviewNode';
 import { lazy, Suspense, type ComponentType } from 'react';
+import { NodeErrorBoundary } from '../ErrorBoundary';
 
 // Loading Fallback Component
 const LoadingFallback = ({ label }: { label: string }) => (
@@ -16,6 +18,7 @@ const LoadingFallback = ({ label }: { label: string }) => (
  * Helper to create a lazy-loaded node component with a Suspense wrapper
  */
 function createLazyNode(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React lazy() requires any for dynamic component types
   importFn: () => Promise<{ [key: string]: ComponentType<any> }>,
   exportName: string,
   label: string
@@ -24,10 +27,13 @@ function createLazyNode(
     importFn().then((m) => ({ default: m[exportName] }))
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Props forwarded to dynamic components
   return (props: any) => (
-    <Suspense fallback={<LoadingFallback label={label} />}>
-      <LazyComponent {...props} />
-    </Suspense>
+    <NodeErrorBoundary nodeId={props.id || 'unknown'} label={label}>
+      <Suspense fallback={<LoadingFallback label={label} />}>
+        <LazyComponent {...props} />
+      </Suspense>
+    </NodeErrorBoundary>
   );
 }
 
@@ -55,6 +61,7 @@ const TileNodeWrapper = createLazyNode(() => import('./TileNode'), 'TileNode', '
 const CropNodeWrapper = createLazyNode(() => import('./CropNode'), 'CropNode', 'Image Cropper');
 const CombineNodeWrapper = createLazyNode(() => import('./CombineNode'), 'CombineNode', 'Image Combiner');
 const AnalyzeNodeWrapper = createLazyNode(() => import('./AnalyzeNode'), 'AnalyzeNode', 'Vision Analyzer');
+const QualityCheckNodeWrapper = createLazyNode(() => import('./QualityCheckNode'), 'QualityCheckNode', 'Quality Check');
 const FilterNodeWrapper = createLazyNode(() => import('./FilterNode'), 'FilterNode', 'Image Filter');
 const CompressNodeWrapper = createLazyNode(() => import('./CompressNode'), 'CompressNode', 'Optimizer');
 const IterateNodeWrapper = createLazyNode(() => import('./IterateNode'), 'IterateNode', 'Iterator');
@@ -82,10 +89,25 @@ export {
   type DataType,
 } from '../../types/nodes';
 
+// Non-lazy nodes wrapped with Error Boundary
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Props forwarded to node components
+const TextPromptNodeWrapper = (props: any) => (
+  <NodeErrorBoundary nodeId={props.id} label="Text Prompt">
+    <TextPromptNode {...props} />
+  </NodeErrorBoundary>
+);
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Props forwarded to node components
+const PreviewNodeWrapper = (props: any) => (
+  <NodeErrorBoundary nodeId={props.id} label="Preview">
+    <PreviewNode {...props} />
+  </NodeErrorBoundary>
+);
+
 // Node component registry - maps node type to React component
 export const nodeTypes = {
   // Input
-  textPrompt: TextPromptNode,
+  textPrompt: TextPromptNodeWrapper,
   imageUpload: ImageUploadNodeWrapper,
   number: NumberNodeWrapper,
   styleReference: StyleReferenceNodeWrapper,
@@ -110,9 +132,10 @@ export const nodeTypes = {
   rotate: RotateNodeWrapper,
   iterate: IterateNodeWrapper,
   analyze: AnalyzeNodeWrapper,
+  qualityCheck: QualityCheckNodeWrapper,
   sliceSheet: SliceSheetNodeWrapper,
   // Output
-  preview: PreviewNode,
+  preview: PreviewNodeWrapper,
   save: SaveNodeWrapper,
   exportGLB: ExportGLBNodeWrapper,
   exportSheet: ExportSheetNodeWrapper,

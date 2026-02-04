@@ -87,6 +87,7 @@ export class ErrorBoundary extends Component<Props, State> {
 interface NodeErrorBoundaryProps {
   children: ReactNode;
   nodeId: string;
+  label?: string;
 }
 
 interface NodeErrorState {
@@ -105,7 +106,7 @@ export class NodeErrorBoundary extends Component<NodeErrorBoundaryProps, NodeErr
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    logger.error(`Error in node ${this.props.nodeId}:`, error, errorInfo);
+    logger.error(`Error in node ${this.props.label || this.props.nodeId} (${this.props.nodeId}):`, error, errorInfo);
   }
 
   handleRetry = (): void => {
@@ -115,16 +116,24 @@ export class NodeErrorBoundary extends Component<NodeErrorBoundaryProps, NodeErr
   render(): ReactNode {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center gap-2 rounded border border-[var(--error)] bg-[var(--bg-tertiary)] p-3 text-center">
-          <AlertTriangle className="h-5 w-5 text-[var(--error)]" />
-          <p className="text-xs text-[var(--text-secondary)]">
-            Node error occurred
-          </p>
+        <div className="flex min-h-[120px] w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[var(--error)] bg-[var(--bg-secondary)] p-4 text-center">
+          <AlertTriangle className="h-6 w-6 text-[var(--error)]" />
+          <div className="flex flex-col gap-1">
+            <p className="text-xs font-semibold text-[var(--text-primary)]">
+              {this.props.label || 'Node'} Error
+            </p>
+            {this.state.error && (
+              <p className="max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap text-[10px] text-[var(--text-secondary)]" title={this.state.error.message}>
+                {this.state.error.message}
+              </p>
+            )}
+          </div>
           <button
             onClick={this.handleRetry}
-            className="text-xs text-[var(--accent)] hover:underline"
+            className="mt-1 flex items-center gap-1 rounded bg-[var(--accent)] px-3 py-1 text-[10px] font-medium text-white transition-colors hover:bg-[var(--accent-hover)]"
           >
-            Retry
+            <RefreshCw className="h-3 w-3" />
+            Retry Node
           </button>
         </div>
       );

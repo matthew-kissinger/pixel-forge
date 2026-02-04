@@ -14,6 +14,7 @@
 
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import { logger } from '@pixel-forge/shared/logger';
+import { ServiceUnavailableError, BadRequestError } from '../lib/errors';
 
 // =============================================================================
 // Types
@@ -22,6 +23,30 @@ import { logger } from '@pixel-forge/shared/logger';
 export type RenderMode = 'glb' | 'tsl' | 'both';
 export type AssetCategory = 'character' | 'prop' | 'vfx' | 'environment';
 export type AssetStyle = 'low-poly' | 'stylized' | 'voxel' | 'detailed' | 'realistic';
+
+// Timeout constants
+const CLAUDE_TIMEOUT_MS = 180000; // 180 seconds for complex agent tasks
+
+/**
+ * Create timeout-wrapped promise for async generators
+ */
+async function withTimeoutGenerator<T>(
+  generator: AsyncGenerator<T>,
+  timeoutMs: number,
+  operation: string
+): Promise<void> {
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new ServiceUnavailableError(`${operation} timed out after ${timeoutMs}ms`)), timeoutMs)
+  );
+
+  const generatorPromise = (async () => {
+    for await (const _ of generator) {
+      // Consume generator
+    }
+  })();
+
+  await Promise.race([generatorPromise, timeoutPromise]);
+}
 
 export interface AssetBudget {
   maxTriangles?: number;

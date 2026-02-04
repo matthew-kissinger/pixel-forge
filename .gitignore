@@ -34,6 +34,11 @@ test-*.jpg
 test-*.glb
 test-*.fbx
 
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
 # Logs
 *.log
 npm-debug.log*

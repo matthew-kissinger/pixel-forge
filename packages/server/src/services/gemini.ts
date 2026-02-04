@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
 import { logger } from '@pixel-forge/shared/logger';
+import { ServiceUnavailableError, BadRequestError } from '../lib/errors';
 
 let genai: GoogleGenAI | null = null;
 
@@ -236,30 +237,89 @@ async function extractAlphaFromDualImages(
 // IMAGE GENERATION
 // ===========================================
 
+// Timeout constants
+const GEMINI_TIMEOUT_MS = 60000; // 60 seconds
+
+/**
+ * Create timeout-wrapped promise
+ */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new ServiceUnavailableError(`${operation} timed out after ${timeoutMs}ms`)), timeoutMs)
+    ),
+  ]);
+}
+
 async function generateRawImage(prompt: string): Promise<Buffer> {
+  // Input validation
+  if (!prompt || prompt.trim().length === 0) {
+    throw new BadRequestError('Prompt cannot be empty');
+  }
+  if (prompt.length > 10000) {
+    throw new BadRequestError('Prompt exceeds maximum length of 10000 characters');
+  }
+
   const client = getClient();
 
-  const response = await client.models.generateContent({
-    model: 'gemini-2.5-flash-preview-05-20', // or 'nano-banana-pro-preview'
-    contents: prompt,
-    config: {
-      responseModalities: ['image', 'text'],
-    },
-  });
+  try {
+    const response = await withTimeout(
+      client.models.generateContent({
+        model: 'gemini-2.5-flash-preview-05-20', // or 'nano-banana-pro-preview'
+        contents: prompt,
+        config: {
+          responseModalities: ['image', 'text'],
+        },
+      }),
+      GEMINI_TIMEOUT_MS,
+      'Gemini image generation'
+    );
 
-  const parts = response.candidates?.[0]?.content?.parts;
-  if (!parts) {
-    throw new Error('No response from Gemini');
-  }
-
-  for (const part of parts) {
-    if (part.inlineData) {
-      const { data } = part.inlineData;
-      return Buffer.from(data ?? '', 'base64');
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (!parts) {
+      throw new ServiceUnavailableError('No response from Gemini');
     }
-  }
 
-  throw new Error('No image in Gemini response');
+    for (const part of parts) {
+      if (part.inlineData) {
+        const { data } = part.inlineData;
+        return Buffer.from(data ?? '', 'base64');
+      }
+    }
+
+    throw new ServiceUnavailableError('No image in Gemini response');
+  } catch (error) {
+    // Re-throw our custom errors
+    if (error instanceof BadRequestError || error instanceof ServiceUnavailableError) {
+      throw error;
+    }
+
+    // Handle Gemini API errors
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+
+      // Rate limit errors
+      if (message.includes('quota') || message.includes('rate limit')) {
+        throw new ServiceUnavailableError('Gemini API rate limit exceeded');
+      }
+
+      // Authentication errors
+      if (message.includes('api key') || message.includes('auth')) {
+        throw new ServiceUnavailableError('Gemini API authentication failed');
+      }
+
+      // Network errors
+      if (message.includes('network') || message.includes('fetch') || message.includes('enotfound')) {
+        throw new ServiceUnavailableError('Network error connecting to Gemini API');
+      }
+
+      // Generic API error
+      throw new ServiceUnavailableError(`Gemini API error: ${error.message}`);
+    }
+
+    throw new ServiceUnavailableError('Unknown error occurred during image generation');
+  }
 }
 
 // ===========================================

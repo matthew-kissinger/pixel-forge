@@ -49,16 +49,15 @@ export async function handleSave(context: NodeHandlerContext): Promise<void> {
   }
 
   // Call export API
-  const result = await exportToFile(
+  await exportToFile(
     input.data,
     nodeData.outputPath,
     format,
     nodeData.quality
   );
 
-  context.onProgress?.({
-    message: `Saved to ${result.path} (${result.size} bytes)`,
-  });
+  // Report save complete (instant operation)
+  context.ctx.onProgress?.(1, 1);
 }
 
 export async function handleExportGLB(_context: NodeHandlerContext): Promise<void> {

@@ -125,6 +125,7 @@ vi.mock('../../src/lib/api', () => ({
   generateModel: vi.fn(),
   pollModelStatus: vi.fn(),
   generateKilnCode: vi.fn(),
+  exportToFile: vi.fn(),
 }));
 
 // Mock image-utils
@@ -141,6 +142,7 @@ import {
   generateModel,
   pollModelStatus,
   generateKilnCode,
+  exportToFile,
 } from '../../src/lib/api';
 import {
   extractDominantColors,
@@ -1623,19 +1625,140 @@ describe('Output Handlers', () => {
   });
 
   describe('handleSave', () => {
-    it('should be a no-op', async () => {
+    const baseSaveData = {
+      nodeType: 'save',
+      label: 'Test',
+      fileName: 'test.png',
+      format: 'png' as const,
+      quality: 90,
+    };
+
+    it('should return early when outputPath is not set', async () => {
       const context = createMockContext({
         node: {
           id: 'save-1',
           type: 'save',
           position: { x: 0, y: 0 },
-          data: { nodeType: 'save', label: 'Test' },
+          data: baseSaveData,
         },
+        inputs: [{ type: 'image', data: createTestImageDataUrl(), timestamp: Date.now() }],
       });
 
       await outputHandlers.handleSave(context);
 
-      expect(context.setNodeOutput).not.toHaveBeenCalled();
+      expect(exportToFile).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when no inputs are connected', async () => {
+      const context = createMockContext({
+        node: {
+          id: 'save-2',
+          type: 'save',
+          position: { x: 0, y: 0 },
+          data: { ...baseSaveData, outputPath: '/tmp/test.png' },
+        },
+        inputs: [],
+      });
+
+      await expect(outputHandlers.handleSave(context)).rejects.toThrow(
+        'No input connected to Save node'
+      );
+    });
+
+    it('should throw error when input is not an image type', async () => {
+      const context = createMockContext({
+        node: {
+          id: 'save-3',
+          type: 'save',
+          position: { x: 0, y: 0 },
+          data: { ...baseSaveData, outputPath: '/tmp/test.png' },
+        },
+        inputs: [{ type: 'text', data: 'hello', timestamp: Date.now() }],
+      });
+
+      await expect(outputHandlers.handleSave(context)).rejects.toThrow(
+        'Cannot export text to file yet - only images supported'
+      );
+    });
+
+    it('should call exportToFile with correct arguments', async () => {
+      const imageData = createTestImageDataUrl();
+      (exportToFile as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
+
+      const context = createMockContext({
+        node: {
+          id: 'save-4',
+          type: 'save',
+          position: { x: 0, y: 0 },
+          data: { ...baseSaveData, outputPath: '/tmp/test.png' },
+        },
+        inputs: [{ type: 'image', data: imageData, timestamp: Date.now() }],
+      });
+
+      await outputHandlers.handleSave(context);
+
+      expect(exportToFile).toHaveBeenCalledWith(
+        imageData,
+        '/tmp/test.png',
+        'png',
+        90
+      );
+    });
+
+    it.each([
+      { format: 'png', expected: 'png' },
+      { format: 'jpg', expected: 'jpeg' },
+      { format: 'webp', expected: 'webp' },
+    ])('should handle $format format option', async ({ format, expected }) => {
+      const imageData = createTestImageDataUrl();
+      (exportToFile as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
+
+      const context = createMockContext({
+        node: {
+          id: `save-format-${format}`,
+          type: 'save',
+          position: { x: 0, y: 0 },
+          data: {
+            ...baseSaveData,
+            format: format as 'png' | 'jpg' | 'webp',
+            outputPath: `/tmp/test.${format}`,
+          },
+        },
+        inputs: [{ type: 'image', data: imageData, timestamp: Date.now() }],
+      });
+
+      await outputHandlers.handleSave(context);
+
+      expect(exportToFile).toHaveBeenCalledWith(
+        imageData,
+        `/tmp/test.${format}`,
+        expected,
+        90
+      );
+    });
+
+    it('should pass quality parameter through', async () => {
+      const imageData = createTestImageDataUrl();
+      (exportToFile as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
+
+      const context = createMockContext({
+        node: {
+          id: 'save-5',
+          type: 'save',
+          position: { x: 0, y: 0 },
+          data: { ...baseSaveData, outputPath: '/tmp/test.png', quality: 42 },
+        },
+        inputs: [{ type: 'image', data: imageData, timestamp: Date.now() }],
+      });
+
+      await outputHandlers.handleSave(context);
+
+      expect(exportToFile).toHaveBeenCalledWith(
+        imageData,
+        '/tmp/test.png',
+        'png',
+        42
+      );
     });
   });
 

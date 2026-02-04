@@ -107,6 +107,7 @@ interface ExecutionHistoryProps {
   onToggle: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- onToggle required by interface but not used in this component
 export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHistoryProps) {
   const { executionHistory, clearExecutionHistory } = useWorkflowStore();
   const [isCollapsed, setIsCollapsed] = useState(false);

@@ -76,14 +76,14 @@ export function Model3DGenNode(props: NodeProps) {
         setStatusText(error instanceof Error ? error.message : 'Failed');
       }
     }
-  }, [id, getInputsForNode, setNodeOutput, setNodeStatus]);
+  }, [id, getInputsForNode, setNodeOutput, setNodeStatus, setProgress, setStatusText]);
 
   const handleCancel = useCallback(() => {
     abortRef.current = true;
     setNodeStatus(id, 'idle');
     setStatusText('Cancelled');
     setProgress(0);
-  }, [id, setNodeStatus]);
+  }, [id, setNodeStatus, setProgress, setStatusText]);
 
   return (
     <BaseNode

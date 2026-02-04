@@ -19,6 +19,7 @@ const notifyListeners = () => {
   toastListeners.forEach((listener) => listener([...toasts]));
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- toast is a utility object, not a component
 export const toast = {
   success: (message: string, duration = 3000) => {
     const id = `toast_${Date.now()}`;

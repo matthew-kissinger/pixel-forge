@@ -22,6 +22,24 @@ export function ExportSheetNode(props: NodeProps) {
   const inputs = getInputsForNode(id);
   const latestInput = inputs[inputs.length - 1];
 
+  const downloadMetadata = useCallback(
+    (width: number, height: number) => {
+      // Create basic sprite sheet metadata
+      const metadata = {
+        fileName: `${fileName}.${format}`,
+        dimensions: { width, height },
+        format,
+        exportedAt: new Date().toISOString(),
+      };
+
+      const metaLink = document.createElement('a');
+      metaLink.download = `${fileName}.json`;
+      metaLink.href = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(metadata, null, 2))}`;
+      metaLink.click();
+    },
+    [fileName, format]
+  );
+
   const handleDownload = useCallback(() => {
     if (!latestInput || latestInput.type !== 'image') return;
 
@@ -61,22 +79,7 @@ export function ExportSheetNode(props: NodeProps) {
       };
       img.src = latestInput.data;
     }
-  }, [latestInput, fileName, format, includeMetadata]);
-
-  const downloadMetadata = (width: number, height: number) => {
-    // Create basic sprite sheet metadata
-    const metadata = {
-      fileName: `${fileName}.${format}`,
-      dimensions: { width, height },
-      format,
-      exportedAt: new Date().toISOString(),
-    };
-
-    const metaLink = document.createElement('a');
-    metaLink.download = `${fileName}.json`;
-    metaLink.href = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(metadata, null, 2))}`;
-    metaLink.click();
-  };
+  }, [latestInput, fileName, format, includeMetadata, downloadMetadata]);
 
   return (
     <BaseNode {...props} data={nodeData} hasInput inputLabel="Image">

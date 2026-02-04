@@ -223,7 +223,7 @@ export function KilnGenNode({ id, data, selected }: KilnGenNodeProps) {
     } finally {
       setIsRunning(false);
     }
-  }, [id, data.code, data.effectCode, data.mode, updateNodeData, setNodeOutput]);
+  }, [id, data.code, data.effectCode, data.mode, updateNodeData, setNodeOutput, logger]);
 
   // Run when code or effectCode changes
   useEffect(() => {

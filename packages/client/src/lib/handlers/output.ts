@@ -9,6 +9,7 @@ import type { NodeHandlerContext } from './index';
 import { exportToFile } from '../api';
 import type { SaveNodeData } from '../../types/nodes';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Handler signature must match interface
 export async function handlePreview(_context: NodeHandlerContext): Promise<void> {
   // Output nodes don't need execution - they just display/save
   // The preview node will automatically show inputs when they're available
@@ -60,10 +61,12 @@ export async function handleSave(context: NodeHandlerContext): Promise<void> {
   context.ctx.onProgress?.(1, 1);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Handler signature must match interface
 export async function handleExportGLB(_context: NodeHandlerContext): Promise<void> {
   // Output nodes don't need execution - they just display/save
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Handler signature must match interface
 export async function handleExportSheet(_context: NodeHandlerContext): Promise<void> {
   // Output nodes don't need execution - they just display/save
 }

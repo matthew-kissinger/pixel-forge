@@ -68,13 +68,7 @@ export function SaveNode(props: NodeProps) {
     link.click();
   }, [latestInput, fileName, format, quality]);
 
-  const getIcon = () => {
-    if (!latestInput) return Download;
-    if (latestInput.type === 'model') return FileBox;
-    return FileImage;
-  };
-
-  const Icon = getIcon();
+  const Icon = !latestInput ? Download : latestInput.type === 'model' ? FileBox : FileImage;
 
   return (
     <BaseNode {...props} data={nodeData} hasInput inputLabel="Any">

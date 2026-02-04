@@ -4,7 +4,8 @@ export interface WorkflowData {
     id: string;
     type?: string;
     position: { x: number; y: number };
-    data: any; // Using any for data to avoid circular dependency with store, or we can use NodeData if we move it
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Using any for data to avoid circular dependency with store
+    data: any;
   }[];
   edges: {
     id: string;

@@ -54,6 +54,7 @@ const NODE_TIMEOUTS: Partial<Record<NodeTypeName, number>> = {
   sliceSheet: 30000,
   analyze: 30000,
   iterate: 30000,
+  qualityCheck: 30000,
 };
 
 const DEFAULT_TIMEOUT = 60000;

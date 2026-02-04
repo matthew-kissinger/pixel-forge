@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Rocket,
   Share2,
+  Zap,
 } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useWorkflowStore } from '../../stores/workflow';
@@ -66,6 +67,8 @@ export function Toolbar({
     canRedo,
     lastAutoSave,
     setNodes,
+    demoMode,
+    setDemoMode,
   } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reactFlow = useReactFlow();
@@ -566,6 +569,21 @@ export function Toolbar({
           <div className="h-6 w-px bg-[var(--border-color)]" />
         </>
       )}
+
+      <button
+        onClick={() => setDemoMode(!demoMode)}
+        className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors ${
+          demoMode
+            ? 'bg-yellow-500 text-black font-bold hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]'
+            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
+        }`}
+        title={demoMode ? 'Disable Demo Mode' : 'Enable Demo Mode (Offline)'}
+      >
+        <Zap className={`h-4 w-4 ${demoMode ? 'fill-black' : ''}`} />
+        <span className="hidden sm:inline">{demoMode ? 'DEMO MODE' : 'Demo'}</span>
+      </button>
+
+      <div className="h-6 w-px bg-[var(--border-color)]" />
 
       {onToggleHistory && (
         <>

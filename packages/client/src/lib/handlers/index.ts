@@ -12,6 +12,7 @@ import type { NodeOutput } from '../../stores/workflow';
 export interface ExecutionContext {
   getCancelled: () => boolean;
   onProgress?: (current: number, total: number) => void;
+  demoMode?: boolean;
 }
 
 export interface NodeHandlerContext {

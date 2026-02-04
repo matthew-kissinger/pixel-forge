@@ -239,11 +239,16 @@ export async function executeWorkflow(
   nodes: Node[],
   edges: Edge[],
   store: WorkflowStore,
-  ctx: ExecutionContext = { getCancelled: () => false }
+  ctx: ExecutionContext = { getCancelled: () => false, demoMode: false }
 ): Promise<ExecutionResult> {
   const startedAt = Date.now();
   const errors: Array<{ nodeId: string; error: string }> = [];
-  const { setNodeStatus, setNodeError, addExecutionRecord } = store;
+  const { setNodeStatus, setNodeError, addExecutionRecord, demoMode } = store;
+
+  // Add demoMode to context if not already set
+  if (ctx.demoMode === undefined) {
+    ctx.demoMode = demoMode;
+  }
 
   // Pre-execution validation
   const validationResult = validateWorkflow(nodes, edges);
@@ -413,8 +418,8 @@ export async function executeSingleNode(
   edges: Edge[],
   store: WorkflowStore
 ): Promise<{ success: boolean; error?: string }> {
-  const { setNodeStatus, setNodeError } = store;
-  const ctx: ExecutionContext = { getCancelled: () => false };
+  const { setNodeStatus, setNodeError, demoMode } = store;
+  const ctx: ExecutionContext = { getCancelled: () => false, demoMode };
 
   try {
     // Check if node has required inputs

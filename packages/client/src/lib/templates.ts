@@ -207,6 +207,25 @@ export const templates: WorkflowTemplate[] = [
       [4, 6],
     ],
   },
+  {
+    id: 'demo-pipeline',
+    name: 'Demo Pipeline',
+    description: 'Offline-ready demo pipeline using sample data',
+    category: 'composite',
+    nodes: [
+      { type: 'imageUpload', data: { label: 'Sample Image', imageUrl: '/demo/red-bg.png' } },
+      { type: 'removeBg', data: { label: 'Remove BG' } },
+      { type: 'resize', data: { label: 'Resize', width: 256, height: 256, lockAspect: true, mode: 'contain', pixelPerfect: false } },
+      { type: 'compress', data: { label: 'Compress', format: 'webp', quality: 80 } },
+      { type: 'preview', data: { label: 'Preview', inputType: 'any' } },
+    ],
+    connections: [
+      [0, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+    ],
+  },
 ];
 
 // Template categories with metadata

@@ -80,6 +80,10 @@ export interface WorkflowState {
   undoStack: WorkflowSnapshot[];
   redoStack: WorkflowSnapshot[];
 
+  // Demo mode
+  demoMode: boolean;
+  setDemoMode: (enabled: boolean) => void;
+
   // React Flow callbacks
   onNodesChange: (changes: NodeChange<Node<NodeData>>[]) => void;
   onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
@@ -178,6 +182,9 @@ export const useWorkflowStore = create<WorkflowState>()(
     undoStack: [],
     redoStack: [],
     lastAutoSave: null,
+
+    demoMode: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('demo') === 'true' : false,
+    setDemoMode: (enabled) => set({ demoMode: enabled }),
 
     onNodesChange: (changes) => {
       const state = get();

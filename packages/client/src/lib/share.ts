@@ -7,7 +7,7 @@ const COMPRESSION_FORMAT = 'deflate-raw';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-const base64UrlEncode = (bytes: Uint8Array): string => {
+export const base64UrlEncode = (bytes: Uint8Array): string => {
   let binary = '';
   const chunkSize = 0x8000;
   for (let i = 0; i < bytes.length; i += chunkSize) {
@@ -16,7 +16,7 @@ const base64UrlEncode = (bytes: Uint8Array): string => {
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
 };
 
-const base64UrlDecode = (input: string): Uint8Array => {
+export const base64UrlDecode = (input: string): Uint8Array => {
   const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
   const padded = base64 + '==='.slice((base64.length + 3) % 4);
   const binary = atob(padded);
@@ -27,7 +27,7 @@ const base64UrlDecode = (input: string): Uint8Array => {
   return bytes;
 };
 
-const ensureCompressionSupport = () => {
+export const ensureCompressionSupport = () => {
   if (typeof CompressionStream === 'undefined' || typeof DecompressionStream === 'undefined') {
     throw new Error('CompressionStream is not supported in this browser');
   }

@@ -182,13 +182,14 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Test `/api/kiln/stream` route** - The only server route without test coverage (SSE streaming endpoint).
-- **Integration tests against real APIs** - No tests verify actual Gemini/FAL/Claude API calls work. `packages/server/scripts/validate-apis.ts` exists but isn't automated. Need gated integration tests (run when API keys are in env).
-- **Add E2E tests to CI** - 10 Playwright smoke tests exist in `e2e/smoke.spec.ts` but are not run in CI pipeline yet.
-- **Refactor Toolbar.tsx** - 614 lines, handles 15+ buttons and complex state. Extract sub-components for maintainability.
+- **Add E2E tests to CI** - 10 Playwright smoke tests exist in `e2e/smoke.spec.ts` but are not run in CI pipeline yet. Previous task claimed done but step was never added to ci.yml.
+- **Refactor Toolbar.tsx** - 614 lines, handles 15+ buttons and complex state. Extract sub-components for maintainability. Previous task claimed done but no files were delivered.
+- **Component tests** - Only NodeErrorBoundary has component tests. Toolbar, NodePalette, PresetLauncher, and node components have zero coverage.
+- **Vitest coverage reporting** - Add coverage metrics to CI for visibility into test gaps. Previous attempt failed (gemini agent).
 
 ### Completed Goals
 
+- ~~Test `/api/kiln/stream` route~~ - Done (3 SSE endpoint tests; commit `08a81c8`)
 - ~~Test critical lib modules~~ - Done (`autoLayout.ts` 6 tests, `nodeLayout.ts` 13 tests, `retry.ts` 20 tests; commits `d1ddd31`, `83d68dd`, `d418eea2`)
 - ~~Clean up build log artifacts~~ - Done (deleted, `*.log` gitignored)
 - ~~Planet texture preset~~ - Done (7 presets in `packages/shared/presets.ts`)
@@ -275,13 +276,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk ~323KB/~97KB gzip, Three.js ~1.4MB/~380KB gzip (separate), React Flow ~188KB/~61KB gzip (separate), JSZip ~95KB/~29KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks. Total gzipped: ~613KB. Bundle size CI gate committed.
 
-Test coverage: client 320 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 16 vitest files. Server 79 pass, 0 fail across 4 bun:test files. E2E: 10 Playwright smoke tests (committed but not in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed with CI integration.
+Test coverage: client 320 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 16 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (committed but not in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed with CI integration.
 
 Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. `/api/kiln/stream` route untested. E2E tests not in CI pipeline.
+Key gaps: No integration tests against real APIs. E2E tests not in CI pipeline. Component tests nearly absent (only NodeErrorBoundary). Toolbar.tsx still 614 lines (refactor claimed done but not delivered).
 
 ## Quality Bar
 

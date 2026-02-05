@@ -83,7 +83,7 @@ export type AspectRatio =
 export type Model3DBackend = 'tripo' | 'meshy';
 
 /** Kiln generation categories */
-export type KilnCategory = 'character' | 'prop' | 'vfx';
+export type KilnCategory = 'character' | 'prop' | 'vfx' | 'environment';
 
 /** Rotation direction count */
 export type RotationDirs = 4 | 8;

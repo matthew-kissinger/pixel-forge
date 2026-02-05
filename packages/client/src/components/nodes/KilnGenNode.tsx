@@ -267,7 +267,6 @@ export function KilnGenNode({ id, data, selected }: KilnGenNodeProps) {
           data={data}
           callbacks={callbacks}
           isRunning={isRunning}
-          showCode={showCode}
         />
         <KilnCodeEditor data={data} callbacks={callbacks} showCode={showCode} />
       </div>

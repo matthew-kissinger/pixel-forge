@@ -12,14 +12,12 @@ interface KilnControlsProps {
     'onAnimationToggle' | 'onPromptChange' | 'onGenerate' | 'onDownload' | 'onToggleCodeEditor'
   >;
   isRunning: boolean;
-  showCode: boolean;
 }
 
 export function KilnControls({
   data,
   callbacks,
   isRunning,
-  showCode,
 }: KilnControlsProps) {
   return (
     <>

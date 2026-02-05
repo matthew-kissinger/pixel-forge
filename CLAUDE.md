@@ -182,9 +182,9 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **PresetLauncher tests** - 328 lines, zero test coverage.
-- **Refactor large node components** - QualityCheckNode.tsx (317 lines), ExportSheetNode.tsx (313 lines) still large.
-- **Component test coverage** - Only NodeErrorBoundary (6 tests), NodePalette (7 tests), and toolbar (54 tests) have coverage. Most node components have zero tests.
+- **Refactor ExportSheetNode** - 313 lines, needs decomposition into sub-components.
+- **Refactor PresetLauncher** - 328 lines, large but has 23 tests now.
+- **Component test coverage** - NodeErrorBoundary (6), NodePalette (7), toolbar (54), PresetLauncher (23). ImageGenNode and other node components have zero tests.
 - **Integration testing** - No tests against real Gemini/FAL/Claude APIs.
 
 ### Completed Goals
@@ -274,6 +274,8 @@ Build a **template/preset system** where:
 - ~~Add E2E tests to CI~~ - Done (Playwright steps in ci.yml lines 31-34; commit `c6b7a8b`)
 - ~~Refactor Toolbar.tsx~~ - Done (98 line main + 5 sub-components in `toolbar/`: FileActions, EditActions, ViewActions, ExecutionActions, AdditionalActions; commit `fdb113d`)
 - ~~Test NodePalette component~~ - Done (7 tests; commit `7671cf9`)
+- ~~PresetLauncher tests~~ - Done (23 tests in `PresetLauncher.test.tsx`; commit `939a8f7`)
+- ~~Refactor QualityCheckNode~~ - Done (159 lines main + 4 sub-components in `nodes/quality/`; commit `3961a56`)
 
 ## Current State
 
@@ -281,13 +283,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk ~323KB/~97KB gzip, Three.js ~1.4MB/~380KB gzip (separate), React Flow ~188KB/~61KB gzip (separate), JSZip ~95KB/~29KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks. Total gzipped: ~613KB. Bundle size CI gate committed.
 
-Test coverage: client 381 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 22 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed. CI now includes vitest coverage reporting (uploads artifact).
+Test coverage: client 404 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 23 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed. CI now includes vitest coverage reporting (uploads artifact).
 
 Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. Component tests limited (NodeErrorBoundary 6 tests, NodePalette 7 tests, toolbar 54 tests). Large node components need refactoring: PresetLauncher.tsx (328 lines), QualityCheckNode.tsx (317 lines), ExportSheetNode.tsx (313 lines). KilnGenNode refactor complete (284 lines main + 4 sub-components).
+Key gaps: No integration tests against real APIs. Component tests expanding (NodeErrorBoundary 6, NodePalette 7, toolbar 54, PresetLauncher 23). Large node components needing refactoring: ExportSheetNode.tsx (313 lines), PresetLauncher.tsx (328 lines). Completed refactors: KilnGenNode (283 lines + 4 sub-components), QualityCheckNode (159 lines + 4 sub-components).
 
 ## Quality Bar
 

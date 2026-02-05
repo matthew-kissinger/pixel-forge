@@ -2,7 +2,6 @@
  * Mode and category selector for KilnGenNode
  */
 
-import type { RenderMode } from '../../../lib/kiln';
 import type { KilnGenNodeData, KilnGenNodeCallbacks } from './types';
 
 interface KilnModeSelectorProps {

@@ -182,13 +182,15 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Fix toolbar tests** - 59 tests created in `tests/components/toolbar/` but have import errors (using `require()` instead of mocked imports). Need to fix and commit.
-- **Complete KilnGenNode refactor** - WIP in `nodes/kiln/` folder. Currently 284 lines (was 532). Sub-components created: KilnModeSelector, KilnPreview, KilnControls, KilnCodeEditor. Need to test and commit.
 - **PresetLauncher tests** - 328 lines, zero test coverage.
-- **Continue node refactoring** - QualityCheckNode.tsx (317 lines), ExportSheetNode.tsx (313 lines) still large.
+- **Refactor large node components** - QualityCheckNode.tsx (317 lines), ExportSheetNode.tsx (313 lines) still large.
+- **Component test coverage** - Only NodeErrorBoundary (6 tests), NodePalette (7 tests), and toolbar (54 tests) have coverage. Most node components have zero tests.
+- **Integration testing** - No tests against real Gemini/FAL/Claude APIs.
 
 ### Completed Goals
 
+- ~~Fix toolbar tests~~ - Done (54 tests in `tests/components/toolbar/`, all passing; commit `543d266`)
+- ~~Complete KilnGenNode refactor~~ - Done (284 lines main + 4 sub-components in `nodes/kiln/`; commit `04ab927`, `7e15eda`)
 - ~~Test `/api/kiln/stream` route~~ - Done (3 SSE endpoint tests; commit `08a81c8`)
 - ~~Test critical lib modules~~ - Done (`autoLayout.ts` 6 tests, `nodeLayout.ts` 13 tests, `retry.ts` 20 tests; commits `d1ddd31`, `83d68dd`, `d418eea2`)
 - ~~Clean up build log artifacts~~ - Done (deleted, `*.log` gitignored)
@@ -279,13 +281,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk ~323KB/~97KB gzip, Three.js ~1.4MB/~380KB gzip (separate), React Flow ~188KB/~61KB gzip (separate), JSZip ~95KB/~29KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks. Total gzipped: ~613KB. Bundle size CI gate committed.
 
-Test coverage: client 327 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 17 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed. CI now includes vitest coverage reporting (uploads artifact).
+Test coverage: client 381 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 22 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed. CI now includes vitest coverage reporting (uploads artifact).
 
 Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. Component tests limited (NodeErrorBoundary 6 tests, NodePalette 7 tests). WIP: 59 toolbar tests exist but have import errors. WIP: KilnGenNode refactor partially complete (284 lines, was 532). Large node components need refactoring: PresetLauncher.tsx (328 lines), QualityCheckNode.tsx (317 lines), ExportSheetNode.tsx (313 lines).
+Key gaps: No integration tests against real APIs. Component tests limited (NodeErrorBoundary 6 tests, NodePalette 7 tests, toolbar 54 tests). Large node components need refactoring: PresetLauncher.tsx (328 lines), QualityCheckNode.tsx (317 lines), ExportSheetNode.tsx (313 lines). KilnGenNode refactor complete (284 lines main + 4 sub-components).
 
 ## Quality Bar
 

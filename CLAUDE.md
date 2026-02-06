@@ -182,11 +182,9 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Test guards.ts** - 389 lines, 30+ type guards, zero tests. Pure functions, high-value coverage.
-- **Test templates.ts** - 397 lines, 9 workflow templates, zero tests.
+- **Test templates.ts** - 397 lines, 9 workflow templates, zero tests. Pure functions, high-value coverage.
 - **Test kiln/ library** - runtime.ts (783 lines), primitives.ts (440 lines), prompt.ts (265 lines) - all untested.
-- **Expand component test coverage** - 27 node components have zero tests. Priority: ExportSheetNode, ResizeNode, ColorPaletteNode, AnalyzeNode.
-- **Remove unsafe type casts** - 7 node components use `as unknown as NodeData` pattern instead of direct casts.
+- **Expand component test coverage** - 24 node components have zero tests. Priority: ColorPaletteNode, TileNode, CropNode, AnalyzeNode.
 - **Integration testing** - No tests against real Gemini/FAL/Claude APIs.
 
 ### Completed Goals
@@ -281,6 +279,10 @@ Build a **template/preset system** where:
 - ~~Refactor ExportSheetNode~~ - Done (217 lines main + 4 sub-components in `nodes/export-sheet/`; commit `aef977c`)
 - ~~SliceSheetNode tests~~ - Done (component tests; commit `d20f982`)
 - ~~BatchGenNode tests~~ - Done (component tests; commit `6c83fa0`)
+- ~~ImageGenNode tests~~ - Done (28 tests; commit `67efc27`)
+- ~~ExportSheetNode and ResizeNode tests~~ - Done (component tests; commit `410bf02`)
+- ~~Test guards.ts~~ - Done (56 tests for 30+ type guards; commit `28a9501`)
+- ~~Remove unsafe type casts~~ - Done (7 node components fixed from `as unknown as` to direct cast; commit `28a9501`)
 
 ## Current State
 
@@ -288,13 +290,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk ~323KB/~97KB gzip, Three.js ~1.4MB/~380KB gzip (separate), React Flow ~188KB/~61KB gzip (separate), JSZip ~95KB/~29KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks. Total gzipped: ~613KB. Bundle size CI gate committed.
 
-Test coverage: client 482 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 26 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed. CI now includes vitest coverage reporting (uploads artifact).
+Test coverage: client 602 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 29 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript typecheck clean (both client and server). Production build passes. Bundle size check script committed. CI now includes vitest coverage reporting (uploads artifact).
 
 Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. guards.ts (389 lines, 30+ type guards) and templates.ts (397 lines) have zero tests. kiln/ library (runtime.ts 783 lines, primitives.ts 440 lines) untested. 27 node components have zero tests - only BatchGenNode, ImageGenNode, SliceSheetNode have component tests. Component tests: NodeErrorBoundary (6), NodePalette (7), toolbar (54), PresetLauncher (23), ImageGenNode (28), BatchGenNode, SliceSheetNode. Completed refactors: KilnGenNode (283 lines + 4 sub-components), QualityCheckNode (159 lines + 4 sub-components), ExportSheetNode (217 lines + 4 sub-components). Remaining large: PresetLauncher.tsx (328 lines).
+Key gaps: No integration tests against real APIs. templates.ts (397 lines) has zero tests. kiln/ library (runtime.ts 783 lines, primitives.ts 440 lines) untested. 24 node components have zero tests - tested components: BatchGenNode, ImageGenNode, SliceSheetNode, ExportSheetNode, ResizeNode. Component tests: NodeErrorBoundary (6), NodePalette (7), toolbar (54), PresetLauncher (23), ImageGenNode (28), BatchGenNode, SliceSheetNode, ExportSheetNode, ResizeNode. guards.ts now has 56 tests. Unsafe `as unknown as` double casts removed from all 7 node components. Completed refactors: KilnGenNode (283 lines + 4 sub-components), QualityCheckNode (159 lines + 4 sub-components), ExportSheetNode (217 lines + 4 sub-components). Remaining large: PresetLauncher.tsx (328 lines).
 
 ## Quality Bar
 

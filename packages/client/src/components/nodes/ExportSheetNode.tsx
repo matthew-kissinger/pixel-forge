@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { Download, LayoutGrid, CheckSquare, Square } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore } from '../../stores/workflow';
 import type { ExportSheetNodeData } from '../../types/nodes';
 import { generateAtlas, getAtlasFileExtension, type AtlasFormat } from '../../lib/atlas';
+import { FormatSelector } from './export-sheet/FormatSelector';
+import { ExportSettings } from './export-sheet/ExportSettings';
+import { InputStatus } from './export-sheet/InputStatus';
+import { ExportActions } from './export-sheet/ExportActions';
+import type { ExportSheetNodeCallbacks, ImageDimensions } from './export-sheet/types';
 
 export function ExportSheetNode(props: NodeProps) {
   const { id, data } = props;
@@ -20,7 +25,7 @@ export function ExportSheetNode(props: NodeProps) {
 
   const inputs = getInputsForNode(id);
   const latestInput = inputs[inputs.length - 1];
-  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<ImageDimensions | null>(null);
 
   // Get image dimensions for frame size calculation
   useEffect(() => {
@@ -170,6 +175,30 @@ export function ExportSheetNode(props: NodeProps) {
     }
   }, [latestInput, fileName, format, includeMetadata, downloadMetadata, atlasFormat, columns, rows]);
 
+  const callbacks: ExportSheetNodeCallbacks = {
+    onFileNameChange: (newFileName) => {
+      updateNodeData<ExportSheetNodeData>(id, { fileName: newFileName });
+    },
+    onFormatChange: (newFormat) => {
+      updateNodeData<ExportSheetNodeData>(id, { format: newFormat });
+    },
+    onAtlasFormatChange: (newAtlasFormat) => {
+      updateNodeData<ExportSheetNodeData>(id, { atlasFormat: newAtlasFormat });
+    },
+    onColumnsChange: (newColumns) => {
+      updateNodeData<ExportSheetNodeData>(id, { columns: newColumns });
+    },
+    onRowsChange: (newRows) => {
+      updateNodeData<ExportSheetNodeData>(id, { rows: newRows });
+    },
+    onIncludeMetadataChange: (include) => {
+      updateNodeData<ExportSheetNodeData>(id, { includeMetadata: include });
+    },
+    onExport: handleDownload,
+  };
+
+  const canExport = latestInput?.type === 'image';
+
   return (
     <BaseNode {...props} data={nodeData} hasInput inputLabel="Image">
       <div className="flex flex-col gap-2">
@@ -178,135 +207,10 @@ export function ExportSheetNode(props: NodeProps) {
           <span>Export Sprite Sheet</span>
         </div>
 
-        {/* File Name */}
-        <input
-          type="text"
-          value={fileName}
-          onChange={(e) => updateNodeData<ExportSheetNodeData>(id, { fileName: e.target.value })}
-          placeholder="File name"
-          className="nodrag w-full rounded border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-2 py-1 text-sm"
-        />
-
-        {/* Format Selection */}
-        <div className="flex gap-1">
-          {(['png', 'webp'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => updateNodeData<ExportSheetNodeData>(id, { format: f })}
-              className={`flex-1 rounded px-2 py-1 text-xs uppercase ${
-                format === f
-                  ? 'bg-[var(--accent)] text-white'
-                  : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* Atlas Format Selection */}
-        <div>
-          <label className="text-xs text-[var(--text-secondary)] mb-1 block">Atlas Format</label>
-          <select
-            value={atlasFormat}
-            onChange={(e) =>
-              updateNodeData<ExportSheetNodeData>(id, {
-                atlasFormat: e.target.value as 'none' | 'phaser' | 'unity' | 'godot',
-              })
-            }
-            className="nodrag w-full rounded border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-2 py-1 text-sm"
-          >
-            <option value="none">None</option>
-            <option value="phaser">Phaser 3</option>
-            <option value="unity">Unity</option>
-            <option value="godot">Godot</option>
-          </select>
-        </div>
-
-        {/* Columns and Rows (only show if atlas format is selected) */}
-        {atlasFormat !== 'none' && (
-          <>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <label className="text-xs text-[var(--text-secondary)] mb-1 block">Columns</label>
-                <input
-                  type="number"
-                  value={columns}
-                  onChange={(e) =>
-                    updateNodeData<ExportSheetNodeData>(id, {
-                      columns: Math.max(1, parseInt(e.target.value) || 1),
-                    })
-                  }
-                  className="nodrag w-full rounded border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-2 py-1 text-sm"
-                  min={1}
-                  max={50}
-                />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-[var(--text-secondary)] mb-1 block">Rows</label>
-                <input
-                  type="number"
-                  value={rows}
-                  onChange={(e) =>
-                    updateNodeData<ExportSheetNodeData>(id, {
-                      rows: Math.max(1, parseInt(e.target.value) || 1),
-                    })
-                  }
-                  className="nodrag w-full rounded border border-[var(--border-color)] bg-[var(--bg-tertiary)] px-2 py-1 text-sm"
-                  min={1}
-                  max={50}
-                />
-              </div>
-            </div>
-            {imageDimensions && (
-              <div className="text-xs text-[var(--text-secondary)]">
-                Frame size: {Math.floor(imageDimensions.width / columns)}×
-                {Math.floor(imageDimensions.height / rows)}px
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Options */}
-        <button
-          onClick={() => updateNodeData<ExportSheetNodeData>(id, { includeMetadata: !includeMetadata })}
-          className="nodrag flex items-center gap-2 rounded px-2 py-1 text-xs hover:bg-[var(--bg-tertiary)]"
-        >
-          {includeMetadata ? (
-            <CheckSquare className="h-4 w-4 text-[var(--accent)]" />
-          ) : (
-            <Square className="h-4 w-4 text-[var(--text-secondary)]" />
-          )}
-          <span className="text-[var(--text-primary)]">Include Metadata JSON</span>
-        </button>
-
-        {/* Input Status */}
-        {latestInput && latestInput.type === 'image' && (
-          <div className="rounded bg-[var(--bg-tertiary)] p-2 text-xs text-[var(--text-secondary)]">
-            Sprite sheet ready
-          </div>
-        )}
-
-        {latestInput && latestInput.type !== 'image' && (
-          <div className="rounded border border-dashed border-[var(--error)] p-2 text-center text-xs text-[var(--error)]">
-            Wrong input type - expects image
-          </div>
-        )}
-
-        {!latestInput && (
-          <div className="rounded border border-dashed border-[var(--border-color)] p-2 text-center text-xs text-[var(--text-secondary)]">
-            Connect a sprite sheet input
-          </div>
-        )}
-
-        <button
-          onClick={handleDownload}
-          disabled={!latestInput || latestInput.type !== 'image'}
-          className="w-full rounded bg-[var(--success)] px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Download className="mr-1 inline h-4 w-4" />
-          Export Sheet
-        </button>
+        <ExportSettings data={nodeData} callbacks={callbacks} imageDimensions={imageDimensions} />
+        <FormatSelector data={nodeData} callbacks={callbacks} />
+        <InputStatus hasInput={!!latestInput} inputType={latestInput?.type || null} />
+        <ExportActions canExport={canExport} callbacks={callbacks} />
       </div>
     </BaseNode>
   );

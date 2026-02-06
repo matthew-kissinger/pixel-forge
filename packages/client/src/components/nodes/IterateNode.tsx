@@ -9,6 +9,7 @@ interface IterateNodeData {
   label: string;
   iterations?: number;
   currentIteration?: number;
+  [key: string]: unknown;
 }
 
 export function IterateNode(props: NodeProps) {

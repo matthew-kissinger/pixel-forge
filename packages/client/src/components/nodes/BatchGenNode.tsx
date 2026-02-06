@@ -13,6 +13,7 @@ interface BatchGenNodeData {
   presetId?: string;
   consistencyPhrase?: string;
   seed?: number;
+  [key: string]: unknown;
 }
 
 export function BatchGenNode(props: NodeProps) {

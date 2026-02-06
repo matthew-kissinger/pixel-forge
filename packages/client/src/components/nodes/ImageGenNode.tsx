@@ -36,6 +36,7 @@ interface ImageGenNodeData {
   aspectRatio?: AspectRatio | 'auto';
   autoRemoveBg?: boolean;
   presetId?: string;
+  [key: string]: unknown;
 }
 
 export function ImageGenNode(props: NodeProps) {

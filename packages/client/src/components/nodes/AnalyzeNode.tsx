@@ -11,6 +11,7 @@ interface AnalyzeNodeData {
   extractStats?: boolean;
   extractPalette?: boolean;
   extractDimensions?: boolean;
+  [key: string]: unknown;
 }
 
 interface AnalysisResult {

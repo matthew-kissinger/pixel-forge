@@ -126,6 +126,13 @@ class MockHTMLCanvasElement {
     // Return minimal 1x1 PNG data URL
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
   }
+
+  toBlob(callback: (blob: Blob | null) => void, _type?: string, _quality?: number): void {
+    // Create a minimal blob
+    setTimeout(() => {
+      callback(new Blob(['mock-canvas-data'], { type: _type || 'image/png' }));
+    }, 0);
+  }
 }
 
 // @ts-expect-error - Set Image on all possible globals

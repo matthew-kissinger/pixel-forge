@@ -17,7 +17,7 @@ interface BatchGenNodeData {
 
 export function BatchGenNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as unknown as BatchGenNodeData;
+  const nodeData = data as BatchGenNodeData;
 
   const nodeStatus = useWorkflowStore((state) => state.nodeStatus);
   const updateNodeData = useWorkflowStore((state) => state.updateNodeData);

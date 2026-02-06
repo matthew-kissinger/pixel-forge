@@ -25,7 +25,7 @@ interface AnalysisResult {
 
 export function AnalyzeNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as unknown as AnalyzeNodeData;
+  const nodeData = data as AnalyzeNodeData;
 
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();

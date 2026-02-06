@@ -13,7 +13,7 @@ interface IterateNodeData {
 
 export function IterateNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as unknown as IterateNodeData;
+  const nodeData = data as IterateNodeData;
 
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();

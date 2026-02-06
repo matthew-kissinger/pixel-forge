@@ -19,7 +19,7 @@ const DIRECTION_LABELS: Record<4 | 8, string[]> = {
 
 export function RotateNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as unknown as RotateNodeData;
+  const nodeData = data as RotateNodeData;
 
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();

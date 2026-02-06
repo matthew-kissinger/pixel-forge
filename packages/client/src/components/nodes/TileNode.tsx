@@ -16,7 +16,7 @@ interface TileNodeData {
 
 export function TileNode(props: NodeProps) {
   const { id, data } = props;
-  const nodeData = data as unknown as TileNodeData;
+  const nodeData = data as TileNodeData;
   const { getInputsForNode, setNodeOutput, setNodeStatus, nodeStatus, updateNodeData } =
     useWorkflowStore();
   const status = nodeStatus[id] ?? 'idle';

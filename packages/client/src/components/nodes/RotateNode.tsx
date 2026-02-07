@@ -10,6 +10,7 @@ interface RotateNodeData {
   label: string;
   directions?: 4 | 8;
   outputMode?: 'sheet' | 'separate';
+  [key: string]: unknown;
 }
 
 const DIRECTION_LABELS: Record<4 | 8, string[]> = {

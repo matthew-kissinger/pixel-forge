@@ -11,6 +11,7 @@ interface IsometricTileNodeData {
   tileSize?: number;
   groundBase?: number; // percentage 25-35
   preview4x4?: boolean;
+  [key: string]: unknown;
 }
 
 const TILE_SIZES = [64, 128, 256, 512];

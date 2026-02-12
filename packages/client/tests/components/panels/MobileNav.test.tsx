@@ -47,7 +47,7 @@ describe('MobileNav', () => {
       expect(screen.getByTestId('icon-Menu')).toBeInTheDocument();
     });
 
-    it('has correct aria-label attributes', () => {
+    it('has correct title attributes', () => {
       render(<MobileNav {...baseProps} />);
 
       const paletteButton = screen.getByText('Palette').closest('button')!;
@@ -55,10 +55,10 @@ describe('MobileNav', () => {
       const historyButton = screen.getByText('History').closest('button')!;
       const menuButton = screen.getByText('Menu').closest('button')!;
 
-      expect(paletteButton).toHaveAttribute('aria-label', 'Node Palette');
-      expect(generateButton).toHaveAttribute('aria-label', 'Quick Generate');
-      expect(historyButton).toHaveAttribute('aria-label', 'Execution History');
-      expect(menuButton).toHaveAttribute('aria-label', 'Menu');
+      expect(paletteButton).toHaveAttribute('title', 'Node Palette');
+      expect(generateButton).toHaveAttribute('title', 'Quick Generate');
+      expect(historyButton).toHaveAttribute('title', 'Execution History');
+      expect(menuButton).toHaveAttribute('title', 'Menu');
     });
   });
 

@@ -1,5 +1,6 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAutoSave } from '../../src/hooks/useAutoSave';
 import { useWorkflowStore } from '../../src/stores/workflow';
 import { toast } from '../../src/components/ui/Toast';
@@ -34,15 +35,20 @@ describe('useAutoSave', () => {
   beforeEach(() => {
     // Mock localStorage
     localStorageMock = {};
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key: string) => {
-      return localStorageMock[key] || null;
-    });
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key: string, value: string) => {
-      localStorageMock[key] = value;
-    });
-    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key: string) => {
-      delete localStorageMock[key];
-    });
+
+    // Mock both Storage.prototype and window.localStorage methods directly
+    const getItemMock = vi.fn((key: string) => localStorageMock[key] || null);
+    const setItemMock = vi.fn((key: string, value: string) => { localStorageMock[key] = value; });
+    const removeItemMock = vi.fn((key: string) => { delete localStorageMock[key]; });
+
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(getItemMock);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(setItemMock);
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(removeItemMock);
+
+    // Also mock the methods on localStorage object directly
+    Object.defineProperty(window.localStorage, 'getItem', { value: getItemMock, writable: true });
+    Object.defineProperty(window.localStorage, 'setItem', { value: setItemMock, writable: true });
+    Object.defineProperty(window.localStorage, 'removeItem', { value: removeItemMock, writable: true });
 
     // Reset store
     useWorkflowStore.getState().reset();
@@ -195,7 +201,7 @@ describe('useAutoSave', () => {
   });
 
   describe('Recovery on mount', () => {
-    it('exposes pendingRecovery when localStorage has valid workflow with nodes', () => {
+    it('exposes pendingRecovery when localStorage has valid workflow with nodes', async () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [
@@ -212,6 +218,9 @@ describe('useAutoSave', () => {
       localStorageMock[AUTOSAVE_KEY] = JSON.stringify(workflow);
 
       const { result } = renderHook(() => useAutoSave());
+
+      // The useEffect runs async, need to wait for state update
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(result.current.pendingRecovery).not.toBeNull();
       expect(result.current.pendingRecovery?.nodes).toHaveLength(1);
@@ -238,12 +247,21 @@ describe('useAutoSave', () => {
 
       const { result } = renderHook(() => useAutoSave());
 
+      // Wait for pendingRecovery to be set
+      await waitFor(() => {
+        expect(result.current.pendingRecovery).not.toBeNull();
+      });
+
+      // User clicks "Recover" button
       result.current.confirmRecovery();
 
+      // Workflow should be imported to store
       const store = useWorkflowStore.getState();
       expect(store.nodes).toHaveLength(1);
       expect(store.nodes[0].id).toBe('test-1');
       expect(toast.success).toHaveBeenCalledWith('Workflow recovered');
+
+      // pendingRecovery should be cleared
       await waitFor(() => {
         expect(result.current.pendingRecovery).toBeNull();
       });
@@ -298,12 +316,16 @@ describe('useAutoSave', () => {
       expect(result.current.pendingRecovery).toBeNull();
     });
 
-    it('removes invalid saved data and does not set pendingRecovery', () => {
+    it('removes invalid saved data and does not set pendingRecovery', async () => {
       localStorageMock[AUTOSAVE_KEY] = 'invalid json{{{';
 
       const { result } = renderHook(() => useAutoSave());
 
-      expect(result.current.pendingRecovery).toBeNull();
+      // Give the useEffect time to run and handle the error
+      await waitFor(() => {
+        expect(result.current.pendingRecovery).toBeNull();
+      });
+
       expect(localStorageMock[AUTOSAVE_KEY]).toBeUndefined();
     });
 
@@ -331,7 +353,7 @@ describe('useAutoSave', () => {
       expect(store.nodes).toHaveLength(0);
     });
 
-    it('only sets pendingRecovery once on mount', () => {
+    it('only sets pendingRecovery once on mount', async () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [
@@ -349,7 +371,11 @@ describe('useAutoSave', () => {
 
       const { result, rerender } = renderHook(() => useAutoSave());
 
-      expect(result.current.pendingRecovery).not.toBeNull();
+      // Wait for pendingRecovery to be set
+      await waitFor(() => {
+        expect(result.current.pendingRecovery).not.toBeNull();
+      });
+
       const firstPending = result.current.pendingRecovery;
 
       rerender();

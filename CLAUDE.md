@@ -182,10 +182,10 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Test kiln/primitives.ts** (440 lines) - Geometry/material builder helpers, zero tests. Failed twice with different agents (timeout). Needs THREE.js mocking strategy.
+- **Test api.ts** (190 lines) - Client API wrapper with retry logic, zero tests. Straightforward fetch mocking - easy win.
+- **Expand component test coverage** - 23 node components still have zero tests (of 30 total). Tested: BatchGenNode, ImageGenNode, SliceSheetNode, ExportSheetNode, ResizeNode, ColorPaletteNode, CropNode. Priority: AnalyzeNode, TileNode, CompressNode, QualityCheckNode, FilterNode.
+- **Test kiln/primitives.ts** (440 lines) - Geometry/material builder helpers, zero tests. Failed twice with different agents (timeout). Needs THREE.js mocking strategy - mock THREE namespace, test builder logic in isolation.
 - **Test kiln/runtime.ts** (783 lines) - WebGPU/Three.js renderer, zero tests. Heavy browser deps make unit testing hard - may need integration approach.
-- **Test api.ts** (190 lines) - Client API wrapper with retry logic, zero tests. Straightforward fetch mocking.
-- **Expand component test coverage** - 20 node components still have zero tests (of 29 total). Tested: BatchGenNode, ImageGenNode, SliceSheetNode, ExportSheetNode, ResizeNode, ColorPaletteNode, CropNode. Priority: AnalyzeNode, TileNode, CompressNode, QualityCheckNode.
 - **Integration testing** - No tests against real Gemini/FAL/Claude APIs.
 
 ### Completed Goals
@@ -301,7 +301,7 @@ Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. kiln/ library partially tested - prompt.ts has 85 tests, but runtime.ts (783 lines) and primitives.ts (440 lines) untested. api.ts (190 lines) untested. 20 node components have zero tests - tested components: BatchGenNode, ImageGenNode, SliceSheetNode, ExportSheetNode, ResizeNode, ColorPaletteNode, CropNode. Component tests: NodeErrorBoundary (6), NodePalette (7), toolbar (54), PresetLauncher (23), ImageGenNode (28), BatchGenNode, SliceSheetNode, ExportSheetNode, ResizeNode, ColorPaletteNode, CropNode. templates.ts has 58 tests. guards.ts has 56 tests. kiln/prompt.ts has 85 tests. Completed refactors: KilnGenNode (283 lines + 4 sub-components), QualityCheckNode (159 lines + 4 sub-components), ExportSheetNode (217 lines + 4 sub-components). Remaining large: PresetLauncher.tsx (328 lines).
+Key gaps: No integration tests against real APIs. kiln/ library partially tested - prompt.ts has 85 tests, but runtime.ts (783 lines) and primitives.ts (440 lines) untested. api.ts (190 lines) untested. 23 node components have zero tests (of 30 total) - tested: BatchGenNode, ImageGenNode, SliceSheetNode, ExportSheetNode, ResizeNode, ColorPaletteNode, CropNode. Component tests: NodeErrorBoundary (6), NodePalette (7), toolbar (54), PresetLauncher (23), ImageGenNode (28), BatchGenNode, SliceSheetNode, ExportSheetNode, ResizeNode, ColorPaletteNode (17), CropNode (25). templates.ts has 58 tests. guards.ts has 56 tests. kiln/prompt.ts has 85 tests. Completed refactors: KilnGenNode (283 lines + 4 sub-components), QualityCheckNode (159 lines + 4 sub-components), ExportSheetNode (217 lines + 4 sub-components). Remaining large: PresetLauncher.tsx (328 lines).
 
 ## Quality Bar
 

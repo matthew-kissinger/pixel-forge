@@ -622,7 +622,7 @@ describe('Model3D Handlers', () => {
       await model3dHandlers.handleModel3DGen(context);
 
       expect(generateModel).toHaveBeenCalledWith('3d model prompt');
-      expect(pollModelStatus).toHaveBeenCalledWith('test-request-id', undefined, 5000, 300000);
+      expect(pollModelStatus).toHaveBeenCalledWith('test-request-id', undefined, 5000, 300000, undefined);
       expect(context.setNodeOutput).toHaveBeenCalledWith('model-1', {
         type: 'model',
         data: 'https://example.com/model.glb',

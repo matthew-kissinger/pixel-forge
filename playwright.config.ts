@@ -39,6 +39,21 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 5'] },
+      testMatch: '**/mobile-viewport.spec.ts',
+    },
+    {
+      name: 'mobile-safari',
+      use: { ...devices['iPhone 13'] },
+      testMatch: '**/mobile-viewport.spec.ts',
+    },
+    {
+      name: 'tablet',
+      use: { ...devices['iPad (gen 7)'] },
+      testMatch: '**/mobile-viewport.spec.ts',
+    },
   ],
 
   /* Run your local dev server before starting the tests */

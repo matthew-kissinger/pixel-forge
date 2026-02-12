@@ -47,7 +47,7 @@ describe('Rate Limiting Middleware', () => {
     expect(res3.status).toBe(200);
     expect(res4.status).toBe(429);
 
-    const body = await res4.json();
+    const body = (await res4.json()) as { code: number; error: string };
     expect(body.code).toBe(429);
     expect(body.error).toContain('Rate limit');
   });

@@ -6,7 +6,7 @@ This project includes E2E tests written with Playwright to validate the Pixel Fo
 
 - `e2e/smoke.e2e.ts` - 9 smoke tests for basic UI functionality
 - `e2e/workflow.e2e.ts` - 4 workflow execution tests
-- `e2e/workflow-creation.e2e.ts` - 1 workflow creation test (create, connect, save)
+- `e2e/workflow-creation.e2e.ts` - 3 workflow creation tests (create, connect, save, delete)
 
 ## Test Coverage
 
@@ -32,6 +32,8 @@ This project includes E2E tests written with Playwright to validate the Pixel Fo
 ### Workflow Creation Tests (`workflow-creation.e2e.ts`)
 
 1. **create TextPrompt + ImageGen nodes, connect, type, and save** - End-to-end workflow creation: drags TextPrompt and ImageGen nodes from palette, connects output to input, types prompt text, saves workflow as JSON download
+2. **can delete nodes and edges from workflow** - Tests node deletion functionality with Delete key
+3. **workflow state persists after save** - Verifies workflow state remains intact after saving
 
 ## Configuration
 
@@ -114,7 +116,7 @@ error while loading shared libraries: libnspr4.so: cannot open shared object fil
 |-----------|-------|--------|-------|
 | smoke.e2e.ts | 9 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
 | workflow.e2e.ts | 4 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
-| workflow-creation.e2e.ts | 1 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
+| workflow-creation.e2e.ts | 3 | ⚠️ Not Verified | Cannot run on NixOS; tests appear well-structured |
 
 ## Recommendations
 

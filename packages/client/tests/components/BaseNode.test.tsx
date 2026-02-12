@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ReactFlowProvider } from '@xyflow/react';
 import { BaseNode } from '../../src/components/nodes/BaseNode';
 
@@ -14,12 +15,15 @@ import { useWorkflowStore } from '../../src/stores/workflow';
 vi.mock('lucide-react', () => ({
   Loader2: (props: any) => <div data-testid="loader-icon" className={props.className} />,
   AlertCircle: (props: any) => <div data-testid="alert-icon" className={props.className} />,
+  RefreshCw: (props: any) => <div data-testid="refresh-icon" className={props.className} />,
 }));
 
 describe('BaseNode', () => {
+  const mockRetryNode = vi.fn();
   const mockStore = {
     nodeStatus: {} as Record<string, string>,
     nodeErrors: {} as Record<string, string>,
+    retryNode: mockRetryNode,
   };
 
   const baseProps = {
@@ -38,6 +42,7 @@ describe('BaseNode', () => {
     vi.clearAllMocks();
     mockStore.nodeStatus = {};
     mockStore.nodeErrors = {};
+    mockRetryNode.mockClear();
     (useWorkflowStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
       (selector?: (state: any) => any) => selector ? selector(mockStore) : mockStore
     );
@@ -177,6 +182,52 @@ describe('BaseNode', () => {
       const { container } = renderBaseNode({ selected: false });
       const node = container.firstChild as HTMLElement;
       expect(node.className).not.toContain('ring-2');
+    });
+  });
+
+  describe('retry button', () => {
+    it('shows retry button when node status is error', () => {
+      mockStore.nodeStatus = { 'base-node-1': 'error' };
+      mockStore.nodeErrors = { 'base-node-1': 'API timeout' };
+      renderBaseNode();
+      expect(screen.getByLabelText('Retry this node')).toBeInTheDocument();
+    });
+
+    it('does not show retry button when status is idle', () => {
+      mockStore.nodeStatus = { 'base-node-1': 'idle' };
+      renderBaseNode();
+      expect(screen.queryByLabelText('Retry this node')).not.toBeInTheDocument();
+    });
+
+    it('does not show retry button when status is running', () => {
+      mockStore.nodeStatus = { 'base-node-1': 'running' };
+      renderBaseNode();
+      expect(screen.queryByLabelText('Retry this node')).not.toBeInTheDocument();
+    });
+
+    it('does not show retry button when status is success', () => {
+      mockStore.nodeStatus = { 'base-node-1': 'success' };
+      renderBaseNode();
+      expect(screen.queryByLabelText('Retry this node')).not.toBeInTheDocument();
+    });
+
+    it('calls retryNode with node id when clicked', async () => {
+      mockStore.nodeStatus = { 'base-node-1': 'error' };
+      mockStore.nodeErrors = { 'base-node-1': 'API timeout' };
+      const user = userEvent.setup();
+      render(
+        <ReactFlowProvider>
+          <BaseNode {...baseProps}>
+            <span>content</span>
+          </BaseNode>
+        </ReactFlowProvider>
+      );
+      
+      const retryButton = screen.getByLabelText('Retry this node');
+      await user.click(retryButton);
+      
+      expect(mockRetryNode).toHaveBeenCalledWith('base-node-1');
+      expect(mockRetryNode).toHaveBeenCalledTimes(1);
     });
   });
 });

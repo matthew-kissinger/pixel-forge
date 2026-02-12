@@ -27,6 +27,7 @@ import { Toolbar } from './components/panels/Toolbar';
 import { ExecutionHistory } from './components/panels/ExecutionHistory';
 import { PresetLauncher } from './components/panels/PresetLauncher';
 import { MobileNav, type MobilePanel } from './components/panels/MobileNav';
+import { KeyboardShortcutsHelp } from './components/panels/KeyboardShortcutsHelp';
 import { ToastContainer, toast } from './components/ui/Toast';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { findNonOverlappingPosition } from './lib/nodeLayout';
@@ -409,6 +410,7 @@ export default function App() {
   const [isPresetLauncherVisible, setIsPresetLauncherVisible] = useState(false);
   const [mobileActivePanel, setMobileActivePanel] = useState<MobilePanel>('none');
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const isMd = useMediaQuery('(min-width: 768px)');
   const isLg = useMediaQuery('(min-width: 1024px)');
   const isNarrow = useMediaQuery('(max-width: 768px)');
@@ -452,6 +454,39 @@ export default function App() {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMd, mobileActivePanel]);
+
+  // Global Escape handler for desktop panels
+  useEffect(() => {
+    if (!isMd) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isPresetLauncherVisible) {
+          setIsPresetLauncherVisible(false);
+        } else if (isHistoryVisible) {
+          setIsHistoryVisible(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMd, isPresetLauncherVisible, isHistoryVisible]);
+
+  // "?" key handler for shortcuts help
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+        setShortcutsHelpOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Command palette keyboard shortcut (Cmd/Ctrl+K)
   useEffect(() => {
@@ -541,6 +576,10 @@ export default function App() {
               showShortcuts={!showCommandPaletteFAB}
             />
           </Suspense>
+          <KeyboardShortcutsHelp
+            isOpen={shortcutsHelpOpen}
+            onClose={() => setShortcutsHelpOpen(false)}
+          />
           <ToastContainer />
         </div>
       </ReactFlowProvider>

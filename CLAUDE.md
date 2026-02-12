@@ -28,7 +28,7 @@ React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
 ```
 packages/
   client/   # React Flow editor: 31 lazy-loaded node components, 8 panels, Zustand store, executor engine
-  server/   # Hono API: routes for Gemini, FAL, Claude, export; services with timeouts + retries
+  server/   # Hono API: routes for Gemini, FAL, Claude, export; services with timeouts (no retries yet)
   shared/   # Types, presets, prompt builders, API type contracts
 ```
 
@@ -57,7 +57,8 @@ packages/
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size)
-- 3 unstaged changes on main: signal prop in ExecutionContext, pollModelStatus test update, typecheck tsconfig fix
+- 4 unstaged changes on main: .gitignore cleanup, signal prop in ExecutionContext, pollModelStatus test update, typecheck tsconfig fix
+- Server services (Gemini, FAL, Claude) have no retry logic - single attempt only
 
 ## Quality Bar
 

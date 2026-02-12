@@ -404,6 +404,25 @@ export default function App() {
     workflowFromUrlStatus === 'none' || workflowFromUrlStatus === 'error';
   useAutoSave({ allowRecovery: allowAutoSaveRecovery });
 
+  const theme = useWorkflowStore((state) => state.theme);
+
+  useEffect(() => {
+    const applyTheme = (isDark: boolean) => {
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    };
+
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      applyTheme(mediaQuery.matches);
+
+      const listener = (e: MediaQueryListEvent) => applyTheme(e.matches);
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    } else {
+      applyTheme(theme === 'dark');
+    }
+  }, [theme]);
+
   return (
     <ErrorBoundary>
       <ReactFlowProvider>

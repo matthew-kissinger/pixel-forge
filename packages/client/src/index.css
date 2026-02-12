@@ -14,6 +14,20 @@
   --warning: #f59e0b;
 }
 
+[data-theme='light'] {
+  --bg-primary: #f8f8fc;
+  --bg-secondary: #efeff5;
+  --bg-tertiary: #e4e4ef;
+  --border-color: #d0d0de;
+  --text-primary: #1a1a2e;
+  --text-secondary: #4a4a6a;
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --success: #22c55e;
+  --error: #ef4444;
+  --warning: #f59e0b;
+}
+
 * {
   box-sizing: border-box;
 }

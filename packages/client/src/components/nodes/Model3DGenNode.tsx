@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { Box } from 'lucide-react';
 import { BaseNode } from './BaseNode';
@@ -18,7 +18,16 @@ export function Model3DGenNode(props: NodeProps) {
   const status = nodeStatus[id] ?? 'idle';
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('');
-  const abortRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleGenerate = useCallback(async () => {
     const inputs = getInputsForNode(id);
@@ -30,7 +39,8 @@ export function Model3DGenNode(props: NodeProps) {
       return;
     }
 
-    abortRef.current = false;
+    // Create new AbortController for this generation
+    abortControllerRef.current = new AbortController();
     setNodeStatus(id, 'running');
     setProgress(0);
     setStatusText('Starting...');
@@ -42,7 +52,6 @@ export function Model3DGenNode(props: NodeProps) {
       const result = await pollModelStatus(
         requestId,
         (status: ModelStatusResponse) => {
-          if (abortRef.current) return;
           setProgress(status.progress ?? 0);
           setStatusText(
             status.status === 'pending'
@@ -53,10 +62,9 @@ export function Model3DGenNode(props: NodeProps) {
           );
         },
         5000,
-        600000 // 10 min timeout for 3D
+        600000, // 10 min timeout for 3D
+        abortControllerRef.current.signal
       );
-
-      if (abortRef.current) return;
 
       if (result.status === 'completed' && result.modelUrl) {
         setNodeOutput(id, {
@@ -70,16 +78,20 @@ export function Model3DGenNode(props: NodeProps) {
         throw new Error(result.error || '3D generation failed');
       }
     } catch (error) {
-      if (!abortRef.current) {
-        logger.error('3D model generation failed:', error);
-        setNodeStatus(id, 'error');
-        setStatusText(error instanceof Error ? error.message : 'Failed');
+      // Don't show error UI if operation was aborted
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
       }
+      logger.error('3D model generation failed:', error);
+      setNodeStatus(id, 'error');
+      setStatusText(error instanceof Error ? error.message : 'Failed');
     }
   }, [id, getInputsForNode, setNodeOutput, setNodeStatus, setProgress, setStatusText]);
 
   const handleCancel = useCallback(() => {
-    abortRef.current = true;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setNodeStatus(id, 'idle');
     setStatusText('Cancelled');
     setProgress(0);

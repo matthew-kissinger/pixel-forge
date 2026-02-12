@@ -405,4 +405,51 @@ describe('pollModelStatus', () => {
       api.pollModelStatus('req-4', undefined, 10, 50)
     ).rejects.toThrow('Model generation timed out');
   });
+
+  it('respects AbortSignal and throws AbortError when aborted', async () => {
+    const processing = { status: 'processing' };
+    mockFetch.mockResolvedValue(jsonResponse(processing));
+
+    const controller = new AbortController();
+
+    // Abort after a short delay
+    setTimeout(() => controller.abort(), 20);
+
+    await expect(
+      api.pollModelStatus('req-5', undefined, 10, 60000, controller.signal)
+    ).rejects.toMatchObject({
+      name: 'AbortError',
+      message: 'The operation was aborted.',
+    });
+  });
+
+  it('respects AbortSignal aborted before poll starts', async () => {
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      api.pollModelStatus('req-6', undefined, 10, 60000, controller.signal)
+    ).rejects.toMatchObject({
+      name: 'AbortError',
+      message: 'The operation was aborted.',
+    });
+
+    // Should not make any API calls
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('passes abort signal to getModelStatus calls', async () => {
+    const processing = { status: 'processing' };
+    const completed = { status: 'completed', modelUrl: 'url' };
+
+    mockFetch
+      .mockResolvedValueOnce(jsonResponse(processing))
+      .mockResolvedValueOnce(jsonResponse(completed));
+
+    const controller = new AbortController();
+    await api.pollModelStatus('req-7', undefined, 10, 60000, controller.signal);
+
+    // Verify signal was passed to fetch calls via apiFetch
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
 });

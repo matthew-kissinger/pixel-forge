@@ -27,12 +27,18 @@ export async function handleModel3DGen(context: NodeHandlerContext): Promise<voi
   }
 
   const result = await generateModel(promptInput.data);
-  
+
   if (ctx.getCancelled()) throw new Error('Execution cancelled');
-  
-  // Poll for completion with cancellation check
-  const status = await pollModelStatus(result.requestId, undefined, 5000, 300000);
-  
+
+  // Poll for completion with abort signal (if available in context)
+  const status = await pollModelStatus(
+    result.requestId,
+    undefined,
+    5000,
+    300000,
+    ctx.signal
+  );
+
   if (ctx.getCancelled()) throw new Error('Execution cancelled');
   
   if (status.status === 'failed' || !status.modelUrl) {

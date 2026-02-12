@@ -14,6 +14,9 @@ export interface Toast {
 // Simple global toast store
 let toastListeners: ((toasts: Toast[]) => void)[] = [];
 let toasts: Toast[] = [];
+let toastIdCounter = 0;
+
+const nextId = () => `toast_${Date.now()}_${++toastIdCounter}`;
 
 const notifyListeners = () => {
   toastListeners.forEach((listener) => listener([...toasts]));
@@ -22,22 +25,27 @@ const notifyListeners = () => {
 // eslint-disable-next-line react-refresh/only-export-components -- toast is a utility object, not a component
 export const toast = {
   success: (message: string, duration = 3000) => {
-    const id = `toast_${Date.now()}`;
+    const id = nextId();
     toasts = [...toasts, { id, type: 'success', message, duration }];
     notifyListeners();
   },
   error: (message: string, duration = 5000) => {
-    const id = `toast_${Date.now()}`;
+    const id = nextId();
     toasts = [...toasts, { id, type: 'error', message, duration }];
     notifyListeners();
   },
   info: (message: string, duration = 3000) => {
-    const id = `toast_${Date.now()}`;
+    const id = nextId();
     toasts = [...toasts, { id, type: 'info', message, duration }];
     notifyListeners();
   },
   remove: (id: string) => {
     toasts = toasts.filter((t) => t.id !== id);
+    notifyListeners();
+  },
+  clearAll: () => {
+    toasts = [];
+    toastIdCounter = 0;
     notifyListeners();
   },
 };
@@ -81,8 +89,10 @@ function ToastItem({ toast: t, onRemove }: { toast: Toast; onRemove: () => void 
       <Icon className={cn('h-5 w-5 flex-shrink-0', iconColors[t.type])} />
       <p className="flex-1 text-sm text-[var(--text-primary)]">{t.message}</p>
       <button
+        type="button"
         onClick={onRemove}
         className="flex-shrink-0 rounded p-0.5 hover:bg-white/10"
+        aria-label="Dismiss"
       >
         <X className="h-4 w-4 text-[var(--text-secondary)]" />
       </button>

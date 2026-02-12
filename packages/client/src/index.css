@@ -70,6 +70,16 @@ body,
   background-color: var(--bg-tertiary) !important;
   border-color: var(--border-color) !important;
   fill: var(--text-secondary) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+@media (pointer: coarse) {
+  .react-flow__controls-button {
+    width: 40px !important;
+    height: 40px !important;
+  }
 }
 
 .react-flow__controls-button:hover {
@@ -87,25 +97,52 @@ body,
 }
 
 .react-flow__handle {
-  width: 14px !important;
-  height: 14px !important;
+  --handle-size: 14px;
+  --handle-offset: -7px;
+  width: var(--handle-size) !important;
+  height: var(--handle-size) !important;
   background-color: var(--bg-tertiary) !important;
   border: 2px solid var(--border-color) !important;
   transition: all 0.15s ease;
 }
 
-/* Larger handles on touch devices */
+/* Larger handles and better hit areas on touch devices */
 @media (pointer: coarse) {
   .react-flow__handle {
-    width: 16px !important;
-    height: 16px !important;
+    --handle-size: 20px;
+    --handle-offset: -10px;
   }
+  
+  /* Increase hit area further without increasing visual size if needed, 
+     but here we also increase visual size for clarity */
+  .react-flow__handle::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    right: -12px;
+    bottom: -12px;
+  }
+}
+
+.react-flow__handle-left {
+  left: var(--handle-offset) !important;
+}
+
+.react-flow__handle-right {
+  right: var(--handle-offset) !important;
 }
 
 .react-flow__handle:hover {
   background-color: var(--accent) !important;
   border-color: var(--accent) !important;
   transform: scale(1.2);
+}
+
+/* Active state for handles on touch */
+.react-flow__handle:active {
+  background-color: var(--accent-hover) !important;
+  transform: scale(1.4);
 }
 
 .react-flow__handle-connecting {

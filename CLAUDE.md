@@ -46,18 +46,19 @@ packages/
 
 ## Current Gaps
 
-- **8 unmerged branches**: Mobile accessibility, theme system, touch targets, panel tests, command palette, Playwright e2e, node tests - all completed but need merge/conflict resolution
+- **8 unmerged branches**: Mobile accessibility, theme system, touch targets, panel tests, command palette, Playwright e2e, node tests - merge task in progress
 - **Lint error**: `useMediaQuery.ts` - setState in effect (line 11), blocks clean lint
 - **Untested hooks**: useFocusTrap (64 lines), useMediaQuery (19 lines), useTheme (in branch) - zero tests
 - **Untested sub-components**: PresetLauncher sub-components (5), Toolbar sub-components (3) - zero tests
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer with heavy browser deps
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **Uncommitted cleanup**: 51 legacy scripts/assets staged for deletion, .gitignore updates, touch target improvements
 - **Memory leak**: Deleting nodes does not clean up `nodeOutputs`/`nodeStatus`/`nodeErrors`/`batchProgress` in workflow store
 - **No rate limiting**: Server API routes accept unlimited requests (DoS/quota risk)
+- **No request body size limits**: Server accepts unlimited base64 payloads via Hono (needs `bodyLimit` middleware)
 - **Server errors untested**: `lib/errors.ts` (98 lines) and error handler middleware have zero test coverage
 - **No .env.example**: Required env vars (GEMINI_API_KEY, FAL_KEY) undocumented for contributors
 - **AutoSave perf**: `useAutoSave` uses JSON.stringify equality on full nodes/edges array every state change
+- **pollModelStatus not cancellable**: No AbortController support - polls for up to 5 minutes even after component unmount
 
 ## Known Issues
 

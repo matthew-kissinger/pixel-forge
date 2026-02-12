@@ -49,9 +49,10 @@ packages/
 
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer
 - **Untested handlers**: analysis.ts (216 lines), batch.ts (112 lines), imageGen.ts (115 lines), model3d.ts (105 lines) - handler tests for input/processing/canvas/output exist
-- **Untested panel**: NodePalette.tsx (~317 lines, search filtering, drag-to-add, node categorization, mobile overlay)
+- **Untested node sub-components**: kiln/* (347 lines), quality/* (210 lines), export-sheet/* (85 lines)
+- **Untested shared package**: presets.ts, api-types.ts, logger.ts (314 lines total)
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **66 unpushed commits** on main (ahead of origin/main)
+- **68 unpushed commits** on main (ahead of origin/main)
 
 ## Known Issues
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { executeWorkflow } from '../../src/lib/executor';
+import { executeWorkflow, getExecutionWaves } from '../../src/lib/executor';
 import { handlers } from '../../src/lib/handlers';
 import { useWorkflowStore } from '../../src/stores/workflow';
 import type { Node, Edge } from '@xyflow/react';
@@ -167,7 +167,7 @@ describe('Workflow Executor', () => {
       expect(executionOrder[3]).toBe('D');
     });
 
-    it('should execute disconnected nodes/chains', async () => {
+    it('should execute disconnected processing nodes', async () => {
       const executionOrder: string[] = [];
       
       const handlerA = vi.fn().mockImplementation(async () => {
@@ -202,6 +202,77 @@ describe('Workflow Executor', () => {
 
       expect(result.success).toBe(true);
       expect(new Set(executionOrder)).toEqual(new Set(['A', 'B']));
+    });
+
+    it('should NOT include orphan input-type nodes in execution waves (cycle fallback)', () => {
+      // When input-type nodes are stuck in cycles (not processed by Kahn's),
+      // the orphan fallback should NOT add them to execution waves
+      const nodes: Node[] = [
+        { id: 'T', type: 'textPrompt', position: { x: 0, y: 0 }, data: { nodeType: 'textPrompt', label: 'T' } },
+        { id: 'I', type: 'imageUpload', position: { x: 100, y: 0 }, data: { nodeType: 'imageUpload', label: 'I' } },
+      ];
+
+      // Self-referencing edges create cycles that Kahn's algorithm can't process
+      const edges: Edge[] = [
+        { id: 'e1', source: 'T', target: 'T' },
+        { id: 'e2', source: 'I', target: 'I' },
+      ];
+
+      const waves = getExecutionWaves(nodes, edges);
+      const allNodeIds = waves.flat().map((n) => n.id);
+
+      // Input-type orphan nodes should be filtered out
+      expect(allNodeIds).not.toContain('T');
+      expect(allNodeIds).not.toContain('I');
+      expect(waves.length).toBe(0);
+    });
+
+    it('should include orphan processing nodes in execution waves (cycle fallback)', () => {
+      // When processing-type nodes are stuck in cycles, the orphan fallback
+      // SHOULD add them so they at least get attempted (and fail gracefully)
+      const nodes: Node[] = [
+        { id: 'R', type: 'resize', position: { x: 0, y: 0 }, data: { nodeType: 'resize', label: 'R' } },
+      ];
+
+      const edges: Edge[] = [
+        { id: 'e1', source: 'R', target: 'R' },
+      ];
+
+      const waves = getExecutionWaves(nodes, edges);
+      const allNodeIds = waves.flat().map((n) => n.id);
+
+      // Processing-type orphan nodes should be included
+      expect(allNodeIds).toContain('R');
+    });
+
+    it('should handle mixed graph with connected nodes and orphan input nodes in cycles', () => {
+      const nodes: Node[] = [
+        // Connected chain: textPrompt -> imageGen (processed by Kahn's)
+        { id: 'A', type: 'textPrompt', position: { x: 0, y: 0 }, data: { nodeType: 'textPrompt', label: 'A' } },
+        { id: 'B', type: 'imageGen', position: { x: 100, y: 0 }, data: { nodeType: 'imageGen', label: 'B' } },
+        // Input node in a cycle (orphan - should be excluded)
+        { id: 'C', type: 'number', position: { x: 0, y: 100 }, data: { nodeType: 'number', label: 'C' } },
+        // Processing node in a cycle (orphan - should be included)
+        { id: 'D', type: 'resize', position: { x: 100, y: 100 }, data: { nodeType: 'resize', label: 'D' } },
+      ];
+
+      const edges: Edge[] = [
+        { id: 'e1', source: 'A', target: 'B' },
+        // Self-edges create cycles
+        { id: 'e2', source: 'C', target: 'C' },
+        { id: 'e3', source: 'D', target: 'D' },
+      ];
+
+      const waves = getExecutionWaves(nodes, edges);
+      const allNodeIds = waves.flat().map((n) => n.id);
+
+      // Connected nodes should be in waves
+      expect(allNodeIds).toContain('A');
+      expect(allNodeIds).toContain('B');
+      // Processing orphan should be included
+      expect(allNodeIds).toContain('D');
+      // Input orphan should be excluded
+      expect(allNodeIds).not.toContain('C');
     });
 
     it('should handle self-referencing edges gracefully (skip or handled)', async () => {

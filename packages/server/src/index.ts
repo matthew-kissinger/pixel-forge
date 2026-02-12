@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { bodyLimit } from 'hono/body-limit';
 import { imageRouter } from './routes/image';
 import { modelRouter } from './routes/model';
 import { kilnRouter } from './routes/kiln';
@@ -27,6 +28,7 @@ app.use(
     allowHeaders: ['Content-Type'],
   })
 );
+app.use('*', bodyLimit({ maxSize: 10 * 1024 * 1024 })); // 10MB default
 
 // Health check
 app.get('/health', (c) => {

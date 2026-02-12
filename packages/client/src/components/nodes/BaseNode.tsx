@@ -37,13 +37,14 @@ export function BaseNode<T extends { label: string }>({
   return (
     <div
       className={cn(
-        'min-w-[200px] rounded-lg border-2 bg-[var(--bg-secondary)] shadow-lg',
+        'min-w-[200px] rounded-lg border-2 bg-[var(--bg-secondary)] shadow-lg transition-all duration-150',
+        'active:scale-[0.99] active:shadow-md touch-manipulation',
         statusColors[status],
         selected && 'ring-2 ring-[var(--accent)] ring-offset-2 ring-offset-[var(--bg-primary)]'
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
+      {/* Header - larger touch target on mobile */}
+      <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2 [@media(pointer:coarse)]:py-3">
         <span className="text-sm font-medium text-[var(--text-primary)]">
           {data.label}
         </span>
@@ -83,7 +84,7 @@ export function BaseNode<T extends { label: string }>({
         <Handle
           type="target"
           position={Position.Left}
-          className="!-left-[7px]"
+          className="react-flow__handle-left"
           title={inputLabel}
         />
       )}
@@ -91,7 +92,7 @@ export function BaseNode<T extends { label: string }>({
         <Handle
           type="source"
           position={Position.Right}
-          className="!-right-[7px]"
+          className="react-flow__handle-right"
           title={outputLabel}
         />
       )}

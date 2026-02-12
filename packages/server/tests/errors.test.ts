@@ -229,7 +229,7 @@ describe('Error Handler Integration', () => {
   test('AppError returns correct status and JSON body', async () => {
     const res = await testApp.fetch(new Request(`${base}/throw-app-error`));
     expect(res.status).toBe(404);
-    const data = await res.json();
+    const data = (await res.json()) as { error: string; code: number };
     expect(data.error).toBe('item missing');
     expect(data.code).toBe(404);
   });
@@ -237,7 +237,7 @@ describe('Error Handler Integration', () => {
   test('BadRequestError returns 400', async () => {
     const res = await testApp.fetch(new Request(`${base}/throw-bad-request`));
     expect(res.status).toBe(400);
-    const data = await res.json();
+    const data = (await res.json()) as { error: string; code: number };
     expect(data.error).toBe('invalid input');
     expect(data.code).toBe(400);
   });
@@ -245,7 +245,7 @@ describe('Error Handler Integration', () => {
   test('ZodError returns 400 with validation details', async () => {
     const res = await testApp.fetch(new Request(`${base}/throw-zod-error`));
     expect(res.status).toBe(400);
-    const data = await res.json();
+    const data = (await res.json()) as { error: string; details: unknown[] };
     expect(data.error).toBe('Validation failed');
     expect(data.details).toEqual([{ path: ['field'], message: 'required' }]);
   });
@@ -253,7 +253,7 @@ describe('Error Handler Integration', () => {
   test('unknown error returns 500', async () => {
     const res = await testApp.fetch(new Request(`${base}/throw-unknown`));
     expect(res.status).toBe(500);
-    const data = await res.json();
+    const data = (await res.json()) as { error: string };
     expect(data.error).toBe('something broke');
   });
 });

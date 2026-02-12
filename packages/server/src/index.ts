@@ -74,6 +74,15 @@ app.onError((err, c) => {
   return c.json({ error: getErrorMessage(err) }, 500);
 });
 
+// Validate required environment variables
+const requiredEnvVars = ['GEMINI_API_KEY', 'FAL_KEY'] as const;
+const missing = requiredEnvVars.filter((key) => !process.env[key]);
+if (missing.length > 0) {
+  pixelLogger.warn(
+    `Missing environment variables: ${missing.join(', ')}. Some features may not work. See .env.example for setup.`
+  );
+}
+
 const port = parseInt(process.env.PORT || '3000', 10);
 
 pixelLogger.info(`Starting server on port ${port}...`);

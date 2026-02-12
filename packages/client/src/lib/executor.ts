@@ -85,7 +85,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
  * All nodes in the same wave can execute in parallel.
  * Returns array of waves, where each wave is an array of nodes.
  */
-function getExecutionWaves(nodes: Node[], edges: Edge[]): Node[][] {
+export function getExecutionWaves(nodes: Node[], edges: Edge[]): Node[][] {
   // Build dependency graph
   const dependents = new Map<string, Set<string>>();
   const dependencies = new Map<string, Set<string>>();
@@ -150,9 +150,14 @@ function getExecutionWaves(nodes: Node[], edges: Edge[]): Node[][] {
     }
   }
 
-  // Add nodes with no connections (they weren't in the graph)
+  // Add orphan nodes that have execution handlers (skip input-only nodes)
   const processedIds = new Set(waves.flat().map((n) => n.id));
-  const orphanNodes = nodes.filter((node) => !processedIds.has(node.id));
+  const inputNodeTypes = ['textPrompt', 'imageUpload', 'number', 'styleReference', 'seedControl', 'batchGen'];
+  const orphanNodes = nodes.filter((node) => {
+    if (processedIds.has(node.id)) return false;
+    const nodeType = (node.data as NodeDataUnion).nodeType;
+    return !inputNodeTypes.includes(nodeType);
+  });
   if (orphanNodes.length > 0) {
     waves.push(orphanNodes);
   }

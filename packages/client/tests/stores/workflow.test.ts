@@ -43,6 +43,34 @@ describe('Workflow Store', () => {
       const { nodes } = useWorkflowStore.getState();
       expect(nodes[0].data.prompt).toBe('updated');
     });
+
+    it('should clean up orphaned node data when a node is removed', () => {
+      const store = useWorkflowStore.getState();
+      store.addNode({
+        id: 'test-1',
+        type: 'textPrompt',
+        position: { x: 0, y: 0 },
+        data: { label: 'Test Node', prompt: 'original' },
+      });
+
+      store.setNodeOutput('test-1', {
+        type: 'text',
+        data: 'hello world',
+        timestamp: Date.now(),
+      });
+      store.setNodeStatus('test-1', 'error');
+      store.setNodeError('test-1', 'failed');
+      store.setBatchProgress('test-1', { current: 1, total: 2, label: 'halfway' });
+
+      store.onNodesChange([{ id: 'test-1', type: 'remove' }]);
+
+      const { nodes, nodeOutputs, nodeStatus, nodeErrors, batchProgress } = useWorkflowStore.getState();
+      expect(nodes.find((node) => node.id === 'test-1')).toBeUndefined();
+      expect(nodeOutputs['test-1']).toBeUndefined();
+      expect(nodeStatus['test-1']).toBeUndefined();
+      expect(nodeErrors['test-1']).toBeUndefined();
+      expect(batchProgress['test-1']).toBeUndefined();
+    });
   });
 
   describe('Node Status', () => {
@@ -295,4 +323,3 @@ describe('Workflow Store', () => {
     });
   });
 });
-

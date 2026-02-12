@@ -202,6 +202,29 @@ export const useWorkflowStore = create<WorkflowState>()(
       // Apply changes
       const newNodes = applyNodeChanges(changes, state.nodes);
       set({ nodes: newNodes });
+
+      if (hasStructuralChange) {
+        const removedNodeIds = changes
+          .filter((change) => change.type === 'remove')
+          .map((change) => change.id);
+
+        if (removedNodeIds.length > 0) {
+          const currentState = get();
+          const nodeOutputs = { ...currentState.nodeOutputs };
+          const nodeStatus = { ...currentState.nodeStatus };
+          const nodeErrors = { ...currentState.nodeErrors };
+          const batchProgress = { ...currentState.batchProgress };
+
+          removedNodeIds.forEach((id) => {
+            delete nodeOutputs[id];
+            delete nodeStatus[id];
+            delete nodeErrors[id];
+            delete batchProgress[id];
+          });
+
+          set({ nodeOutputs, nodeStatus, nodeErrors, batchProgress });
+        }
+      }
     },
 
     onEdgesChange: (changes) => {

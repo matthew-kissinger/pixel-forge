@@ -12,9 +12,9 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # 1639 pass, 5 fail, 1 skip, 73 files
+cd packages/client && bunx vitest run   # 1712 pass, 0 fail, 1 skip, 76 files
 cd packages/server && bun test          # 118 pass, 7 files
-bun run test:e2e                        # Playwright smoke + mobile viewport tests
+bun run test:e2e                        # Playwright smoke + mobile viewport + workflow tests
 ```
 
 ## Stack
@@ -27,18 +27,19 @@ React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
 
 ```
 packages/
-  client/   # React Flow editor: 31 lazy-loaded node components, 8 panels, Zustand store, executor engine
-  server/   # Hono API: routes for Gemini, FAL, Claude, export; services with timeouts (no retries yet)
+  client/   # React Flow editor: 30 node components (lazy-loaded), 9 panels, Zustand store, executor engine
+  server/   # Hono API: routes with Zod validation, services with timeouts, retry client-side only
   shared/   # Types, presets, prompt builders, API type contracts
 ```
 
 ## Architecture
 
-- **Nodes**: 31 types, all lazy-loaded via `createLazyNode` with Suspense + `NodeErrorBoundary`
+- **Nodes**: 30 types (28 lazy-loaded via `createLazyNode`, 2 eager), all wrapped with `NodeErrorBoundary`
 - **Executor**: Topological sort, parallel wave execution, per-node timeouts (120s gen, 60s processing, 30s canvas)
 - **Handlers**: 9 modules in `lib/handlers/` (index, input, imageGen, model3d, processing, canvas, analysis, batch, output)
-- **State**: Zustand store with undo/redo snapshots, auto-save to localStorage every 2s
-- **Bundle**: Main ~99KB gzip, Three.js ~380KB, React Flow ~61KB, all nodes in separate chunks
+- **State**: Zustand store with undo/redo snapshots, auto-save to localStorage every 2s with RecoveryBanner UI
+- **Retry**: Client-side `retryWithBackoff` in `packages/client/src/lib/retry.ts` with per-node retry buttons
+- **Bundle**: Main ~103KB gzip, Three.js ~380KB (lazy, only loaded for 3D nodes), React Flow ~61KB, all nodes in separate chunks
 
 ## Critical: Transparency Workflow
 
@@ -46,19 +47,17 @@ packages/
 
 ## Current Gaps
 
-- **5 failing tests**: MobileNav (expects aria-label, component uses title) + useAutoSave recovery tests (expect old window.confirm pattern, component now uses RecoveryBanner)
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer
-- **Untested handlers**: analysis.ts (216 lines), batch.ts (112 lines), imageGen.ts (115 lines), model3d.ts (105 lines)
-- **Untested panels**: CommandPalette.tsx (370 lines), KeyboardShortcutsHelp.tsx (125 lines)
-- **Untested UI**: RecoveryBanner.tsx (72 lines), Toast.tsx (117 lines)
+- **Untested handlers**: analysis.ts (216 lines), batch.ts (112 lines), imageGen.ts (115 lines), model3d.ts (105 lines) - handler tests for input/processing/canvas/output exist
+- **Untested panels**: KeyboardShortcutsHelp.tsx (125 lines), NodePalette.tsx (~250 lines)
 - **No integration tests** against real Gemini/FAL/Claude APIs
+- **60 unpushed commits** on main (ahead of origin/main)
 
 ## Known Issues
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
-- Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size)
-- 4 unstaged changes on main: .gitignore cleanup, signal prop in ExecutionContext, pollModelStatus test update, typecheck tsconfig fix
-- Server services (Gemini, FAL, Claude) have no retry logic - single attempt only
+- Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size) - lazy loaded, only affects 3D workflows
+- 2 unmerged task branches with completed work (KeyboardShortcutsHelp tests, handler test fix)
 
 ## Quality Bar
 

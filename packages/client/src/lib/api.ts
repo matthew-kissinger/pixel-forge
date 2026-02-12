@@ -132,8 +132,11 @@ export async function generateModel(prompt: string): Promise<GenerateModelRespon
   });
 }
 
-export async function getModelStatus(requestId: string): Promise<ModelStatusResponse> {
-  return apiFetch<ModelStatusResponse>(`/model/status/${requestId}`);
+export async function getModelStatus(
+  requestId: string,
+  signal?: AbortSignal
+): Promise<ModelStatusResponse> {
+  return apiFetch<ModelStatusResponse>(`/model/status/${requestId}`, { signal });
 }
 
 // Helper to poll for model completion
@@ -141,19 +144,49 @@ export async function pollModelStatus(
   requestId: string,
   onProgress?: (status: ModelStatusResponse) => void,
   intervalMs = 5000,
-  timeoutMs = 300000 // 5 minutes max
+  timeoutMs = 300000, // 5 minutes max
+  signal?: AbortSignal
 ): Promise<ModelStatusResponse> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeoutMs) {
-    const status = await getModelStatus(requestId);
+    // Check abort before polling
+    if (signal?.aborted) {
+      const error = new Error('The operation was aborted.');
+      error.name = 'AbortError';
+      throw error;
+    }
+
+    const status = await getModelStatus(requestId, signal);
     onProgress?.(status);
 
     if (status.status === 'completed' || status.status === 'failed') {
       return status;
     }
 
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    // Check abort before sleeping
+    if (signal?.aborted) {
+      const error = new Error('The operation was aborted.');
+      error.name = 'AbortError';
+      throw error;
+    }
+
+    // Sleep with abort support
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(resolve, intervalMs);
+
+      const onAbort = () => {
+        clearTimeout(timeout);
+        signal?.removeEventListener('abort', onAbort);
+        const error = new Error('The operation was aborted.');
+        error.name = 'AbortError';
+        reject(error);
+      };
+
+      if (signal) {
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
+    });
   }
 
   throw new Error('Model generation timed out');

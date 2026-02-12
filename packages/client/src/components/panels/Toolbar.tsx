@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { X } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow';
 import { toast } from '../ui/Toast';
 import { TemplateLoader } from './TemplateLoader';
@@ -17,6 +18,8 @@ interface ToolbarProps {
   isMiniMapVisible?: boolean;
   onTogglePresetLauncher?: () => void;
   isPresetLauncherVisible?: boolean;
+  isMobileOverlay?: boolean;
+  onMobileClose?: () => void;
 }
 
 export function Toolbar({
@@ -26,6 +29,8 @@ export function Toolbar({
   isMiniMapVisible,
   onTogglePresetLauncher,
   isPresetLauncherVisible,
+  isMobileOverlay,
+  onMobileClose,
 }: ToolbarProps) {
   const { importWorkflow } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -55,8 +60,23 @@ export function Toolbar({
     [importWorkflow]
   );
 
-  return (
-    <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow-lg">
+  const toolbarContent = (
+    <div
+      className={
+        isMobileOverlay
+          ? 'fixed left-4 right-4 top-4 z-40 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow-lg'
+          : 'absolute right-4 top-4 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow-lg md:flex-nowrap'
+      }
+    >
+      {isMobileOverlay && onMobileClose && (
+        <button
+          onClick={onMobileClose}
+          className="absolute -top-2 -right-2 rounded-full border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow hover:bg-[var(--bg-tertiary)]"
+          title="Close"
+        >
+          <X className="h-4 w-4 text-[var(--text-secondary)]" />
+        </button>
+      )}
       <QuickGenerate />
 
       <div className="h-6 w-px bg-[var(--border-color)]" />
@@ -95,4 +115,19 @@ export function Toolbar({
       />
     </div>
   );
+
+  if (isMobileOverlay) {
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onMobileClose}
+          aria-hidden
+        />
+        {toolbarContent}
+      </>
+    );
+  }
+
+  return toolbarContent;
 }

@@ -69,7 +69,12 @@ const nodeIcons: Record<NodeType, typeof Type> = {
   exportSheet: LayoutGrid,
 };
 
-export function NodePalette() {
+interface NodePaletteProps {
+  isMobileOverlay?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps = {}) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
@@ -99,10 +104,10 @@ export function NodePalette() {
     );
   });
 
-  // Collapsed view - just show icons
-  if (isCollapsed) {
+  // Collapsed view - just show icons (hidden on mobile overlay)
+  if (isCollapsed && !isMobileOverlay) {
     return (
-      <div className="absolute left-4 top-4 z-10 flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
+      <div className="absolute left-4 top-4 z-10 hidden md:flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
         <button
           onClick={() => setIsCollapsed(false)}
           className="flex items-center justify-center p-2 hover:bg-[var(--bg-tertiary)]"
@@ -131,20 +136,45 @@ export function NodePalette() {
     );
   }
 
+  const containerClasses = isMobileOverlay
+    ? 'fixed inset-y-0 left-0 z-40 flex w-full max-w-[min(280px,85vw)] max-h-[80vh] flex-col overflow-hidden border-r border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl'
+    : 'absolute left-4 top-4 z-10 flex max-h-[calc(100vh-32px)] w-48 lg:w-56 flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl';
+
   return (
-    <div className="absolute left-4 top-4 z-10 flex max-h-[calc(100vh-32px)] w-56 flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
+    <>
+      {isMobileOverlay && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onMobileClose}
+          aria-hidden
+        />
+      )}
+      <div className={containerClasses}>
       <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
         <div>
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">Node Palette</h3>
           <p className="text-xs text-[var(--text-secondary)]">Drag nodes to canvas</p>
         </div>
-        <button
-          onClick={() => setIsCollapsed(true)}
-          className="rounded p-1 hover:bg-[var(--bg-tertiary)]"
-          title="Collapse palette"
-        >
-          <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
-        </button>
+        <div className="flex items-center gap-1">
+          {isMobileOverlay && onMobileClose && (
+            <button
+              onClick={onMobileClose}
+              className="rounded p-1 hover:bg-[var(--bg-tertiary)] md:hidden"
+              title="Close"
+            >
+              <X className="h-4 w-4 text-[var(--text-secondary)]" />
+            </button>
+          )}
+          {!isMobileOverlay && (
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="rounded p-1 hover:bg-[var(--bg-tertiary)] hidden md:block"
+              title="Collapse palette"
+            >
+              <ChevronLeft className="h-4 w-4 text-[var(--text-secondary)]" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="border-b border-[var(--border-color)] px-2 py-2">
@@ -274,5 +304,6 @@ export function NodePalette() {
         </div>
       </div>
     </div>
+    </>
   );
 }

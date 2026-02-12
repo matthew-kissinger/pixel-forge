@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
+  X,
 } from 'lucide-react';
 import { useWorkflowStore, type ExecutionRecord } from '../../stores/workflow';
 
@@ -105,10 +106,10 @@ function ExecutionHistoryEntry({ record }: ExecutionHistoryEntryProps) {
 interface ExecutionHistoryProps {
   isVisible: boolean;
   onToggle: () => void;
+  isMobileOverlay?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- onToggle required by interface but not used in this component
-export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHistoryProps) {
+export function ExecutionHistory({ isVisible, onToggle, isMobileOverlay }: ExecutionHistoryProps) {
   const { executionHistory, clearExecutionHistory } = useWorkflowStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -116,10 +117,10 @@ export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHi
     return null;
   }
 
-  // Collapsed view - just show icon
-  if (isCollapsed) {
+  // Collapsed view - just show icon (hidden on mobile overlay)
+  if (isCollapsed && !isMobileOverlay) {
     return (
-      <div className="absolute right-4 top-20 z-10 flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
+      <div className="absolute right-4 top-20 z-10 hidden md:flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
         <button
           onClick={() => setIsCollapsed(false)}
           className="flex items-center justify-center p-2 hover:bg-[var(--bg-tertiary)]"
@@ -134,8 +135,20 @@ export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHi
     );
   }
 
+  const containerClasses = isMobileOverlay
+    ? 'fixed right-4 left-4 top-20 z-40 flex max-h-[80vh] w-auto flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl md:absolute md:right-4 md:left-auto md:top-20 md:w-[300px] md:max-h-[calc(100vh-120px)]'
+    : 'absolute right-4 top-20 z-10 flex max-h-[calc(100vh-120px)] w-[300px] flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl';
+
   return (
-    <div className="absolute right-4 top-20 z-10 flex max-h-[calc(100vh-120px)] w-[300px] flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
+    <>
+      {isMobileOverlay && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onToggle}
+          aria-hidden
+        />
+      )}
+      <div className={containerClasses}>
       <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
         <div>
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">Execution History</h3>
@@ -144,6 +157,15 @@ export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHi
           </p>
         </div>
         <div className="flex items-center gap-1">
+          {isMobileOverlay && (
+            <button
+              onClick={onToggle}
+              className="rounded p-1 hover:bg-[var(--bg-tertiary)] md:hidden"
+              title="Close"
+            >
+              <X className="h-4 w-4 text-[var(--text-secondary)]" />
+            </button>
+          )}
           {executionHistory.length > 0 && (
             <button
               onClick={() => {
@@ -157,13 +179,15 @@ export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHi
               <Trash2 className="h-4 w-4 text-[var(--text-secondary)]" />
             </button>
           )}
-          <button
-            onClick={() => setIsCollapsed(true)}
-            className="rounded p-1 hover:bg-[var(--bg-tertiary)]"
-            title="Collapse history"
-          >
-            <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
-          </button>
+          {!isMobileOverlay && (
+            <button
+              onClick={() => setIsCollapsed(true)}
+              className="rounded p-1 hover:bg-[var(--bg-tertiary)]"
+              title="Collapse history"
+            >
+              <ChevronRight className="h-4 w-4 text-[var(--text-secondary)]" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -184,5 +208,6 @@ export function ExecutionHistory({ isVisible, onToggle: _onToggle }: ExecutionHi
         )}
       </div>
     </div>
+    </>
   );
 }

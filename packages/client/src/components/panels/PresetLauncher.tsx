@@ -46,9 +46,10 @@ const outputTypeIcons: Record<Preset['format'], typeof FileImage> = {
 interface PresetLauncherProps {
   isVisible: boolean;
   onToggle: () => void;
+  isMobileOverlay?: boolean;
 }
 
-export function PresetLauncher({ isVisible, onToggle }: PresetLauncherProps) {
+export function PresetLauncher({ isVisible, onToggle, isMobileOverlay }: PresetLauncherProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
   const [subject, setSubject] = useState('');
@@ -102,10 +103,10 @@ export function PresetLauncher({ isVisible, onToggle }: PresetLauncherProps) {
     setSubject('');
   };
 
-  // Collapsed view - just show icon
-  if (isCollapsed) {
+  // Collapsed view - just show icon (hidden on mobile overlay)
+  if (isCollapsed && !isMobileOverlay) {
     return (
-      <div className="absolute right-4 top-20 z-10 flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
+      <div className="absolute right-4 top-20 z-10 hidden md:flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
         <button
           onClick={() => setIsCollapsed(false)}
           className="flex items-center justify-center p-2 hover:bg-[var(--bg-tertiary)]"
@@ -122,8 +123,20 @@ export function PresetLauncher({ isVisible, onToggle }: PresetLauncherProps) {
     );
   }
 
+  const containerClasses = isMobileOverlay
+    ? 'fixed right-4 left-4 top-20 z-40 flex max-h-[80vh] w-auto flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl md:absolute md:right-4 md:left-auto md:top-20 md:w-80 md:max-h-[calc(100vh-120px)]'
+    : 'absolute right-4 top-20 z-10 flex max-h-[calc(100vh-120px)] w-80 flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl';
+
   return (
-    <div className="absolute right-4 top-20 z-10 flex max-h-[calc(100vh-120px)] w-80 flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
+    <>
+      {isMobileOverlay && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onToggle}
+          aria-hidden
+        />
+      )}
+      <div className={containerClasses}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
         <div>
@@ -324,5 +337,6 @@ export function PresetLauncher({ isVisible, onToggle }: PresetLauncherProps) {
         </div>
       )}
     </div>
+    </>
   );
 }

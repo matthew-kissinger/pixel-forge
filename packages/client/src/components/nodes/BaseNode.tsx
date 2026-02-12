@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useWorkflowStore, type NodeStatus } from '../../stores/workflow';
 
@@ -32,6 +32,7 @@ export function BaseNode<T extends { label: string }>({
 }: BaseNodeProps<T>) {
   const status = useWorkflowStore((s) => s.nodeStatus[id] ?? 'idle');
   const error = useWorkflowStore((s) => s.nodeErrors[id]);
+  const retryNode = useWorkflowStore((s) => s.retryNode);
 
   return (
     <div
@@ -57,12 +58,20 @@ export function BaseNode<T extends { label: string }>({
       {/* Error Message */}
       {status === 'error' && error && (
         <div 
-          className="bg-[var(--error)] px-3 py-1 text-[10px] text-white"
+          className="flex items-center gap-2 bg-[var(--error)] px-3 py-1 text-[10px] text-white"
           title={error}
         >
-          <div className="line-clamp-2 leading-tight">
+          <div className="flex-1 line-clamp-2 leading-tight">
             {error}
           </div>
+          <button
+            onClick={() => retryNode(id)}
+            className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded hover:bg-white/20 active:bg-white/30"
+            aria-label="Retry this node"
+            type="button"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
 

@@ -12,7 +12,7 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # 1712 pass, 0 fail, 1 skip, 76 files
+cd packages/client && bunx vitest run   # 1736 pass, 0 fail, 1 skip, 77 files
 cd packages/server && bun test          # 118 pass, 7 files
 bun run test:e2e                        # Playwright smoke + mobile viewport + workflow tests
 ```
@@ -49,15 +49,15 @@ packages/
 
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer
 - **Untested handlers**: analysis.ts (216 lines), batch.ts (112 lines), imageGen.ts (115 lines), model3d.ts (105 lines) - handler tests for input/processing/canvas/output exist
-- **Untested panels**: KeyboardShortcutsHelp.tsx (125 lines), NodePalette.tsx (~250 lines)
+- **Untested panel**: NodePalette.tsx (~250 lines, search filtering, drag-to-add, node categorization)
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **60 unpushed commits** on main (ahead of origin/main)
+- **63 unpushed commits** on main (ahead of origin/main)
 
 ## Known Issues
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size) - lazy loaded, only affects 3D workflows
-- 2 unmerged task branches with completed work (KeyboardShortcutsHelp tests, handler test fix)
+- Old worktrees from completed tasks could be cleaned up
 
 ## Quality Bar
 

@@ -1,5 +1,7 @@
-import { type DragEvent, useState } from 'react';
+import { type DragEvent, useState, useRef, useEffect, useMemo, type KeyboardEvent } from 'react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { useWorkflowStore, type NodeData } from '../../stores/workflow';
+import type { Node } from '@xyflow/react';
 import {
   Type,
   ImageIcon,
@@ -78,6 +80,8 @@ interface NodePaletteProps {
 export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps = {}) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     input: true,
     generate: true,
@@ -85,6 +89,36 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
     output: true,
   });
   const focusTrapRef = useFocusTrap(isMobileOverlay ?? false);
+  const addNode = useWorkflowStore((state) => state.addNode);
+
+  // Refs for debouncing and scroll management
+  const debounceTimerRef = useRef<number | null>(null);
+  const highlightedItemRef = useRef<HTMLDivElement | null>(null);
+
+  // Debounce search input
+  useEffect(() => {
+    if (debounceTimerRef.current !== null) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setHighlightedIndex(-1); // Reset highlight when search changes
+    }, 150);
+
+    return () => {
+      if (debounceTimerRef.current !== null) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightedItemRef.current) {
+      highlightedItemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [highlightedIndex]);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
@@ -95,16 +129,75 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
     event.dataTransfer.effectAllowed = 'move';
   };
 
+  const addNodeToCanvas = (nodeType: NodeType) => {
+    // Generate unique ID
+    const id = `${nodeType}-${Date.now()}`;
+
+    // Get node definition
+    const nodeDef = nodeDefinitions.find((def) => def.type === nodeType);
+    if (!nodeDef) return;
+
+    // Create node at canvas center (or slightly offset from existing nodes)
+    const newNode: Node<NodeData> = {
+      id,
+      type: nodeType,
+      position: { x: 250, y: 250 },
+      data: nodeDef.defaultData,
+    };
+
+    addNode(newNode);
+
+    // Clear search after adding
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    setHighlightedIndex(-1);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    // Handle Escape always (to clear search)
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setSearchQuery('');
+      setDebouncedSearchQuery('');
+      setHighlightedIndex(-1);
+      return;
+    }
+
+    // For other keys, only handle if there are search results
+    if (!debouncedSearchQuery || filteredNodes.length === 0) return;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setHighlightedIndex((prev) =>
+          prev < filteredNodes.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (highlightedIndex >= 0 && highlightedIndex < filteredNodes.length) {
+          addNodeToCanvas(filteredNodes[highlightedIndex].type);
+        }
+        break;
+    }
+  };
+
   const categories = Object.entries(nodeCategories) as [keyof typeof nodeCategories, (typeof nodeCategories)[keyof typeof nodeCategories]][];
 
-  const filteredNodes = nodeDefinitions.filter((def) => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    return (
+  // Memoize filtered nodes based on debounced search query
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
+  const filteredNodes = useMemo(() => {
+    if (!debouncedSearchQuery) return nodeDefinitions;
+    const query = debouncedSearchQuery.toLowerCase();
+    return nodeDefinitions.filter((def) =>
       def.label.toLowerCase().includes(query) ||
       def.description.toLowerCase().includes(query)
     );
-  });
+  }, [debouncedSearchQuery]);
 
   // Collapsed view - just show icons (hidden on mobile overlay)
   if (isCollapsed && !isMobileOverlay) {
@@ -192,12 +285,17 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Search nodes..."
             className="w-full rounded border border-[var(--border-color)] bg-[var(--bg-tertiary)] py-1 pl-7 pr-7 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent)]"
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setSearchQuery('');
+                setDebouncedSearchQuery('');
+                setHighlightedIndex(-1);
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
               <X className="h-3.5 w-3.5" />
@@ -207,19 +305,24 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {searchQuery ? (
+        {debouncedSearchQuery ? (
           <div className="flex flex-col gap-1 p-2">
-            {filteredNodes.map((def) => {
+            {filteredNodes.map((def, index) => {
               const Icon = nodeIcons[def.type];
               const category = nodeCategories[def.category];
+              const isHighlighted = index === highlightedIndex;
               return (
                 <div
                   key={def.type}
+                  ref={isHighlighted ? highlightedItemRef : null}
                   draggable
                   onDragStart={(e) => onDragStart(e, def.type)}
+                  onClick={() => addNodeToCanvas(def.type)}
                   className={cn(
                     'flex cursor-grab items-center gap-2 rounded border px-2 py-1.5 min-h-[44px] transition-colors active:cursor-grabbing touch-manipulation',
-                    'border-[var(--border-color)] bg-[var(--bg-tertiary)]',
+                    isHighlighted
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                      : 'border-[var(--border-color)] bg-[var(--bg-tertiary)]',
                     'hover:border-[var(--accent)] hover:bg-[var(--bg-secondary)]'
                   )}
                   title={def.description}
@@ -238,7 +341,7 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
             })}
             {filteredNodes.length === 0 && (
               <div className="py-8 text-center text-xs text-[var(--text-secondary)]">
-                No nodes match "{searchQuery}"
+                No nodes match "{debouncedSearchQuery}"
               </div>
             )}
           </div>

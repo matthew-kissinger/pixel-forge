@@ -38,7 +38,7 @@ packages/
 - **Executor**: Topological sort, parallel wave execution, per-node timeouts (120s gen, 60s processing, 30s canvas)
 - **Handlers**: 8 modules in `lib/handlers/` (input, imageGen, model3d, processing, canvas, analysis, batch, output)
 - **State**: Zustand store with undo/redo snapshots, auto-save to localStorage every 2s
-- **Bundle**: Main ~97KB gzip, Three.js ~380KB, React Flow ~61KB, all nodes in separate chunks
+- **Bundle**: Main ~99KB gzip, Three.js ~380KB, React Flow ~61KB, all nodes in separate chunks
 
 ## Critical: Transparency Workflow
 
@@ -53,12 +53,18 @@ packages/
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer with heavy browser deps
 - **No integration tests** against real Gemini/FAL/Claude APIs
 - **Uncommitted cleanup**: 51 legacy scripts/assets staged for deletion, .gitignore updates, touch target improvements
+- **Memory leak**: Deleting nodes does not clean up `nodeOutputs`/`nodeStatus`/`nodeErrors`/`batchProgress` in workflow store
+- **No rate limiting**: Server API routes accept unlimited requests (DoS/quota risk)
+- **Server errors untested**: `lib/errors.ts` (98 lines) and error handler middleware have zero test coverage
+- **No .env.example**: Required env vars (GEMINI_API_KEY, FAL_KEY) undocumented for contributors
+- **AutoSave perf**: `useAutoSave` uses JSON.stringify equality on full nodes/edges array every state change
 
 ## Known Issues
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size)
 - Main bundle ~99KB gzip (increased from 97KB with mobile/responsive additions)
+- `window.confirm` used for workflow recovery in useAutoSave (should be custom UI)
 
 ## Quality Bar
 

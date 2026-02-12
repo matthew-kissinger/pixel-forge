@@ -11,6 +11,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import sharp from 'sharp';
 import path from 'path';
+import { realpathSync, existsSync } from 'fs';
 import { BadRequestError } from '../lib/errors';
 import { logger } from '@pixel-forge/shared/logger';
 import type {
@@ -27,7 +28,7 @@ const EXPORT_BASE_DIR = process.env.EXPORT_BASE_DIR || '/tmp/pixel-forge-exports
 
 /**
  * Validates that the resolved path is within the allowed base directory
- * Prevents directory traversal attacks
+ * Prevents directory traversal attacks and symlink traversal
  */
 function validatePath(relativePath: string): string {
   // Reject paths containing .. segments
@@ -37,10 +38,20 @@ function validatePath(relativePath: string): string {
 
   // Resolve the full path
   const resolvedPath = path.resolve(EXPORT_BASE_DIR, relativePath);
+  const baseResolved = path.resolve(EXPORT_BASE_DIR);
 
   // Ensure the resolved path starts with the base directory
-  if (!resolvedPath.startsWith(path.resolve(EXPORT_BASE_DIR))) {
+  if (!resolvedPath.startsWith(baseResolved)) {
     throw new BadRequestError('Invalid path: outside allowed directory');
+  }
+
+  // Resolve symlinks to prevent symlink traversal
+  const dir = path.dirname(resolvedPath);
+  if (existsSync(dir)) {
+    const realDir = realpathSync(dir);
+    if (!realDir.startsWith(baseResolved)) {
+      throw new BadRequestError('Invalid path: symlink outside allowed directory');
+    }
   }
 
   return resolvedPath;

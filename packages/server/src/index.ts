@@ -9,6 +9,7 @@ import { exportRouter } from './routes/export';
 import { isAppError, getErrorMessage } from './lib/errors';
 import { logger as pixelLogger } from '@pixel-forge/shared/logger';
 import { rateLimit } from './middleware/rateLimit';
+import { requestTimeout } from './middleware/timeout';
 
 const app = new Hono();
 
@@ -31,15 +32,35 @@ app.use(
 app.use('*', bodyLimit({ maxSize: 10 * 1024 * 1024 })); // 10MB default
 
 // Health check
-app.get('/health', (c) => {
+app.get('/health', requestTimeout(5000), (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API routes with rate limiting
-app.route('/api/image', imageRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 10 })));
-app.route('/api/model', modelRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 10 })));
-app.route('/api/kiln', kilnRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 10 })));
-app.route('/api/export', exportRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 30 })));
+// API routes with rate limiting and timeouts
+app.route(
+  '/api/image',
+  imageRouter
+    .use('*', requestTimeout(180000))
+    .use('*', rateLimit({ windowMs: 60000, maxRequests: 10 }))
+);
+app.route(
+  '/api/model',
+  modelRouter
+    .use('*', requestTimeout(180000))
+    .use('*', rateLimit({ windowMs: 60000, maxRequests: 10 }))
+);
+app.route(
+  '/api/kiln',
+  kilnRouter
+    .use('*', requestTimeout(180000))
+    .use('*', rateLimit({ windowMs: 60000, maxRequests: 10 }))
+);
+app.route(
+  '/api/export',
+  exportRouter
+    .use('*', requestTimeout(60000))
+    .use('*', rateLimit({ windowMs: 60000, maxRequests: 30 }))
+);
 
 // 404 handler
 app.notFound((c) => {

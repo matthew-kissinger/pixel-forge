@@ -25,7 +25,9 @@ import { NodePalette } from './components/panels/NodePalette';
 import { Toolbar } from './components/panels/Toolbar';
 import { ExecutionHistory } from './components/panels/ExecutionHistory';
 import { PresetLauncher } from './components/panels/PresetLauncher';
+import { MobileNav, type MobilePanel } from './components/panels/MobileNav';
 import { ToastContainer, toast } from './components/ui/Toast';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import { findNonOverlappingPosition } from './lib/nodeLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { NodeContextMenu } from './components/NodeContextMenu';
@@ -40,9 +42,10 @@ const generateNodeId = () => `node_${++nodeIdCounter}`;
 
 interface FlowEditorProps {
   isMiniMapVisible: boolean;
+  controlsMarginLeft?: number;
 }
 
-function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
+function FlowEditor({ isMiniMapVisible, controlsMarginLeft = 240 }: FlowEditorProps) {
   const workflowStore = useWorkflowStore();
   const {
     nodes,
@@ -358,7 +361,7 @@ function FlowEditor({ isMiniMapVisible }: FlowEditorProps) {
       snapGrid={[10, 10]}
     >
       <Background gap={20} size={1} color="var(--border-color)" />
-      <Controls position="bottom-left" style={{ marginLeft: '240px' }} />
+      <Controls position="bottom-left" style={{ marginLeft: `${controlsMarginLeft}px` }} />
       {isMiniMapVisible && (
         <MiniMap
           position="bottom-right"
@@ -399,33 +402,72 @@ export default function App() {
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
   const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
   const [isPresetLauncherVisible, setIsPresetLauncherVisible] = useState(false);
+  const [mobileActivePanel, setMobileActivePanel] = useState<MobilePanel>('none');
+  const isMd = useMediaQuery('(min-width: 768px)');
+  const isLg = useMediaQuery('(min-width: 1024px)');
   const workflowFromUrlStatus = useWorkflowFromUrl();
   const allowAutoSaveRecovery =
     workflowFromUrlStatus === 'none' || workflowFromUrlStatus === 'error';
   useAutoSave({ allowRecovery: allowAutoSaveRecovery });
 
+  // Controls margin: 0 on mobile, 208 on tablet (w-48 + left-4), 240 on desktop (w-56 + left-4)
+  const controlsMarginLeft = isMd ? (isLg ? 240 : 208) : 0;
+
+  const handleMobilePanelToggle = (panel: MobilePanel) => {
+    setMobileActivePanel((prev) => (prev === panel ? 'none' : panel));
+  };
+
+  // Mobile: panels hidden by default, shown as overlay when toggled
+  // Tablet: NodePalette narrow, toolbar top
+  // Desktop: current layout
+  const showNodePalette = isMd || mobileActivePanel === 'palette';
+  const showToolbar = isMd || mobileActivePanel === 'menu';
+  const showPresetLauncher =
+    (isMd && isPresetLauncherVisible) || (!isMd && mobileActivePanel === 'generate');
+  const showExecutionHistory =
+    (isMd && isHistoryVisible) || (!isMd && mobileActivePanel === 'history');
+
   return (
     <ErrorBoundary>
       <ReactFlowProvider>
-        <div className="h-screen w-screen">
-          <FlowEditor isMiniMapVisible={isMiniMapVisible} />
-          <NodePalette />
-          <Toolbar
-            onToggleHistory={() => setIsHistoryVisible(!isHistoryVisible)}
-            isHistoryVisible={isHistoryVisible}
-            onToggleMiniMap={() => setIsMiniMapVisible(!isMiniMapVisible)}
+        <div className="h-screen w-screen pb-16 md:pb-0">
+          <FlowEditor
             isMiniMapVisible={isMiniMapVisible}
-            onTogglePresetLauncher={() => setIsPresetLauncherVisible(!isPresetLauncherVisible)}
-            isPresetLauncherVisible={isPresetLauncherVisible}
+            controlsMarginLeft={controlsMarginLeft}
           />
+          {showNodePalette && (
+            <NodePalette
+              isMobileOverlay={!isMd && mobileActivePanel === 'palette'}
+              onMobileClose={() => setMobileActivePanel('none')}
+            />
+          )}
+          {showToolbar && (
+            <Toolbar
+              onToggleHistory={() => setIsHistoryVisible(!isHistoryVisible)}
+              isHistoryVisible={isHistoryVisible}
+              onToggleMiniMap={() => setIsMiniMapVisible(!isMiniMapVisible)}
+              isMiniMapVisible={isMiniMapVisible}
+              onTogglePresetLauncher={() => setIsPresetLauncherVisible(!isPresetLauncherVisible)}
+              isPresetLauncherVisible={isPresetLauncherVisible}
+              isMobileOverlay={!isMd && mobileActivePanel === 'menu'}
+              onMobileClose={() => setMobileActivePanel('none')}
+            />
+          )}
           <PresetLauncher
-            isVisible={isPresetLauncherVisible}
-            onToggle={() => setIsPresetLauncherVisible(false)}
+            isVisible={showPresetLauncher}
+            onToggle={() =>
+              isMd ? setIsPresetLauncherVisible(false) : setMobileActivePanel('none')
+            }
+            isMobileOverlay={!isMd && mobileActivePanel === 'generate'}
           />
           <ExecutionHistory
-            isVisible={isHistoryVisible}
-            onToggle={() => setIsHistoryVisible(false)}
+            isVisible={showExecutionHistory}
+            onToggle={() =>
+              isMd ? setIsHistoryVisible(false) : setMobileActivePanel('none')
+            }
+            isMobileOverlay={!isMd && mobileActivePanel === 'history'}
           />
+          <MobileNav activePanel={mobileActivePanel} onToggle={handleMobilePanelToggle} />
           <ToastContainer />
         </div>
       </ReactFlowProvider>

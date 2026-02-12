@@ -76,6 +76,14 @@ body,
   transition: all 0.15s ease;
 }
 
+/* Larger handles on touch devices */
+@media (pointer: coarse) {
+  .react-flow__handle {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
 .react-flow__handle:hover {
   background-color: var(--accent) !important;
   border-color: var(--accent) !important;
@@ -95,6 +103,11 @@ body,
 
 .react-flow__handle.connectingto {
   background-color: var(--success) !important;
+}
+
+/* Prevent double-tap zoom on buttons */
+button {
+  touch-action: manipulation;
 }
 
 @keyframes pulse {

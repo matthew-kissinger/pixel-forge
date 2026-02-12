@@ -106,17 +106,17 @@ export function ExecutionActions() {
       <button
         onClick={handleValidate}
         disabled={nodes.length === 0}
-        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50 touch-manipulation"
         title="Validate workflow"
       >
-        <CheckCircle2 className="h-4 w-4" />
+        <CheckCircle2 className="h-5 w-5 md:h-4 md:w-4" />
         <span className="hidden sm:inline">Validate</span>
       </button>
 
       <button
         onClick={handleExecuteAll}
         disabled={nodes.length === 0}
-        className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm font-medium transition-colors ${
+        className={`flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm font-medium transition-colors touch-manipulation ${
           isExecuting
             ? 'bg-[var(--error)] text-white hover:bg-red-600'
             : 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
@@ -125,12 +125,12 @@ export function ExecutionActions() {
       >
         {isExecuting ? (
           <>
-            <Square className="h-4 w-4" />
+            <Square className="h-5 w-5 md:h-4 md:w-4" />
             <span className="hidden sm:inline">Stop</span>
           </>
         ) : (
           <>
-            <Play className="h-4 w-4" />
+            <Play className="h-5 w-5 md:h-4 md:w-4" />
             <span className="hidden sm:inline">Execute</span>
           </>
         )}

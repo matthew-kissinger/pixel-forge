@@ -410,6 +410,26 @@ export default function App() {
     workflowFromUrlStatus === 'none' || workflowFromUrlStatus === 'error';
   useAutoSave({ allowRecovery: allowAutoSaveRecovery });
 
+  // Theme system
+  const theme = useWorkflowStore((state) => state.theme);
+
+  useEffect(() => {
+    const applyTheme = (isDark: boolean) => {
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    };
+
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      applyTheme(mediaQuery.matches);
+
+      const listener = (e: MediaQueryListEvent) => applyTheme(e.matches);
+      mediaQuery.addEventListener('change', listener);
+      return () => mediaQuery.removeEventListener('change', listener);
+    } else {
+      applyTheme(theme === 'dark');
+    }
+  }, [theme]);
+
   // Controls margin: 0 on mobile, 208 on tablet (w-48 + left-4), 240 on desktop (w-56 + left-4)
   const controlsMarginLeft = isMd ? (isLg ? 240 : 208) : 0;
 

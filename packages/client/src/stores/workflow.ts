@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, persist } from 'zustand/middleware';
 import {
   type Node,
   type Edge,
@@ -84,6 +84,10 @@ export interface WorkflowState {
   demoMode: boolean;
   setDemoMode: (enabled: boolean) => void;
 
+  // Theme
+  theme: 'dark' | 'light' | 'system';
+  setTheme: (theme: 'dark' | 'light' | 'system') => void;
+
   // React Flow callbacks
   onNodesChange: (changes: NodeChange<Node<NodeData>>[]) => void;
   onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
@@ -154,7 +158,8 @@ const restoreSnapshot = (snapshot: WorkflowSnapshot): { nodes: Node<NodeData>[];
 };
 
 export const useWorkflowStore = create<WorkflowState>()(
-  subscribeWithSelector((set, get) => {
+  persist(
+    subscribeWithSelector((set, get) => {
     // Helper to push current state to undo stack
     const pushToHistory = (skipRedoClear = false) => {
     const state = get();
@@ -185,6 +190,9 @@ export const useWorkflowStore = create<WorkflowState>()(
 
     demoMode: typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('demo') === 'true' : false,
     setDemoMode: (enabled) => set({ demoMode: enabled }),
+
+    theme: 'system',
+    setTheme: (theme) => set({ theme }),
 
     onNodesChange: (changes) => {
       const state = get();
@@ -508,5 +516,10 @@ export const useWorkflowStore = create<WorkflowState>()(
     set({ lastAutoSave: timestamp });
   },
   };
-  })
+  }),
+  {
+    name: 'pixelforge-theme',
+    partialize: (state) => ({ theme: state.theme }),
+  }
+  )
 );

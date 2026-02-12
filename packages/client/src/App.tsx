@@ -1,4 +1,5 @@
-import { useCallback, type DragEvent, useState, useRef, useEffect } from 'react';
+import { useCallback, type DragEvent, useState, useRef, useEffect, lazy, Suspense } from 'react';
+import { Command } from 'lucide-react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -36,6 +37,10 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAutoSave } from './hooks/useAutoSave';
 import { useWorkflowFromUrl } from './hooks/useWorkflowFromUrl';
 import { templates, templateToFlow } from './lib/templates';
+
+const CommandPalette = lazy(() =>
+  import('./components/panels/CommandPalette').then((m) => ({ default: m.CommandPalette }))
+);
 
 let nodeIdCounter = 0;
 const generateNodeId = () => `node_${++nodeIdCounter}`;
@@ -403,8 +408,12 @@ export default function App() {
   const [isMiniMapVisible, setIsMiniMapVisible] = useState(true);
   const [isPresetLauncherVisible, setIsPresetLauncherVisible] = useState(false);
   const [mobileActivePanel, setMobileActivePanel] = useState<MobilePanel>('none');
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const isMd = useMediaQuery('(min-width: 768px)');
   const isLg = useMediaQuery('(min-width: 1024px)');
+  const isNarrow = useMediaQuery('(max-width: 768px)');
+  const isCoarse = useMediaQuery('(pointer: coarse)');
+  const showCommandPaletteFAB = isNarrow || isCoarse;
   const workflowFromUrlStatus = useWorkflowFromUrl();
   const allowAutoSaveRecovery =
     workflowFromUrlStatus === 'none' || workflowFromUrlStatus === 'error';
@@ -443,6 +452,18 @@ export default function App() {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isMd, mobileActivePanel]);
+
+  // Command palette keyboard shortcut (Cmd/Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Controls margin: 0 on mobile, 208 on tablet (w-48 + left-4), 240 on desktop (w-56 + left-4)
   const controlsMarginLeft = isMd ? (isLg ? 240 : 208) : 0;
@@ -502,6 +523,24 @@ export default function App() {
             isMobileOverlay={!isMd && mobileActivePanel === 'history'}
           />
           <MobileNav activePanel={mobileActivePanel} onToggle={handleMobilePanelToggle} />
+          {showCommandPaletteFAB && (
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="fixed bottom-6 right-6 z-50 flex h-14 w-14 touch-manipulation items-center justify-center rounded-full bg-[var(--accent)] text-white shadow-lg transition-transform hover:bg-[var(--accent-hover)] hover:scale-105 active:scale-95"
+              style={{ minWidth: 56, minHeight: 56 }}
+              aria-label="Open command palette"
+            >
+              <Command className="h-6 w-6" />
+            </button>
+          )}
+          <Suspense fallback={null}>
+            <CommandPalette
+              isOpen={commandPaletteOpen}
+              onClose={() => setCommandPaletteOpen(false)}
+              showShortcuts={!showCommandPaletteFAB}
+            />
+          </Suspense>
           <ToastContainer />
         </div>
       </ReactFlowProvider>

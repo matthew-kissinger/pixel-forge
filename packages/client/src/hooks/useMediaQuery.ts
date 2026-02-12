@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 
+/**
+ * Subscribes to a media query and returns whether it matches.
+ * Uses useSyncExternalStore to avoid hydration mismatch and flash.
+ */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia(query).matches;
-  });
-
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    setMatches(media.matches);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    media.addEventListener('change', handler);
-    return () => media.removeEventListener('change', handler);
-  }, [query]);
-
-  return matches;
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      if (typeof window === 'undefined') return () => {};
+      const m = window.matchMedia(query);
+      m.addEventListener('change', onStoreChange);
+      return () => m.removeEventListener('change', onStoreChange);
+    },
+    () => (typeof window !== 'undefined' ? window.matchMedia(query).matches : false),
+    () => false
+  );
 }

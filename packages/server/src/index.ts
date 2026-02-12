@@ -7,6 +7,7 @@ import { kilnRouter } from './routes/kiln';
 import { exportRouter } from './routes/export';
 import { isAppError, getErrorMessage } from './lib/errors';
 import { logger as pixelLogger } from '@pixel-forge/shared/logger';
+import { rateLimit } from './middleware/rateLimit';
 
 const app = new Hono();
 
@@ -32,11 +33,11 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API routes
-app.route('/api/image', imageRouter);
-app.route('/api/model', modelRouter);
-app.route('/api/kiln', kilnRouter);
-app.route('/api/export', exportRouter);
+// API routes with rate limiting
+app.route('/api/image', imageRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 10 })));
+app.route('/api/model', modelRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 10 })));
+app.route('/api/kiln', kilnRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 10 })));
+app.route('/api/export', exportRouter.use('*', rateLimit({ windowMs: 60000, maxRequests: 30 })));
 
 // 404 handler
 app.notFound((c) => {

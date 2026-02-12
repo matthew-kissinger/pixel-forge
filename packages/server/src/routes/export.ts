@@ -6,6 +6,7 @@
  */
 
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import sharp from 'sharp';
@@ -173,7 +174,11 @@ exportRouter.post('/save', zValidator('json', saveSchema), async (c) => {
  *   totalCount: number
  * }
  */
-exportRouter.post('/batch-save', zValidator('json', batchSaveSchema), async (c) => {
+exportRouter.post(
+  '/batch-save',
+  bodyLimit({ maxSize: 50 * 1024 * 1024 }), // 50MB for batch operations
+  zValidator('json', batchSaveSchema),
+  async (c) => {
   const { images } = c.req.valid('json') as BatchExportToFileOptions;
 
   try {

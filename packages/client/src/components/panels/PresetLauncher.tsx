@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { type Preset } from '@pixel-forge/shared/presets';
 import { createWorkflowFromPreset } from '../../lib/templates';
 import { useWorkflowStore } from '../../stores/workflow';
@@ -17,6 +18,7 @@ export function PresetLauncher({ isVisible, onToggle, isMobileOverlay }: PresetL
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
   const [subject, setSubject] = useState('');
   const { reset, addNode, onConnect } = useWorkflowStore();
+  const focusTrapRef = useFocusTrap(isMobileOverlay ?? false);
 
   if (!isVisible) return null;
 
@@ -79,7 +81,13 @@ export function PresetLauncher({ isVisible, onToggle, isMobileOverlay }: PresetL
           aria-hidden
         />
       )}
-      <div className={containerClasses}>
+      <div
+        ref={isMobileOverlay ? focusTrapRef : undefined}
+        className={containerClasses}
+        role={isMobileOverlay ? 'dialog' : undefined}
+        aria-modal={isMobileOverlay ? 'true' : undefined}
+        aria-labelledby={isMobileOverlay ? 'preset-launcher-title' : undefined}
+      >
         <PresetLauncherHeader
           onCollapse={() => setIsCollapsed(true)}
           onClose={onToggle}

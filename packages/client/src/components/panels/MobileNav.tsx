@@ -9,7 +9,11 @@ interface MobileNavProps {
 
 export function MobileNav({ activePanel, onToggle }: MobileNavProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden items-center justify-around border-t border-[var(--border-color)] bg-[var(--bg-secondary)] py-2 safe-area-pb">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden items-center justify-around border-t border-[var(--border-color)] bg-[var(--bg-secondary)] py-2 safe-area-pb"
+      role="navigation"
+      aria-label="Main navigation"
+    >
       <button
         onClick={() => onToggle(activePanel === 'palette' ? 'none' : 'palette')}
         className={`flex flex-col items-center gap-1 rounded-lg px-4 py-1.5 transition-colors ${
@@ -18,6 +22,7 @@ export function MobileNav({ activePanel, onToggle }: MobileNavProps) {
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
         }`}
         title="Node Palette"
+        aria-current={activePanel === 'palette' ? 'page' : undefined}
       >
         <LayoutGrid className="h-5 w-5" />
         <span className="text-[10px] font-medium">Palette</span>
@@ -31,6 +36,7 @@ export function MobileNav({ activePanel, onToggle }: MobileNavProps) {
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
         }`}
         title="Quick Generate"
+        aria-current={activePanel === 'generate' ? 'page' : undefined}
       >
         <Zap className="h-5 w-5" />
         <span className="text-[10px] font-medium">Generate</span>
@@ -44,6 +50,7 @@ export function MobileNav({ activePanel, onToggle }: MobileNavProps) {
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
         }`}
         title="Execution History"
+        aria-current={activePanel === 'history' ? 'page' : undefined}
       >
         <Clock className="h-5 w-5" />
         <span className="text-[10px] font-medium">History</span>
@@ -57,10 +64,11 @@ export function MobileNav({ activePanel, onToggle }: MobileNavProps) {
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
         }`}
         title="Menu"
+        aria-current={activePanel === 'menu' ? 'page' : undefined}
       >
         <Menu className="h-5 w-5" />
         <span className="text-[10px] font-medium">Menu</span>
       </button>
-    </div>
+    </nav>
   );
 }

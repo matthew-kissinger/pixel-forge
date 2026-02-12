@@ -1,4 +1,5 @@
 import { type DragEvent, useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import {
   Type,
   ImageIcon,
@@ -83,6 +84,7 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
     process: true,
     output: true,
   });
+  const focusTrapRef = useFocusTrap(isMobileOverlay ?? false);
 
   const toggleCategory = (category: string) => {
     setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
@@ -149,10 +151,16 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
           aria-hidden
         />
       )}
-      <div className={containerClasses}>
+      <div
+        ref={isMobileOverlay ? focusTrapRef : undefined}
+        className={containerClasses}
+        role={isMobileOverlay ? 'dialog' : undefined}
+        aria-modal={isMobileOverlay ? 'true' : undefined}
+        aria-labelledby={isMobileOverlay ? 'node-palette-title' : undefined}
+      >
       <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
         <div>
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Node Palette</h3>
+          <h3 id="node-palette-title" className="text-sm font-semibold text-[var(--text-primary)]">Node Palette</h3>
           <p className="text-xs text-[var(--text-secondary)]">Drag nodes to canvas</p>
         </div>
         <div className="flex items-center gap-1">

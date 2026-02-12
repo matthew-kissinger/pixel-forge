@@ -15,7 +15,7 @@ export function PresetLauncherHeader({
   return (
     <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
       <div>
-        <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
+        <h3 id="preset-launcher-title" className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
           <Rocket className="h-4 w-4 text-[var(--accent)]" />
           Preset Launcher
         </h3>

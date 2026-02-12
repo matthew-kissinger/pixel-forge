@@ -430,6 +430,20 @@ export default function App() {
     }
   }, [theme]);
 
+  // Escape key handler to close active mobile panel overlay
+  useEffect(() => {
+    if (isMd || mobileActivePanel === 'none') return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMobileActivePanel('none');
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isMd, mobileActivePanel]);
+
   // Controls margin: 0 on mobile, 208 on tablet (w-48 + left-4), 240 on desktop (w-56 + left-4)
   const controlsMarginLeft = isMd ? (isLg ? 240 : 208) : 0;
 

@@ -182,12 +182,15 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Expand component test coverage** - 12 node components still have zero tests (of 30 total). Running task covers 7 small nodes. Tested: AnalyzeNode, BatchGenNode, ColorPaletteNode, CompressNode, CropNode, ExportSheetNode, FilterNode, ImageGenNode, ResizeNode, SliceSheetNode, TileNode. Priority remaining: CombineNode (224), SpriteSheetNode (206), IterateNode (167), StyleReferenceNode (166), Model3DGenNode (163), QualityCheckNode (159), SaveNode (152), RotateNode (146), IsometricTileNode (139), PixelateNode (138), ExportGLBNode (109), KilnGenNode (283).
+- **Merge unmerged test branches** - 4 branches with test work waiting for merge: small nodes (7 components, 88 tests), medium nodes (6 components), older node tests, API tests. Branch `a68a0b5b` is cleanest (only additions).
+- **Remaining untested node components** - After merging branches: KilnGenNode (283), SpriteSheetNode (206), CombineNode (224), Model3DGenNode (163), QualityCheckNode (159), StyleReferenceNode (166). Panel components QuickGenerate (153) and TemplateLoader (183) also untested.
+- **Refactor PresetLauncher.tsx** (328 lines) - Last large component, has 23 tests. Extract sub-components.
 - **Test kiln/runtime.ts** (783 lines) - WebGPU/Three.js renderer, zero tests. Heavy browser deps make unit testing hard - may need integration approach.
 - **Integration testing** - No tests against real Gemini/FAL/Claude APIs.
-- **Refactor PresetLauncher.tsx** (328 lines) - Last large component, has 23 tests. Extract sub-components.
 
 ### Completed Goals
+
+- ~~Expand component test coverage (small + medium nodes)~~ - Done (small: 7 nodes in branch `43dc385d`, medium: 6 nodes in branch `a68a0b5b`). Pending merge.
 
 - ~~Test api.ts~~ - Done (client API wrapper tests; commit `9ef1676`)
 - ~~Test kiln/primitives.ts~~ - Done (49 tests; commit `0b18886`)
@@ -303,7 +306,7 @@ Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. kiln/runtime.ts (783 lines) untested (heavy browser/WebGPU deps). 12 node components have zero tests (of 30 total) - tested: AnalyzeNode, BatchGenNode, ColorPaletteNode, CompressNode, CropNode, ExportSheetNode, FilterNode, ImageGenNode, ResizeNode, SliceSheetNode, TileNode. Component tests: NodeErrorBoundary (6), NodePalette (7), toolbar (54), PresetLauncher (23), ImageGenNode (28), BatchGenNode, SliceSheetNode, ExportSheetNode, ResizeNode, ColorPaletteNode (17), CropNode (25), AnalyzeNode, CompressNode, FilterNode, TileNode. api.ts now tested. kiln/primitives.ts now tested (49 tests). templates.ts (58 tests), guards.ts (56 tests), kiln/prompt.ts (85 tests). Completed refactors: KilnGenNode, QualityCheckNode, ExportSheetNode. Remaining large: PresetLauncher.tsx (328 lines).
+Key gaps: No integration tests against real APIs. kiln/runtime.ts (783 lines) untested (heavy browser/WebGPU deps). 4 unmerged task branches with node component tests (13 nodes total). After merge, remaining untested: KilnGenNode (283), SpriteSheetNode (206), CombineNode (224), Model3DGenNode (163), QualityCheckNode (159), StyleReferenceNode (166). Panel components QuickGenerate (153) and TemplateLoader (183) also untested. Completed refactors: KilnGenNode, QualityCheckNode, ExportSheetNode. Remaining large: PresetLauncher.tsx (328 lines).
 
 ## Quality Bar
 

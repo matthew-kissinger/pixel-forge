@@ -1,4 +1,5 @@
 import { Hono, type Context } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import sharp from 'sharp';
@@ -275,6 +276,7 @@ imageRouter.post(
 
 imageRouter.post(
   '/batch-generate',
+  bodyLimit({ maxSize: 1 * 1024 * 1024 }), // 1MB for text prompts
   zValidator('json', batchGenerateSchema),
   async (c) => {
     const { subjects, presetId, consistencyPhrase } = c.req.valid('json') as BatchGenerateRequest;

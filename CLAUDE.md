@@ -12,7 +12,7 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # ~1343 pass, 1 skip, 58 files
+cd packages/client && bunx vitest run   # ~1429 pass, 1 skip, 62 files
 cd packages/server && bun test          # 82 pass, 4 files
 bun run test:e2e                        # 10 Playwright smoke tests
 ```
@@ -46,16 +46,19 @@ packages/
 
 ## Current Gaps
 
-- **Mobile accessibility**: Responsive layout merged (MobileNav, useMediaQuery, breakpoints). Missing: ARIA roles, focus traps, keyboard nav on mobile overlays
-- **Touch targets**: Uncommitted improvements in toolbar buttons, NodePalette, QuickGenerate (44px min, touch-manipulation)
-- **Untested panels**: QuickGenerate, TemplateLoader, ExecutionHistory, MobileNav (4 panels with 0 tests)
+- **8 unmerged branches**: Mobile accessibility, theme system, touch targets, panel tests, command palette, Playwright e2e, node tests - all completed but need merge/conflict resolution
+- **Lint error**: `useMediaQuery.ts` - setState in effect (line 11), blocks clean lint
+- **Untested hooks**: useFocusTrap (64 lines), useMediaQuery (19 lines), useTheme (in branch) - zero tests
+- **Untested sub-components**: PresetLauncher sub-components (5), Toolbar sub-components (3) - zero tests
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer with heavy browser deps
 - **No integration tests** against real Gemini/FAL/Claude APIs
+- **Uncommitted cleanup**: 51 legacy scripts/assets staged for deletion, .gitignore updates, touch target improvements
 
 ## Known Issues
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size)
+- Main bundle ~99KB gzip (increased from 97KB with mobile/responsive additions)
 
 ## Quality Bar
 

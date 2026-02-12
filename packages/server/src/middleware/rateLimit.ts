@@ -14,7 +14,7 @@ interface RequestRecord {
 const globalStore = new Map<string, RequestRecord>();
 
 // Clean up old entries every 5 minutes
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [key, record] of globalStore.entries()) {
     if (now > record.resetTime) {
@@ -22,10 +22,13 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+cleanupInterval.unref();
 
 export function rateLimit(config: RateLimitConfig, store = globalStore) {
   return async (c: Context, next: Next) => {
-    const ip = c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'unknown';
+    const forwarded = c.req.header('x-forwarded-for');
+    const first = forwarded?.split(',')[0];
+    const ip = (typeof first === 'string' && first.trim() !== '') ? first.trim() : c.req.header('x-real-ip') || 'unknown';
     const key = `${ip}:${c.req.path}`;
     const now = Date.now();
 

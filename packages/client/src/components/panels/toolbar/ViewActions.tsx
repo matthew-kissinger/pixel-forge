@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Maximize2, LayoutGrid, Eye, EyeOff } from 'lucide-react';
+import { Maximize2, LayoutGrid, Eye, EyeOff, Sun, Moon, Monitor } from 'lucide-react';
 import { useReactFlow } from '@xyflow/react';
 import { useWorkflowStore } from '../../../stores/workflow';
 import { toast } from '../../ui/Toast';
@@ -11,7 +11,7 @@ interface ViewActionsProps {
 }
 
 export function ViewActions({ onToggleMiniMap, isMiniMapVisible }: ViewActionsProps) {
-  const { nodes, edges, setNodes } = useWorkflowStore();
+  const { nodes, edges, setNodes, theme, setTheme } = useWorkflowStore();
   const reactFlow = useReactFlow();
 
   const handleFitView = useCallback(() => {
@@ -32,6 +32,14 @@ export function ViewActions({ onToggleMiniMap, isMiniMapVisible }: ViewActionsPr
     });
   }, [nodes, edges, reactFlow, setNodes]);
 
+  const handleThemeToggle = useCallback(() => {
+    const nextTheme = theme === 'system' ? 'light' : theme === 'light' ? 'dark' : 'system';
+    setTheme(nextTheme);
+  }, [theme, setTheme]);
+
+  const themeIcon = theme === 'system' ? Monitor : theme === 'light' ? Sun : Moon;
+  const ThemeIcon = themeIcon;
+
   return (
     <>
       <button
@@ -50,6 +58,15 @@ export function ViewActions({ onToggleMiniMap, isMiniMapVisible }: ViewActionsPr
       >
         <LayoutGrid className="h-4 w-4" />
         <span className="hidden sm:inline">Auto Layout</span>
+      </button>
+
+      <button
+        onClick={handleThemeToggle}
+        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        title={`Theme: ${theme}`}
+      >
+        <ThemeIcon className="h-4 w-4" />
+        <span className="hidden sm:inline capitalize">{theme}</span>
       </button>
 
       {onToggleMiniMap && (

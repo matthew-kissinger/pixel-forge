@@ -12,7 +12,7 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # 1208 pass, 1 skip, 52 files
+cd packages/client && bunx vitest run   # ~1243 pass, 1 skip, 54 files
 cd packages/server && bun test          # 82 pass, 4 files
 bun run test:e2e                        # 10 Playwright smoke tests
 ```
@@ -46,12 +46,12 @@ packages/
 
 ## Current Gaps
 
-- **Mobile/responsive**: Layout is desktop-only (absolute positioning, fixed widths, no touch targets). Active work in progress.
-- **Untested node components**: KilnGenNode, SpriteSheetNode, CombineNode, Model3DGenNode, QualityCheckNode, StyleReferenceNode
+- **Mobile/responsive**: Active work - responsive layout branch (MobileNav, useMediaQuery, breakpoints) and touch targets branch ready for merge. Not yet on main.
 - **Untested panels**: QuickGenerate, TemplateLoader
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer with heavy browser deps
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **PresetLauncher.tsx** (328 lines) - last large component needing refactor, has 23 tests
+- **PresetLauncher.tsx** (328 lines) - refactor branch exists (extracted sub-components), needs merge to main
+- **Unmerged task branches**: 3 branches with completed work awaiting merge (responsive layout, PresetLauncher refactor, node tests)
 
 ## Known Issues
 

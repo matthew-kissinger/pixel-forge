@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { compress } from 'hono/compress';
 import { bodyLimit } from 'hono/body-limit';
 import { imageRouter } from './routes/image';
 import { modelRouter } from './routes/model';
@@ -30,6 +31,7 @@ app.use(
     maxAge: 86400, // Cache preflight for 24 hours
   })
 );
+app.use('*', compress());
 app.use('*', bodyLimit({ maxSize: 10 * 1024 * 1024 })); // 10MB default
 
 // Health check

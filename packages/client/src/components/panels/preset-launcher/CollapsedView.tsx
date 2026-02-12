@@ -9,7 +9,7 @@ interface CollapsedViewProps {
 
 export function CollapsedView({ onExpand }: CollapsedViewProps) {
   return (
-    <div className="absolute right-4 top-20 z-10 flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
+    <div className="absolute right-4 top-20 z-10 hidden md:flex flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
       <button
         onClick={onExpand}
         className="flex items-center justify-center p-2 hover:bg-[var(--bg-tertiary)]"

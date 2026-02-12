@@ -12,7 +12,7 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # 1474 pass, 0 fail, 1 skip, 62 files
+cd packages/client && bunx vitest run   # 1468 pass, 6 fail, 1 skip, 62 files
 cd packages/server && bun test          # 113 pass, 6 files
 bun run test:e2e                        # 10 Playwright smoke tests
 ```
@@ -44,37 +44,29 @@ packages/
 
 **Always use solid red (#FF0000) or green (#00FF00) backgrounds.** Never ask Gemini for "transparent background" - produces checkerboard with no alpha. Red preferred; green for red subjects.
 
-## Unmerged Branches (9)
+## Unmerged Branches (2)
 
 Completed work sitting in branches not yet merged to main:
-- **19d434c6** - Mobile accessibility (MobileNav nav element, aria-labels, escape handler) - changes also in working tree
-- **22c6095a** - Command palette and mobile FAB
-- **9c9e219e** - Server body size limits (bodyLimit middleware)
-- **b494385d** - Mobile touch targets (44px minimum)
-- **be212658** - AbortController for pollModelStatus
-- **e31fbd32** - Playwright mobile e2e tests
-- **e559adc1** - Component tests for 6 node types
-- **ef687c57** - Theme system (dark/light/system-preference)
-- **f709891c** - Replace window.confirm with RecoveryBanner (has worktree with uncommitted work)
+- **be212658** - AbortController for pollModelStatus (1 commit ahead)
+- **f709891c** - Replace window.confirm with RecoveryBanner (1 commit ahead)
 
 ## Current Gaps
 
-- **Lint error**: `useMediaQuery.ts:11` - setState in effect, fix with `useSyncExternalStore`
+- **6 failing tests**: MobileNav (expects aria-label, has title) + useAutoSave recovery tests (expects window.confirm, branch has RecoveryBanner)
 - **Untested hooks**: useFocusTrap (64 lines), useMediaQuery (19 lines) - zero tests
 - **Untested sub-components**: PresetLauncher sub-components (5), Toolbar sub-components (3)
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **AutoSave perf**: `useAutoSave` uses JSON.stringify equality on full nodes/edges every state change
 - **Export path validation**: `validatePath()` blocks `..` but doesn't resolve symlinks
-- **No server request timeout**: Long-running AI requests can hang indefinitely
 - **No response compression**: Large base64 image responses sent uncompressed
-- **No CORS preflight caching**: Missing maxAge in CORS config
 
 ## Known Issues
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size)
 - Executor adds orphan input nodes to execution waves (line 153-158) - they have no handlers
+- pollModelStatus has no AbortController - polls after unmount (fix in unmerged branch be212658)
+- useAutoSave uses window.confirm for recovery - bad on mobile (fix in unmerged branch f709891c)
 
 ## Quality Bar
 

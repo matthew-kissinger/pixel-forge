@@ -182,15 +182,15 @@ Build a **template/preset system** where:
 
 ### Near-term Goals
 
-- **Merge unmerged test branches** - 4 branches with test work waiting for merge: small nodes (7 components, 88 tests), medium nodes (6 components), older node tests, API tests. Branch `a68a0b5b` is cleanest (only additions).
-- **Remaining untested node components** - After merging branches: KilnGenNode (283), SpriteSheetNode (206), CombineNode (224), Model3DGenNode (163), QualityCheckNode (159), StyleReferenceNode (166). Panel components QuickGenerate (153) and TemplateLoader (183) also untested.
+- **Remaining untested node components** - KilnGenNode (283), SpriteSheetNode (206), CombineNode (224), Model3DGenNode (163), QualityCheckNode (159), StyleReferenceNode (166). Panel components QuickGenerate (153) and TemplateLoader (183) also untested.
 - **Refactor PresetLauncher.tsx** (328 lines) - Last large component, has 23 tests. Extract sub-components.
 - **Test kiln/runtime.ts** (783 lines) - WebGPU/Three.js renderer, zero tests. Heavy browser deps make unit testing hard - may need integration approach.
 - **Integration testing** - No tests against real Gemini/FAL/Claude APIs.
+- **Clean up stale task branches** - 2 remaining unmerged branches (b59efa12, fc47621b) are largely superseded by recent merges.
 
 ### Completed Goals
 
-- ~~Expand component test coverage (small + medium nodes)~~ - Done (small: 7 nodes in branch `43dc385d`, medium: 6 nodes in branch `a68a0b5b`). Pending merge.
+- ~~Expand component test coverage (small + medium nodes)~~ - Done (small: 7 nodes merged `1715d3a`, medium: 6 nodes merged `1acd55c`). Total: 1208 tests, 52 files.
 
 - ~~Test api.ts~~ - Done (client API wrapper tests; commit `9ef1676`)
 - ~~Test kiln/primitives.ts~~ - Done (49 tests; commit `0b18886`)
@@ -300,13 +300,13 @@ React Flow editor with 30 node types fully implemented (type definitions, UI com
 
 Bundle: main chunk ~323KB/~97KB gzip, Three.js ~1.4MB/~380KB gzip (separate), React Flow ~188KB/~61KB gzip (separate), JSZip ~95KB/~29KB gzip (lazy), all 30 nodes lazy-loaded into individual chunks. Total gzipped: ~613KB. Bundle size CI gate committed.
 
-Test coverage: client 983 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 39 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript `tsc --noEmit` AND `tsc -b` both clean (build fixed). Bundle size CI gate committed. CI now includes vitest coverage reporting (uploads artifact).
+Test coverage: client 1208 pass, 0 fail, 1 skip (executor timeout - bun/vitest fake timer incompatibility) across 52 vitest files. Server 82 pass, 0 fail across 4 bun:test files (includes /api/kiln/stream SSE tests). E2E: 10 Playwright smoke tests (in CI). TypeScript `tsc --noEmit` AND `tsc -b` both clean (build fixed). Bundle size CI gate committed. CI now includes vitest coverage reporting (uploads artifact).
 
 Lint status: 0 errors, 0 warnings (both client and server). Fully clean.
 
 Known limitations: executor timeout test skipped due to bun's vitest incompatibility with `vi.useFakeTimers()` + async promise resolution. Not a bug - platform constraint.
 
-Key gaps: No integration tests against real APIs. kiln/runtime.ts (783 lines) untested (heavy browser/WebGPU deps). 4 unmerged task branches with node component tests (13 nodes total). After merge, remaining untested: KilnGenNode (283), SpriteSheetNode (206), CombineNode (224), Model3DGenNode (163), QualityCheckNode (159), StyleReferenceNode (166). Panel components QuickGenerate (153) and TemplateLoader (183) also untested. Completed refactors: KilnGenNode, QualityCheckNode, ExportSheetNode. Remaining large: PresetLauncher.tsx (328 lines).
+Key gaps: No integration tests against real APIs. kiln/runtime.ts (783 lines) untested (heavy browser/WebGPU deps). Remaining untested node components: KilnGenNode (283), SpriteSheetNode (206), CombineNode (224), Model3DGenNode (163), QualityCheckNode (159), StyleReferenceNode (166). Panel components QuickGenerate (153) and TemplateLoader (183) also untested. Completed refactors: KilnGenNode, QualityCheckNode, ExportSheetNode. Remaining large: PresetLauncher.tsx (328 lines).
 
 ## Quality Bar
 

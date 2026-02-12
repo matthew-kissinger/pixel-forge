@@ -46,6 +46,7 @@ packages/
 
 ## Current Gaps
 
+- **Mobile/responsive**: Layout is desktop-only (absolute positioning, fixed widths, no touch targets). Active work in progress.
 - **Untested node components**: KilnGenNode, SpriteSheetNode, CombineNode, Model3DGenNode, QualityCheckNode, StyleReferenceNode
 - **Untested panels**: QuickGenerate, TemplateLoader
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer with heavy browser deps

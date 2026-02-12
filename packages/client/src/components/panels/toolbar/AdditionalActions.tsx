@@ -53,10 +53,10 @@ export function AdditionalActions({
     <>
       <button
         onClick={handleExportOutputs}
-        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        className="flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] touch-manipulation"
         title="Export all outputs"
       >
-        <FileJson className="h-4 w-4" />
+        <FileJson className="h-5 w-5 md:h-4 md:w-4" />
         <span className="hidden sm:inline">Export</span>
       </button>
 
@@ -66,14 +66,14 @@ export function AdditionalActions({
         <>
           <button
             onClick={onTogglePresetLauncher}
-            className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors ${
+            className={`flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm transition-colors touch-manipulation ${
               isPresetLauncherVisible
                 ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
                 : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
             }`}
             title="Toggle preset launcher"
           >
-            <Rocket className="h-4 w-4" />
+            <Rocket className="h-5 w-5 md:h-4 md:w-4" />
             <span className="hidden sm:inline">Presets</span>
           </button>
           <div className="h-6 w-px bg-[var(--border-color)]" />
@@ -82,14 +82,14 @@ export function AdditionalActions({
 
       <button
         onClick={() => setDemoMode(!demoMode)}
-        className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors ${
+        className={`flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm transition-colors touch-manipulation ${
           demoMode
             ? 'bg-yellow-500 text-black font-bold hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]'
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
         }`}
         title={demoMode ? 'Disable Demo Mode' : 'Enable Demo Mode (Offline)'}
       >
-        <Zap className={`h-4 w-4 ${demoMode ? 'fill-black' : ''}`} />
+        <Zap className={`h-5 w-5 md:h-4 md:w-4 ${demoMode ? 'fill-black' : ''}`} />
         <span className="hidden sm:inline">{demoMode ? 'DEMO MODE' : 'Demo'}</span>
       </button>
 
@@ -99,14 +99,14 @@ export function AdditionalActions({
         <>
           <button
             onClick={onToggleHistory}
-            className={`flex items-center gap-1.5 rounded px-2 py-1.5 text-sm transition-colors ${
+            className={`flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm transition-colors touch-manipulation ${
               isHistoryVisible
                 ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)]'
                 : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
             }`}
             title="Toggle execution history"
           >
-            <Clock className="h-4 w-4" />
+            <Clock className="h-5 w-5 md:h-4 md:w-4" />
             <span className="hidden sm:inline">History</span>
           </button>
           <div className="h-6 w-px bg-[var(--border-color)]" />
@@ -116,10 +116,10 @@ export function AdditionalActions({
       <div className="relative group">
         <button
           type="button"
-          className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+          className="flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] touch-manipulation"
           title="Keyboard shortcuts"
         >
-          <HelpCircle className="h-4 w-4" />
+          <HelpCircle className="h-5 w-5 md:h-4 md:w-4" />
           <span className="hidden sm:inline">Shortcuts</span>
         </button>
         <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-64 rounded-md border border-[var(--border-color)] bg-[var(--bg-secondary)] p-3 text-xs text-[var(--text-secondary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
@@ -161,10 +161,10 @@ export function AdditionalActions({
 
       <button
         onClick={handleClear}
-        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--error)] transition-colors hover:bg-red-900/30"
+        className="flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm text-[var(--error)] transition-colors hover:bg-red-900/30 touch-manipulation"
         title="Clear canvas"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className="h-5 w-5 md:h-4 md:w-4" />
         <span className="hidden sm:inline">Clear</span>
       </button>
     </>

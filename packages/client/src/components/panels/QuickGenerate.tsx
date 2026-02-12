@@ -53,7 +53,7 @@ export function QuickGenerate() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center gap-2 rounded border px-3 py-1.5 text-sm transition-colors',
+          'flex items-center gap-2 rounded border px-3 py-1.5 min-h-[44px] text-sm transition-colors touch-manipulation',
           'border-[var(--border-color)] bg-[var(--bg-secondary)] text-[var(--accent)] font-semibold',
           'hover:border-[var(--accent)] hover:bg-[var(--bg-tertiary)]',
           isOpen && 'border-[var(--accent)]'
@@ -85,7 +85,7 @@ export function QuickGenerate() {
               </h3>
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded p-1 hover:bg-[var(--bg-tertiary)]"
+                className="rounded p-1 min-h-[40px] min-w-[40px] hover:bg-[var(--bg-tertiary)] touch-manipulation"
               >
                 <X className="h-4 w-4 text-[var(--text-secondary)]" />
               </button>
@@ -132,7 +132,7 @@ export function QuickGenerate() {
 
               <button
                 onClick={handleGenerate}
-                className="w-full flex items-center justify-center gap-2 rounded bg-[var(--accent)] py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                className="w-full flex items-center justify-center gap-2 rounded bg-[var(--accent)] py-2 min-h-[44px] text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] touch-manipulation"
               >
                 <Zap className="h-4 w-4" />
                 Build Workflow

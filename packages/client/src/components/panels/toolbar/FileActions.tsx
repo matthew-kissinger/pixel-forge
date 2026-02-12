@@ -117,28 +117,28 @@ export function FileActions({ onFileChange, fileInputRef }: FileActionsProps) {
 
       <button
         onClick={handleSave}
-        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        className="flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] touch-manipulation"
         title="Save workflow (JSON)"
       >
-        <Save className="h-4 w-4" />
+        <Save className="h-5 w-5 md:h-4 md:w-4" />
         <span className="hidden sm:inline">Save</span>
       </button>
 
       <button
         onClick={handleLoad}
-        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        className="flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] touch-manipulation"
         title="Load workflow"
       >
-        <FolderOpen className="h-4 w-4" />
+        <FolderOpen className="h-5 w-5 md:h-4 md:w-4" />
         <span className="hidden sm:inline">Load</span>
       </button>
 
       <button
         onClick={handleShare}
-        className="flex items-center gap-1.5 rounded px-2 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]"
+        className="flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] touch-manipulation"
         title="Share workflow"
       >
-        <Share2 className="h-4 w-4" />
+        <Share2 className="h-5 w-5 md:h-4 md:w-4" />
         <span className="hidden sm:inline">Share</span>
       </button>
     </>

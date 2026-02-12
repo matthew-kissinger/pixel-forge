@@ -210,7 +210,7 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
                   draggable
                   onDragStart={(e) => onDragStart(e, def.type)}
                   className={cn(
-                    'flex cursor-grab items-center gap-2 rounded border px-2 py-1.5 transition-colors active:cursor-grabbing',
+                    'flex cursor-grab items-center gap-2 rounded border px-2 py-1.5 min-h-[44px] transition-colors active:cursor-grabbing touch-manipulation',
                     'border-[var(--border-color)] bg-[var(--bg-tertiary)]',
                     'hover:border-[var(--accent)] hover:bg-[var(--bg-secondary)]'
                   )}
@@ -243,7 +243,7 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
             <div key={categoryKey} className="border-b border-[var(--border-color)] last:border-b-0">
               <button
                 onClick={() => toggleCategory(categoryKey)}
-                className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-[var(--bg-tertiary)]"
+                className="flex w-full items-center justify-between px-3 py-2 min-h-[40px] text-left hover:bg-[var(--bg-tertiary)] touch-manipulation"
               >
                 <div className="flex items-center gap-2">
                   <div
@@ -272,7 +272,7 @@ export function NodePalette({ isMobileOverlay, onMobileClose }: NodePaletteProps
                         draggable
                         onDragStart={(e) => onDragStart(e, def.type)}
                         className={cn(
-                          'flex cursor-grab items-center gap-2 rounded border px-2 py-1.5 transition-colors active:cursor-grabbing',
+                          'flex cursor-grab items-center gap-2 rounded border px-2 py-1.5 min-h-[44px] transition-colors active:cursor-grabbing touch-manipulation',
                           'border-[var(--border-color)] bg-[var(--bg-tertiary)]',
                           'hover:border-[var(--accent)] hover:bg-[var(--bg-secondary)]'
                         )}

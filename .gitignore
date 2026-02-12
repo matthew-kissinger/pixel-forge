@@ -34,10 +34,19 @@ test-*.jpg
 test-*.glb
 test-*.fbx
 
+# Generated assets (use the app, not ad-hoc scripts)
+output/
+generated_spaceships/
+final_spaceships/
+processed_spaceships/
+hive3_variations/
+hive3_processed/
+
 # Playwright
 /test-results/
 /playwright-report/
 /playwright/.cache/
+.playwright-mcp/
 
 # Logs
 *.log

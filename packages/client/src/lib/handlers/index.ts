@@ -13,6 +13,7 @@ export interface ExecutionContext {
   getCancelled: () => boolean;
   onProgress?: (current: number, total: number) => void;
   demoMode?: boolean;
+  signal?: AbortSignal;
 }
 
 export interface NodeHandlerContext {

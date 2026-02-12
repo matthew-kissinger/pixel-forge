@@ -6,6 +6,7 @@ import type { Preset } from '@pixel-forge/shared/presets';
 export interface PresetLauncherProps {
   isVisible: boolean;
   onToggle: () => void;
+  isMobileOverlay?: boolean;
 }
 
 export interface PresetCardGridProps {

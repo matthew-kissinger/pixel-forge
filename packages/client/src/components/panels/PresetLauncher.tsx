@@ -12,7 +12,7 @@ import {
 } from './preset-launcher';
 import type { PresetLauncherProps } from './preset-launcher';
 
-export function PresetLauncher({ isVisible, onToggle }: PresetLauncherProps) {
+export function PresetLauncher({ isVisible, onToggle, isMobileOverlay }: PresetLauncherProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState<Preset | null>(null);
   const [subject, setSubject] = useState('');
@@ -61,32 +61,46 @@ export function PresetLauncher({ isVisible, onToggle }: PresetLauncherProps) {
     setSubject('');
   };
 
-  if (isCollapsed) {
+  // Collapsed view - just show icon (hidden on mobile overlay)
+  if (isCollapsed && !isMobileOverlay) {
     return <CollapsedView onExpand={() => setIsCollapsed(false)} />;
   }
 
+  const containerClasses = isMobileOverlay
+    ? 'fixed right-4 left-4 top-20 z-40 flex max-h-[80vh] w-auto flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl md:absolute md:right-4 md:left-auto md:top-20 md:w-80 md:max-h-[calc(100vh-120px)]'
+    : 'absolute right-4 top-20 z-10 flex max-h-[calc(100vh-120px)] w-80 flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl';
+
   return (
-    <div className="absolute right-4 top-20 z-10 flex max-h-[calc(100vh-120px)] w-80 flex-col overflow-hidden rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] shadow-xl">
-      <PresetLauncherHeader
-        onCollapse={() => setIsCollapsed(true)}
-        onClose={onToggle}
-      />
+    <>
+      {isMobileOverlay && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onToggle}
+          aria-hidden
+        />
+      )}
+      <div className={containerClasses}>
+        <PresetLauncherHeader
+          onCollapse={() => setIsCollapsed(true)}
+          onClose={onToggle}
+        />
 
-      <div className="flex-1 overflow-y-auto">
-        {selectedPreset ? (
-          <PresetDetailForm
-            preset={selectedPreset}
-            subject={subject}
-            onSubjectChange={setSubject}
-            onGenerate={handleGenerate}
-            onCancel={handleCancel}
-          />
-        ) : (
-          <PresetCardGrid onPresetClick={handlePresetClick} />
-        )}
+        <div className="flex-1 overflow-y-auto">
+          {selectedPreset ? (
+            <PresetDetailForm
+              preset={selectedPreset}
+              subject={subject}
+              onSubjectChange={setSubject}
+              onGenerate={handleGenerate}
+              onCancel={handleCancel}
+            />
+          ) : (
+            <PresetCardGrid onPresetClick={handlePresetClick} />
+          )}
+        </div>
+
+        {!selectedPreset && <PresetLauncherFooter />}
       </div>
-
-      {!selectedPreset && <PresetLauncherFooter />}
-    </div>
+    </>
   );
 }

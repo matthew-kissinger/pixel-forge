@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { X } from 'lucide-react';
 import { useWorkflowStore } from '../../stores/workflow';
 import { toast } from '../ui/Toast';
@@ -34,6 +35,7 @@ export function Toolbar({
 }: ToolbarProps) {
   const { importWorkflow } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const focusTrapRef = useFocusTrap(isMobileOverlay ?? false);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,11 +64,15 @@ export function Toolbar({
 
   const toolbarContent = (
     <div
+      ref={isMobileOverlay ? focusTrapRef : undefined}
       className={
         isMobileOverlay
           ? 'fixed left-4 right-4 top-4 z-40 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow-lg'
           : 'absolute right-4 top-4 z-10 flex flex-wrap items-center gap-2 rounded-lg border border-[var(--border-color)] bg-[var(--bg-secondary)] p-1.5 shadow-lg md:flex-nowrap'
       }
+      role={isMobileOverlay ? 'dialog' : undefined}
+      aria-modal={isMobileOverlay ? 'true' : undefined}
+      aria-label={isMobileOverlay ? 'Toolbar menu' : undefined}
     >
       {isMobileOverlay && onMobileClose && (
         <button

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import {
   Clock,
   CheckCircle,
@@ -112,6 +113,7 @@ interface ExecutionHistoryProps {
 export function ExecutionHistory({ isVisible, onToggle, isMobileOverlay }: ExecutionHistoryProps) {
   const { executionHistory, clearExecutionHistory } = useWorkflowStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const focusTrapRef = useFocusTrap(isMobileOverlay ?? false);
 
   if (!isVisible) {
     return null;
@@ -148,10 +150,16 @@ export function ExecutionHistory({ isVisible, onToggle, isMobileOverlay }: Execu
           aria-hidden
         />
       )}
-      <div className={containerClasses}>
+      <div
+        ref={isMobileOverlay ? focusTrapRef : undefined}
+        className={containerClasses}
+        role={isMobileOverlay ? 'dialog' : undefined}
+        aria-modal={isMobileOverlay ? 'true' : undefined}
+        aria-labelledby={isMobileOverlay ? 'execution-history-title' : undefined}
+      >
       <div className="flex items-center justify-between border-b border-[var(--border-color)] px-3 py-2">
         <div>
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Execution History</h3>
+          <h3 id="execution-history-title" className="text-sm font-semibold text-[var(--text-primary)]">Execution History</h3>
           <p className="text-xs text-[var(--text-secondary)]">
             {executionHistory.length} run{executionHistory.length !== 1 ? 's' : ''}
           </p>

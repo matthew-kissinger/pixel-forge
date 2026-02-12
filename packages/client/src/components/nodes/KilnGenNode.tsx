@@ -36,13 +36,19 @@ export function KilnGenNode({ id, data, selected }: KilnGenNodeProps) {
   const [showCode, setShowCode] = useState(false);
   const { updateNodeData, getEdges } = useReactFlow();
   const setNodeOutput = useWorkflowStore((s) => s.setNodeOutput);
+  const theme = useWorkflowStore((s) => s.theme);
 
-  // Initialize runtime
+  // Initialize runtime; read --bg-primary in effect so it respects current theme
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const cssBg =
+      getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim() || '#0a0a0f';
+    const hex = cssBg.replace(/^#/, '');
+    const backgroundHex = /^[0-9a-fA-F]{6}$/.test(hex) ? parseInt(hex, 16) : 0x1a1a1a;
+
     const runtime = new KilnRuntime({
-      background: 0x1a1a1a,
+      background: backgroundHex,
       ambientIntensity: 0.6,
       directionalIntensity: 0.8,
     });
@@ -53,7 +59,7 @@ export function KilnGenNode({ id, data, selected }: KilnGenNodeProps) {
       runtime.dispose();
       runtimeRef.current = null;
     };
-  }, []);
+  }, [theme]);
 
   // Get prompt: connected TextPrompt takes priority, then inline prompt
   const getPrompt = useCallback((): string | null => {

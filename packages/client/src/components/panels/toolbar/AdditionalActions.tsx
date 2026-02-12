@@ -84,7 +84,7 @@ export function AdditionalActions({
         onClick={() => setDemoMode(!demoMode)}
         className={`flex items-center gap-1.5 rounded p-1.5 lg:p-1.5 min-h-[44px] min-w-[44px] lg:min-h-0 lg:min-w-0 lg:px-2 lg:py-1.5 text-sm transition-colors touch-manipulation ${
           demoMode
-            ? 'bg-yellow-500 text-black font-bold hover:bg-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.5)]'
+            ? 'bg-yellow-500 text-black font-bold hover:bg-yellow-400 shadow-[0_0_10px_var(--demo-glow)]'
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]'
         }`}
         title={demoMode ? 'Disable Demo Mode' : 'Enable Demo Mode (Offline)'}

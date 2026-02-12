@@ -27,7 +27,7 @@ React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
 
 ```
 packages/
-  client/   # React Flow editor: 31 lazy-loaded node components, 7 panels, Zustand store, executor engine
+  client/   # React Flow editor: 31 lazy-loaded node components, 8 panels, Zustand store, executor engine
   server/   # Hono API: routes for Gemini, FAL, Claude, export; services with timeouts + retries
   shared/   # Types, presets, prompt builders, API type contracts
 ```
@@ -36,7 +36,7 @@ packages/
 
 - **Nodes**: 31 types, all lazy-loaded via `createLazyNode` with Suspense + `NodeErrorBoundary`
 - **Executor**: Topological sort, parallel wave execution, per-node timeouts (120s gen, 60s processing, 30s canvas)
-- **Handlers**: 8 modules in `lib/handlers/` (input, imageGen, model3d, processing, canvas, analysis, batch, output)
+- **Handlers**: 9 modules in `lib/handlers/` (index, input, imageGen, model3d, processing, canvas, analysis, batch, output)
 - **State**: Zustand store with undo/redo snapshots, auto-save to localStorage every 2s
 - **Bundle**: Main ~99KB gzip, Three.js ~380KB, React Flow ~61KB, all nodes in separate chunks
 
@@ -44,29 +44,37 @@ packages/
 
 **Always use solid red (#FF0000) or green (#00FF00) backgrounds.** Never ask Gemini for "transparent background" - produces checkerboard with no alpha. Red preferred; green for red subjects.
 
-## Unmerged Branches (2)
+## Unmerged Branches (11)
 
-Completed work sitting in branches not yet merged to main:
-- **be212658** - AbortController for pollModelStatus (1 commit ahead)
-- **f709891c** - Replace window.confirm with RecoveryBanner (1 commit ahead)
+Completed work sitting in task branches not yet merged to main (all merge cleanly):
+- **be212658** - AbortController for pollModelStatus
+- **f709891c** - Replace window.confirm with RecoveryBanner
+- **0a8ce706** - Handler module tests (input, processing, canvas, output)
+- **328992e1** - PresetLauncher sub-component tests (5 components)
+- **6d8b4a07** - Symlink-safe path validation and request timeouts
+- **bd22a840** - CORS preflight caching with maxAge
+- **c340036c** - Response compression middleware
+- **d02efcca** - Fix executor orphan node bug
+- **d389e125** - Light theme hardcoded color audit fix
+- **fd041f77** - Rate limiter x-forwarded-for fix and setInterval unref
+- **fe54cbc0** - Keyboard shortcuts help overlay and Escape-to-close
 
 ## Current Gaps
 
 - **6 failing tests**: MobileNav (expects aria-label, has title) + useAutoSave recovery tests (expects window.confirm, branch has RecoveryBanner)
 - **Untested hooks**: useFocusTrap (64 lines), useMediaQuery (19 lines) - zero tests
-- **Untested sub-components**: PresetLauncher sub-components (5), Toolbar sub-components (3)
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **Export path validation**: `validatePath()` blocks `..` but doesn't resolve symlinks
-- **No response compression**: Large base64 image responses sent uncompressed
 
 ## Known Issues
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size)
-- Executor adds orphan input nodes to execution waves (line 153-158) - they have no handlers
-- pollModelStatus has no AbortController - polls after unmount (fix in unmerged branch be212658)
-- useAutoSave uses window.confirm for recovery - bad on mobile (fix in unmerged branch f709891c)
+- Executor adds orphan input nodes to execution waves (line 153-158) - fix in unmerged branch d02efcca
+- pollModelStatus has no AbortController - fix in unmerged branch be212658
+- useAutoSave uses window.confirm for recovery - fix in unmerged branch f709891c
+- Export path validation doesn't resolve symlinks - fix in unmerged branch 6d8b4a07
+- No response compression - fix in unmerged branch c340036c
 
 ## Quality Bar
 

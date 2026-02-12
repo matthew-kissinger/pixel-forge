@@ -385,7 +385,7 @@ function FlowEditor({ isMiniMapVisible, controlsMarginLeft = 240 }: FlowEditorPr
             }
             return 'var(--bg-tertiary)';
           }}
-          maskColor="rgba(0, 0, 0, 0.6)"
+          maskColor="var(--minimap-mask)"
         />
       )}
       {menu && (

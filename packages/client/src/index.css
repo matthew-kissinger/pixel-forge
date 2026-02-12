@@ -12,6 +12,8 @@
   --success: #22c55e;
   --error: #ef4444;
   --warning: #f59e0b;
+  --minimap-mask: rgba(0, 0, 0, 0.6);
+  --demo-glow: rgba(234, 179, 8, 0.5);
 }
 
 [data-theme='light'] {
@@ -26,6 +28,8 @@
   --success: #22c55e;
   --error: #ef4444;
   --warning: #f59e0b;
+  --minimap-mask: rgba(0, 0, 0, 0.4);
+  --demo-glow: rgba(234, 179, 8, 0.5);
 }
 
 * {
@@ -219,6 +223,85 @@ button {
   background-color: rgba(245, 158, 11, 0.2);
   border-color: var(--warning);
   color: var(--warning);
+}
+
+.node-type-badge.type-processing {
+  background-color: rgba(20, 184, 166, 0.2);
+  border-color: #14b8a6;
+  color: #14b8a6;
+}
+
+.node-type-badge.type-canvas {
+  background-color: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.node-type-badge.type-analysis {
+  background-color: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.node-type-badge.type-batch {
+  background-color: rgba(251, 146, 60, 0.2);
+  border-color: #fb923c;
+  color: #fb923c;
+}
+
+.node-type-badge.type-output {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+/* Light theme: darker badge backgrounds and text for WCAG AA contrast on light bg */
+[data-theme='light'] .node-type-badge.type-text {
+  background-color: #dcfce7;
+  border-color: #15803d;
+  color: #166534;
+}
+
+[data-theme='light'] .node-type-badge.type-image {
+  background-color: #e0e7ff;
+  border-color: #4338ca;
+  color: #3730a3;
+}
+
+[data-theme='light'] .node-type-badge.type-model {
+  background-color: #ffedd5;
+  border-color: #c2410c;
+  color: #9a3412;
+}
+
+[data-theme='light'] .node-type-badge.type-processing {
+  background-color: #ccfbf1;
+  border-color: #0f766e;
+  color: #115e59;
+}
+
+[data-theme='light'] .node-type-badge.type-canvas {
+  background-color: #ede9fe;
+  border-color: #5b21b6;
+  color: #4c1d95;
+}
+
+[data-theme='light'] .node-type-badge.type-analysis {
+  background-color: #dbeafe;
+  border-color: #1d4ed8;
+  color: #1e40af;
+}
+
+[data-theme='light'] .node-type-badge.type-batch {
+  background-color: #ffedd5;
+  border-color: #ea580c;
+  color: #c2410c;
+}
+
+[data-theme='light'] .node-type-badge.type-output {
+  background-color: #fee2e2;
+  border-color: #b91c1c;
+  color: #991b1b;
 }
 
 /* Scrollbar styling for panels */

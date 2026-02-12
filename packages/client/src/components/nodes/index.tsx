@@ -6,9 +6,9 @@ import { NodeErrorBoundary } from '../ErrorBoundary';
 
 // Loading Fallback Component
 const LoadingFallback = ({ label }: { label: string }) => (
-  <div className="bg-zinc-900 p-4 rounded-lg border-2 border-zinc-700 w-80 h-48 flex items-center justify-center text-zinc-500 text-sm">
+  <div className="bg-[var(--bg-secondary)] p-4 rounded-lg border-2 border-[var(--border-color)] min-w-[200px] min-h-[12rem] flex items-center justify-center text-[var(--text-secondary)] text-sm">
     <div className="flex flex-col items-center gap-2">
-      <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       Loading {label}...
     </div>
   </div>

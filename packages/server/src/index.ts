@@ -27,6 +27,7 @@ app.use(
     },
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type'],
+    maxAge: 86400, // Cache preflight for 24 hours
   })
 );
 app.use('*', bodyLimit({ maxSize: 10 * 1024 * 1024 })); // 10MB default

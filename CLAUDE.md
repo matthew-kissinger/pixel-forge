@@ -12,7 +12,7 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # ~1243 pass, 1 skip, 54 files
+cd packages/client && bunx vitest run   # ~1343 pass, 1 skip, 58 files
 cd packages/server && bun test          # 82 pass, 4 files
 bun run test:e2e                        # 10 Playwright smoke tests
 ```
@@ -46,12 +46,11 @@ packages/
 
 ## Current Gaps
 
-- **Mobile/responsive**: Active work - responsive layout branch (MobileNav, useMediaQuery, breakpoints) and touch targets branch ready for merge. Not yet on main.
-- **Untested panels**: QuickGenerate, TemplateLoader
+- **Mobile accessibility**: Responsive layout merged (MobileNav, useMediaQuery, breakpoints). Missing: ARIA roles, focus traps, keyboard nav on mobile overlays
+- **Touch targets**: Uncommitted improvements in toolbar buttons, NodePalette, QuickGenerate (44px min, touch-manipulation)
+- **Untested panels**: QuickGenerate, TemplateLoader, ExecutionHistory, MobileNav (4 panels with 0 tests)
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer with heavy browser deps
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **PresetLauncher.tsx** (328 lines) - refactor branch exists (extracted sub-components), needs merge to main
-- **Unmerged task branches**: 3 branches with completed work awaiting merge (responsive layout, PresetLauncher refactor, node tests)
 
 ## Known Issues
 

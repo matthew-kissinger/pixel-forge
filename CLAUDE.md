@@ -13,7 +13,7 @@ bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
 cd packages/client && bunx vitest run   # ~1472 pass, 1 fail, 1 skip, 62 files
-cd packages/server && bun test          # 82 pass, 4 files
+cd packages/server && bun test          # 85 pass, 5 files
 bun run test:e2e                        # 10 Playwright smoke tests
 ```
 

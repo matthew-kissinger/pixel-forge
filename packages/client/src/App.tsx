@@ -29,6 +29,7 @@ import { PresetLauncher } from './components/panels/PresetLauncher';
 import { MobileNav, type MobilePanel } from './components/panels/MobileNav';
 import { KeyboardShortcutsHelp } from './components/panels/KeyboardShortcutsHelp';
 import { ToastContainer, toast } from './components/ui/Toast';
+import { RecoveryBanner } from './components/ui/RecoveryBanner';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { findNonOverlappingPosition } from './lib/nodeLayout';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -419,7 +420,9 @@ export default function App() {
   const workflowFromUrlStatus = useWorkflowFromUrl();
   const allowAutoSaveRecovery =
     workflowFromUrlStatus === 'none' || workflowFromUrlStatus === 'error';
-  useAutoSave({ allowRecovery: allowAutoSaveRecovery });
+  const { pendingRecovery, confirmRecovery, discardRecovery } = useAutoSave({
+    allowRecovery: allowAutoSaveRecovery,
+  });
 
   // Theme system
   const theme = useWorkflowStore((state) => state.theme);
@@ -521,6 +524,12 @@ export default function App() {
     <ErrorBoundary>
       <ReactFlowProvider>
         <div className="h-screen w-screen pb-16 md:pb-0">
+          {pendingRecovery && (
+            <RecoveryBanner
+              onRecover={confirmRecovery}
+              onDiscard={discardRecovery}
+            />
+          )}
           <FlowEditor
             isMiniMapVisible={isMiniMapVisible}
             controlsMarginLeft={controlsMarginLeft}

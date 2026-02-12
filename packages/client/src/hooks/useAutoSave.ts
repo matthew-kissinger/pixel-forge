@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { useWorkflowStore } from '../stores/workflow';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { useWorkflowStore, type WorkflowData } from '../stores/workflow';
 import { toast } from '../components/ui/Toast';
 import { logger } from '@pixel-forge/shared/logger';
 
@@ -10,12 +10,19 @@ interface AutoSaveOptions {
   allowRecovery?: boolean;
 }
 
-export function useAutoSave(options: AutoSaveOptions = {}) {
+export interface UseAutoSaveReturn {
+  pendingRecovery: WorkflowData | null;
+  confirmRecovery: () => void;
+  discardRecovery: () => void;
+}
+
+export function useAutoSave(options: AutoSaveOptions = {}): UseAutoSaveReturn {
   const allowRecovery = options.allowRecovery ?? true;
   const { exportWorkflow, importWorkflow, setLastAutoSave } = useWorkflowStore();
   const lastSavedJsonRef = useRef<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const recoveryHandledRef = useRef(false);
+  const [pendingRecovery, setPendingRecovery] = useState<WorkflowData | null>(null);
 
   const saveToLocalStorage = useCallback(() => {
     try {
@@ -43,40 +50,40 @@ export function useAutoSave(options: AutoSaveOptions = {}) {
     }
   }, [exportWorkflow, setLastAutoSave]);
 
-  // Handle recovery on mount
+  const confirmRecovery = useCallback(() => {
+    if (!pendingRecovery) return;
+    try {
+      importWorkflow(pendingRecovery);
+      lastSavedJsonRef.current = JSON.stringify(pendingRecovery);
+      setLastAutoSave(Date.now());
+      toast.success('Workflow recovered');
+    } finally {
+      setPendingRecovery(null);
+    }
+  }, [pendingRecovery, importWorkflow, setLastAutoSave]);
+
+  const discardRecovery = useCallback(() => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setPendingRecovery(null);
+  }, []);
+
+  // Handle recovery on mount: show banner instead of window.confirm
   useEffect(() => {
     if (!allowRecovery || recoveryHandledRef.current) return;
     recoveryHandledRef.current = true;
     const saved = localStorage.getItem(AUTOSAVE_KEY);
     if (saved) {
       try {
-        const workflow = JSON.parse(saved);
-        // Only show recovery if there are nodes
+        const workflow = JSON.parse(saved) as WorkflowData;
         if (workflow.nodes && workflow.nodes.length > 0) {
-          // Use a custom toast or a simple confirm for now
-          // The requirement asked for "Recover unsaved workflow? [Recover] [Discard]"
-          
-          // Since our toast system might not support buttons easily (need to check),
-          // I'll use window.confirm for a definitive choice or implement a custom toast if possible.
-          // Looking at Toast.tsx might help, but let's assume a simple confirm for now
-          // and maybe improve it if I see a better way.
-          
-          const recover = window.confirm('Recover unsaved workflow from your last session?');
-          if (recover) {
-            importWorkflow(workflow);
-            lastSavedJsonRef.current = saved;
-            setLastAutoSave(Date.now());
-            toast.success('Workflow recovered');
-          } else {
-            localStorage.removeItem(AUTOSAVE_KEY);
-          }
+          setPendingRecovery(workflow);
         }
       } catch (error) {
         logger.error('Failed to parse auto-saved workflow:', error);
         localStorage.removeItem(AUTOSAVE_KEY);
       }
     }
-  }, [allowRecovery, importWorkflow, setLastAutoSave]);
+  }, [allowRecovery]);
 
   // Subscribe to changes
   useEffect(() => {
@@ -104,5 +111,5 @@ export function useAutoSave(options: AutoSaveOptions = {}) {
     };
   }, [saveToLocalStorage]);
 
-  return null;
+  return { pendingRecovery, confirmRecovery, discardRecovery };
 }

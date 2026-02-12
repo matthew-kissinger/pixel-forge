@@ -12,7 +12,7 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # ~1429 pass, 1 skip, 62 files
+cd packages/client && bunx vitest run   # ~1472 pass, 1 fail, 1 skip, 62 files
 cd packages/server && bun test          # 82 pass, 4 files
 bun run test:e2e                        # 10 Playwright smoke tests
 ```
@@ -46,26 +46,29 @@ packages/
 
 ## Current Gaps
 
-- **8 unmerged branches**: Mobile accessibility, theme system, touch targets, panel tests, command palette, Playwright e2e, node tests - merge task in progress
-- **Lint error**: `useMediaQuery.ts` - setState in effect (line 11), blocks clean lint
+- **12 unmerged task branches**: Completed work (rate limiting, memory leak fix, server error tests, theme, focus trap, panel tests, e2e, node tests, touch targets, command palette, light theme) sitting in branches not merged to main
+- **1 failing test**: `MobileNav.test.tsx` - expects `title` attribute but component uses `aria-label`
+- **Lint error**: `useMediaQuery.ts` - setState in effect (line 11), fix with `useSyncExternalStore`
 - **Untested hooks**: useFocusTrap (64 lines), useMediaQuery (19 lines), useTheme (in branch) - zero tests
 - **Untested sub-components**: PresetLauncher sub-components (5), Toolbar sub-components (3) - zero tests
 - **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer with heavy browser deps
 - **No integration tests** against real Gemini/FAL/Claude APIs
-- **Memory leak**: Deleting nodes does not clean up `nodeOutputs`/`nodeStatus`/`nodeErrors`/`batchProgress` in workflow store
-- **No rate limiting**: Server API routes accept unlimited requests (DoS/quota risk)
 - **No request body size limits**: Server accepts unlimited base64 payloads via Hono (needs `bodyLimit` middleware)
-- **Server errors untested**: `lib/errors.ts` (98 lines) and error handler middleware have zero test coverage
 - **No .env.example**: Required env vars (GEMINI_API_KEY, FAL_KEY) undocumented for contributors
 - **AutoSave perf**: `useAutoSave` uses JSON.stringify equality on full nodes/edges array every state change
 - **pollModelStatus not cancellable**: No AbortController support - polls for up to 5 minutes even after component unmount
+- **Export path validation**: `validatePath()` blocks `..` but doesn't resolve symlinks (use `fs.realpath`)
+- **No server request timeout**: Long-running AI requests can hang indefinitely
+- **No response compression**: Large base64 image responses sent uncompressed
 
 ## Known Issues
 
 - 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
+- 1 failing test: MobileNav title attribute mismatch with aria-label
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size)
 - Main bundle ~99KB gzip (increased from 97KB with mobile/responsive additions)
 - `window.confirm` used for workflow recovery in useAutoSave (should be custom UI)
+- Executor adds orphan input nodes to execution waves (line 153-158) - they have no handlers
 
 ## Quality Bar
 

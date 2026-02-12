@@ -121,6 +121,9 @@ export interface WorkflowState {
   canUndo: () => boolean;
   canRedo: () => boolean;
 
+  // Retry
+  retryNode: (nodeId: string) => Promise<void>;
+
   // Persistence
   exportWorkflow: () => WorkflowData;
   importWorkflow: (data: WorkflowData) => void;
@@ -514,6 +517,44 @@ export const useWorkflowStore = create<WorkflowState>()(
 
   setLastAutoSave: (timestamp) => {
     set({ lastAutoSave: timestamp });
+  },
+
+  retryNode: async (nodeId) => {
+    const state = get();
+    const node = state.nodes.find((n) => n.id === nodeId);
+    
+    if (!node) {
+      console.error(`Node ${nodeId} not found`);
+      return;
+    }
+
+    // Check if upstream outputs are available
+    const currentOutputs = state.nodeOutputs;
+    const incomingEdges = state.edges.filter((e) => e.target === nodeId);
+    const missingInputs = incomingEdges.filter((e) => !currentOutputs[e.source]);
+    
+    if (missingInputs.length > 0) {
+      set({
+        nodeErrors: {
+          ...state.nodeErrors,
+          [nodeId]: 'Upstream node outputs are no longer available. Re-run the pipeline.',
+        },
+      });
+      return;
+    }
+
+    // Clear error state and set to idle
+    const nodeErrors = { ...state.nodeErrors };
+    delete nodeErrors[nodeId];
+    
+    set({
+      nodeStatus: { ...state.nodeStatus, [nodeId]: 'idle' },
+      nodeErrors,
+    });
+
+    // Execute the node
+    const { executeSingleNode } = await import('../lib/executor');
+    await executeSingleNode(node, state.nodes, state.edges, state);
   },
   };
   }),

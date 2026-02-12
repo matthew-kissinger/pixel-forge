@@ -43,9 +43,9 @@ hive3_variations/
 hive3_processed/
 
 # Playwright
-/test-results/
-/playwright-report/
-/playwright/.cache/
+test-results/
+playwright-report/
+**/playwright/.cache/
 .playwright-mcp/
 
 # Logs

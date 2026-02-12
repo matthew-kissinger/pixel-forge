@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { useAutoSave } from '../../src/hooks/useAutoSave';
 import { useWorkflowStore } from '../../src/stores/workflow';
 import { toast } from '../../src/components/ui/Toast';
@@ -30,7 +30,6 @@ const DEBOUNCE_MS = 2000;
 
 describe('useAutoSave', () => {
   let localStorageMock: Record<string, string>;
-  let confirmSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // Mock localStorage
@@ -44,10 +43,6 @@ describe('useAutoSave', () => {
     vi.spyOn(Storage.prototype, 'removeItem').mockImplementation((key: string) => {
       delete localStorageMock[key];
     });
-
-    // Mock window.confirm (define it if it doesn't exist in happy-dom)
-    confirmSpy = vi.fn().mockReturnValue(true);
-    window.confirm = confirmSpy;
 
     // Reset store
     useWorkflowStore.getState().reset();
@@ -200,7 +195,7 @@ describe('useAutoSave', () => {
   });
 
   describe('Recovery on mount', () => {
-    it('prompts recovery when localStorage has valid workflow with nodes', () => {
+    it('exposes pendingRecovery when localStorage has valid workflow with nodes', () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [
@@ -215,16 +210,17 @@ describe('useAutoSave', () => {
       };
 
       localStorageMock[AUTOSAVE_KEY] = JSON.stringify(workflow);
-      confirmSpy.mockReturnValue(true);
 
-      renderHook(() => useAutoSave());
+      const { result } = renderHook(() => useAutoSave());
 
-      expect(confirmSpy).toHaveBeenCalledWith(
-        'Recover unsaved workflow from your last session?'
-      );
+      expect(result.current.pendingRecovery).not.toBeNull();
+      expect(result.current.pendingRecovery?.nodes).toHaveLength(1);
+      expect(result.current.pendingRecovery?.nodes[0].id).toBe('test-1');
+      expect(typeof result.current.confirmRecovery).toBe('function');
+      expect(typeof result.current.discardRecovery).toBe('function');
     });
 
-    it('recovers workflow when user confirms', () => {
+    it('recovers workflow when user calls confirmRecovery', async () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [
@@ -239,17 +235,21 @@ describe('useAutoSave', () => {
       };
 
       localStorageMock[AUTOSAVE_KEY] = JSON.stringify(workflow);
-      confirmSpy.mockReturnValue(true);
 
-      renderHook(() => useAutoSave());
+      const { result } = renderHook(() => useAutoSave());
+
+      result.current.confirmRecovery();
 
       const store = useWorkflowStore.getState();
       expect(store.nodes).toHaveLength(1);
       expect(store.nodes[0].id).toBe('test-1');
       expect(toast.success).toHaveBeenCalledWith('Workflow recovered');
+      await waitFor(() => {
+        expect(result.current.pendingRecovery).toBeNull();
+      });
     });
 
-    it('removes workflow from localStorage when user declines recovery', () => {
+    it('removes workflow from localStorage when user calls discardRecovery', async () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [
@@ -264,23 +264,27 @@ describe('useAutoSave', () => {
       };
 
       localStorageMock[AUTOSAVE_KEY] = JSON.stringify(workflow);
-      confirmSpy.mockReturnValue(false);
 
-      renderHook(() => useAutoSave());
+      const { result } = renderHook(() => useAutoSave());
+
+      result.current.discardRecovery();
 
       expect(localStorageMock[AUTOSAVE_KEY]).toBeUndefined();
 
       const store = useWorkflowStore.getState();
       expect(store.nodes).toHaveLength(0);
+      await waitFor(() => {
+        expect(result.current.pendingRecovery).toBeNull();
+      });
     });
 
-    it('does not prompt recovery when no saved data exists', () => {
-      renderHook(() => useAutoSave());
+    it('does not set pendingRecovery when no saved data exists', () => {
+      const { result } = renderHook(() => useAutoSave());
 
-      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(result.current.pendingRecovery).toBeNull();
     });
 
-    it('does not prompt recovery when saved workflow has no nodes', () => {
+    it('does not set pendingRecovery when saved workflow has no nodes', () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [],
@@ -289,21 +293,21 @@ describe('useAutoSave', () => {
 
       localStorageMock[AUTOSAVE_KEY] = JSON.stringify(workflow);
 
-      renderHook(() => useAutoSave());
+      const { result } = renderHook(() => useAutoSave());
 
-      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(result.current.pendingRecovery).toBeNull();
     });
 
-    it('removes invalid saved data and does not prompt recovery', () => {
+    it('removes invalid saved data and does not set pendingRecovery', () => {
       localStorageMock[AUTOSAVE_KEY] = 'invalid json{{{';
 
-      renderHook(() => useAutoSave());
+      const { result } = renderHook(() => useAutoSave());
 
-      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(result.current.pendingRecovery).toBeNull();
       expect(localStorageMock[AUTOSAVE_KEY]).toBeUndefined();
     });
 
-    it('does not prompt recovery when allowRecovery is false', () => {
+    it('does not set pendingRecovery when allowRecovery is false', () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [
@@ -319,15 +323,15 @@ describe('useAutoSave', () => {
 
       localStorageMock[AUTOSAVE_KEY] = JSON.stringify(workflow);
 
-      renderHook(() => useAutoSave({ allowRecovery: false }));
+      const { result } = renderHook(() => useAutoSave({ allowRecovery: false }));
 
-      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(result.current.pendingRecovery).toBeNull();
 
       const store = useWorkflowStore.getState();
       expect(store.nodes).toHaveLength(0);
     });
 
-    it('only handles recovery once on mount', () => {
+    it('only sets pendingRecovery once on mount', () => {
       const workflow: WorkflowData = {
         version: 1,
         nodes: [
@@ -342,16 +346,15 @@ describe('useAutoSave', () => {
       };
 
       localStorageMock[AUTOSAVE_KEY] = JSON.stringify(workflow);
-      confirmSpy.mockReturnValue(true);
 
-      const { rerender } = renderHook(() => useAutoSave());
+      const { result, rerender } = renderHook(() => useAutoSave());
 
-      expect(confirmSpy).toHaveBeenCalledTimes(1);
+      expect(result.current.pendingRecovery).not.toBeNull();
+      const firstPending = result.current.pendingRecovery;
 
-      // Rerender should not trigger recovery again
       rerender();
 
-      expect(confirmSpy).toHaveBeenCalledTimes(1);
+      expect(result.current.pendingRecovery).toBe(firstPending);
     });
   });
 

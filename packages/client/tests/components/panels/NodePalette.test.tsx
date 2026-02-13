@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NodePalette } from '../../../src/components/panels/NodePalette';
 import { useFocusTrap } from '../../../src/hooks/useFocusTrap';
@@ -253,9 +253,11 @@ describe('NodePalette', () => {
       const input = screen.getByPlaceholderText('Search nodes...');
       await user.type(input, 'resize');
 
-      expect(screen.getByText('Resize')).toBeInTheDocument();
-      // Other nodes not matching should be hidden
-      expect(screen.queryByText('Text Prompt')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Resize')).toBeInTheDocument();
+        // Other nodes not matching should be hidden
+        expect(screen.queryByText('Text Prompt')).not.toBeInTheDocument();
+      });
     });
 
     it('filters nodes by description', async () => {
@@ -286,8 +288,10 @@ describe('NodePalette', () => {
       const input = screen.getByPlaceholderText('Search nodes...');
       await user.type(input, 'xyz123notfound');
 
-      expect(screen.getByText(/No nodes match/)).toBeInTheDocument();
-      expect(screen.getByText(/"xyz123notfound"/)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/No nodes match/)).toBeInTheDocument();
+        expect(screen.getByText(/"xyz123notfound"/)).toBeInTheDocument();
+      });
     });
 
     it('shows search results in flat list without categories', async () => {
@@ -297,12 +301,14 @@ describe('NodePalette', () => {
       const input = screen.getByPlaceholderText('Search nodes...');
       await user.type(input, 'gen');
 
-      // Should show matching nodes
-      expect(screen.getByText('Image Gen')).toBeInTheDocument();
+      await waitFor(() => {
+        // Should show matching nodes
+        expect(screen.getByText('Image Gen')).toBeInTheDocument();
 
-      // Category headers should NOT be visible during search
-      expect(screen.queryByText('Input')).not.toBeInTheDocument();
-      expect(screen.queryByText('Generate')).not.toBeInTheDocument();
+        // Category headers should NOT be visible during search
+        expect(screen.queryByText('Input')).not.toBeInTheDocument();
+        expect(screen.queryByText('Generate')).not.toBeInTheDocument();
+      });
     });
 
     it('shows clear button when search has text', async () => {
@@ -342,14 +348,18 @@ describe('NodePalette', () => {
 
       // Search to enter flat view
       await user.type(input, 'gen');
-      expect(screen.queryByText('Input')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Input')).not.toBeInTheDocument();
+      });
 
       // Clear search
       await user.clear(input);
 
       // Category headers return
-      expect(screen.getByText('Input')).toBeInTheDocument();
-      expect(screen.getByText('Generate')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Input')).toBeInTheDocument();
+        expect(screen.getByText('Generate')).toBeInTheDocument();
+      });
     });
 
     it('handles special characters in search', async () => {
@@ -359,7 +369,9 @@ describe('NodePalette', () => {
       const input = screen.getByPlaceholderText('Search nodes...');
       await user.type(input, '!@#$%');
 
-      expect(screen.getByText(/No nodes match/)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/No nodes match/)).toBeInTheDocument();
+      });
     });
 
     it('search results show matching nodes from different categories', async () => {
@@ -652,7 +664,9 @@ describe('NodePalette', () => {
       await user.clear(input);
       await user.type(input, 'xyz');
 
-      expect(screen.getByText(/No nodes match/)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText(/No nodes match/)).toBeInTheDocument();
+      });
     });
 
     it('search maintains drag functionality on filtered results', async () => {

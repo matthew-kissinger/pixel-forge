@@ -1,0 +1,43 @@
+{
+  "batch": 3,
+  "name": "Vegetation Billboards - Sprint 2",
+  "description": "Remaining vegetation sprites for Terror in the Jungle",
+  "status": "pending",
+  "assets": [
+    {
+      "name": "Rice Paddy Plants (9.9)",
+      "prompt": "Cluster of rice paddy plants, bright green rice stalks growing upward from shallow muddy water base, young rice seedlings in a dense cluster, Vietnam lowland agriculture plant, side view, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "vegetation/rice-paddy-plants.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Banana Plant (9.10)",
+      "prompt": "Banana plant, large broad paddle-shaped bright green leaves, thick green pseudostem trunk, a bunch of green bananas hanging from top, ~3m tall tropical plant, Vietnam settlement vegetation, side view, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "vegetation/banana-plant.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Tall Elephant Grass (9.11)",
+      "prompt": "Tall elephant grass cogon grass, 2-3m high dense cluster of tall green grass stalks with feathery white-silver seed plumes at top, thick base of long green blades, Vietnam highland savanna grass, side view, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "vegetation/elephant-grass.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Mangrove Section (9.12)",
+      "prompt": "Mangrove tree section, tangled prop roots arching down into murky water, dark green dense canopy above, exposed root system, Vietnam Mekong Delta coastal waterside tree, side view, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "vegetation/mangrove.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Rubber Tree (9.13)",
+      "prompt": "Rubber tree Hevea brasiliensis, tall straight smooth grey-brown trunk with a small latex collection cup attached, broad green canopy of oval leaves at top, Vietnam rubber plantation tree, side view, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "vegetation/rubber-tree.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    }
+  ]
+}

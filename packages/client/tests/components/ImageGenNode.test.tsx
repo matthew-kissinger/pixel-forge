@@ -24,18 +24,27 @@ vi.mock('lucide-react', () => ({
   ChevronDown: () => <div data-testid="chevron-down-icon" />,
   Loader2: () => <div data-testid="loader2-icon" />,
   AlertCircle: () => <div data-testid="alert-circle-icon" />,
+  Image: () => <div data-testid="image-lucide-icon" />,
 }));
 
-// Mock BaseNode to simplify testing
-vi.mock('../../src/components/nodes/BaseNode', () => ({
-  BaseNode: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+// Mock @xyflow/react - useEdges returns edges, Handle renders as div
+vi.mock('@xyflow/react', () => ({
+  useEdges: vi.fn(() => []),
+  Handle: ({ id, title }: { id?: string; title?: string }) => (
+    <div data-testid={`handle-${id ?? 'source'}`} title={title} />
+  ),
+  Position: { Left: 'left', Right: 'right' },
 }));
+
+// Get the mocked useEdges for controlling edges in tests
+import { useEdges } from '@xyflow/react';
+const mockUseEdges = useEdges as ReturnType<typeof vi.fn>;
 
 describe('ImageGenNode', () => {
-  const mockGetInputsForNode = vi.fn();
   const mockSetNodeOutput = vi.fn();
   const mockSetNodeStatus = vi.fn();
   const mockUpdateNodeData = vi.fn();
+  const mockRetryNode = vi.fn();
 
   const defaultProps = {
     id: 'test-node-1',
@@ -53,38 +62,34 @@ describe('ImageGenNode', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseEdges.mockReturnValue([]);
     (useWorkflowStore as any).mockReturnValue({
-      getInputsForNode: mockGetInputsForNode,
+      nodeOutputs: {},
       setNodeOutput: mockSetNodeOutput,
       setNodeStatus: mockSetNodeStatus,
       updateNodeData: mockUpdateNodeData,
+      retryNode: mockRetryNode,
       nodeStatus: {},
+      nodeErrors: {},
     });
-    mockGetInputsForNode.mockReturnValue([]);
   });
 
   describe('rendering', () => {
     it('renders with default props', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      expect(screen.getByText('Nano Banana Pro')).toBeInTheDocument();
+      expect(screen.getByText('Gemini 3 Pro Image')).toBeInTheDocument();
       expect(screen.getByText('Generate')).toBeInTheDocument();
     });
 
-    it('displays current style in collapsed settings header', () => {
-      const props = {
-        ...defaultProps,
-        data: {
-          ...defaultProps.data,
-          style: 'anime' as const,
-        },
-      };
-      render(<ImageGenNode {...props} />);
+    it('displays config summary in collapsed settings header', () => {
+      render(<ImageGenNode {...defaultProps} />);
 
-      expect(screen.getByText('Anime')).toBeInTheDocument();
+      // Default shows "Default" when no config overrides
+      expect(screen.getByText('Default')).toBeInTheDocument();
     });
 
-    it('displays preset name in collapsed settings header when preset is selected', () => {
+    it('displays preset name in config summary when preset is selected', () => {
       const enemySprite = PRESETS.find((p) => p.id === 'enemy-sprite');
       const props = {
         ...defaultProps,
@@ -98,6 +103,20 @@ describe('ImageGenNode', () => {
       expect(screen.getByText(enemySprite!.name)).toBeInTheDocument();
     });
 
+    it('shows aspect ratio and image size in config summary', () => {
+      const props = {
+        ...defaultProps,
+        data: {
+          ...defaultProps.data,
+          aspectRatio: '16:9',
+          imageSize: '2K',
+        },
+      };
+      render(<ImageGenNode {...props} />);
+
+      expect(screen.getByText('16:9 / 2K')).toBeInTheDocument();
+    });
+
     it('shows Generate button text when idle', () => {
       render(<ImageGenNode {...defaultProps} />);
 
@@ -106,11 +125,13 @@ describe('ImageGenNode', () => {
 
     it('shows Generating... text when running', () => {
       (useWorkflowStore as any).mockReturnValue({
-        getInputsForNode: mockGetInputsForNode,
+        nodeOutputs: {},
         setNodeOutput: mockSetNodeOutput,
         setNodeStatus: mockSetNodeStatus,
         updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
         nodeStatus: { 'test-node-1': 'running' },
+        nodeErrors: {},
       });
 
       render(<ImageGenNode {...defaultProps} />);
@@ -118,18 +139,53 @@ describe('ImageGenNode', () => {
       expect(screen.getByText('Generating...')).toBeInTheDocument();
     });
 
-    it('shows error message when status is error', () => {
+    it('shows error message when status is error and no error details', () => {
       (useWorkflowStore as any).mockReturnValue({
-        getInputsForNode: mockGetInputsForNode,
+        nodeOutputs: {},
         setNodeOutput: mockSetNodeOutput,
         setNodeStatus: mockSetNodeStatus,
         updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
         nodeStatus: { 'test-node-1': 'error' },
+        nodeErrors: {},
       });
 
       render(<ImageGenNode {...defaultProps} />);
 
       expect(screen.getByText(/Generation failed/i)).toBeInTheDocument();
+    });
+
+    it('shows prompt needed indicator when no edges connected', () => {
+      render(<ImageGenNode {...defaultProps} />);
+
+      expect(screen.getByText(/Prompt needed/)).toBeInTheDocument();
+    });
+
+    it('shows prompt connected indicator when prompt edge exists', () => {
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
+      ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'hello', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
+
+      render(<ImageGenNode {...defaultProps} />);
+
+      expect(screen.getByText(/Prompt connected/)).toBeInTheDocument();
+    });
+
+    it('renders prompt and image input handles', () => {
+      render(<ImageGenNode {...defaultProps} />);
+
+      expect(screen.getByTestId('handle-prompt')).toBeInTheDocument();
+      expect(screen.getByTestId('handle-image')).toBeInTheDocument();
+      expect(screen.getByTestId('handle-source')).toBeInTheDocument();
     });
   });
 
@@ -137,18 +193,18 @@ describe('ImageGenNode', () => {
     it('expands settings when header button is clicked', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       expect(screen.getByText('Preset')).toBeInTheDocument();
-      expect(screen.getByText('Style')).toBeInTheDocument();
       expect(screen.getByText('Aspect Ratio')).toBeInTheDocument();
+      expect(screen.getByText('Resolution')).toBeInTheDocument();
     });
 
     it('collapses settings when header button is clicked again', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
       expect(screen.getByText('Preset')).toBeInTheDocument();
 
@@ -161,10 +217,9 @@ describe('ImageGenNode', () => {
     it('shows preset dropdown with all available presets', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
-      // Find the select by looking for the container with the label
       const presetLabel = screen.getByText('Preset');
       const presetSelect = presetLabel.parentElement!.querySelector('select') as HTMLSelectElement;
       expect(presetSelect).toBeInTheDocument();
@@ -177,7 +232,7 @@ describe('ImageGenNode', () => {
     it('shows Custom (No Preset) option in preset dropdown', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       expect(screen.getByText('Custom (No Preset)')).toBeInTheDocument();
@@ -186,7 +241,7 @@ describe('ImageGenNode', () => {
     it('calls updateNodeData when preset is changed', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       const presetLabel = screen.getByText('Preset');
@@ -208,7 +263,8 @@ describe('ImageGenNode', () => {
       };
       render(<ImageGenNode {...props} />);
 
-      const settingsButton = screen.getByText(/Enemy Sprite/i).closest('button');
+      const enemySprite = PRESETS.find((p) => p.id === 'enemy-sprite');
+      const settingsButton = screen.getByText(enemySprite!.name).closest('button');
       fireEvent.click(settingsButton!);
 
       expect(screen.getByText(/512x512/)).toBeInTheDocument();
@@ -216,61 +272,30 @@ describe('ImageGenNode', () => {
     });
   });
 
-  describe('style selection', () => {
-    it('shows style dropdown with all available styles', () => {
-      render(<ImageGenNode {...defaultProps} />);
-
-      const settingsButton = screen.getAllByText('Pixel Art')[0].closest('button');
-      fireEvent.click(settingsButton!);
-
-      const styleLabel = screen.getByText('Style');
-      const styleSelect = styleLabel.parentElement!.querySelector('select') as HTMLSelectElement;
-      expect(styleSelect).toBeInTheDocument();
-
-      // Check that all style options are present (will find multiple "Pixel Art" matches)
-      expect(screen.getAllByText('Pixel Art').length).toBeGreaterThan(0);
-      expect(screen.getByText('Painted')).toBeInTheDocument();
-      expect(screen.getByText('Vector')).toBeInTheDocument();
-      expect(screen.getByText('Anime')).toBeInTheDocument();
-      expect(screen.getByText('Realistic')).toBeInTheDocument();
-      expect(screen.getByText('Isometric')).toBeInTheDocument();
-    });
-
-    it('calls updateNodeData when style is changed', () => {
-      render(<ImageGenNode {...defaultProps} />);
-
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
-      fireEvent.click(settingsButton!);
-
-      const styleLabel = screen.getByText('Style');
-      const styleSelect = styleLabel.parentElement!.querySelector('select') as HTMLSelectElement;
-      fireEvent.change(styleSelect, { target: { value: 'anime' } });
-
-      expect(mockUpdateNodeData).toHaveBeenCalledWith('test-node-1', { style: 'anime' });
-    });
-  });
-
   describe('aspect ratio selection', () => {
-    it('shows aspect ratio dropdown with all available ratios', () => {
+    it('shows aspect ratio dropdown with Gemini-supported ratios', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       const aspectRatioLabel = screen.getByText('Aspect Ratio');
       const aspectRatioSelect = aspectRatioLabel.parentElement!.querySelector('select') as HTMLSelectElement;
       expect(aspectRatioSelect).toBeInTheDocument();
 
-      expect(screen.getByText('Auto (Smart)')).toBeInTheDocument();
+      // "Auto" appears in both aspect ratio and resolution dropdowns
+      const autoOptions = screen.getAllByText('Auto');
+      expect(autoOptions.length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText('1:1 Square')).toBeInTheDocument();
       expect(screen.getByText('4:3 Landscape')).toBeInTheDocument();
       expect(screen.getByText('16:9 Wide')).toBeInTheDocument();
+      expect(screen.getByText('21:9 Ultrawide')).toBeInTheDocument();
     });
 
     it('calls updateNodeData when aspect ratio is changed', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       const aspectRatioLabel = screen.getByText('Aspect Ratio');
@@ -281,11 +306,41 @@ describe('ImageGenNode', () => {
     });
   });
 
+  describe('image size / resolution selection', () => {
+    it('shows resolution dropdown with 1K, 2K, 4K options', () => {
+      render(<ImageGenNode {...defaultProps} />);
+
+      const settingsButton = screen.getByText('Default').closest('button');
+      fireEvent.click(settingsButton!);
+
+      const resolutionLabel = screen.getByText('Resolution');
+      const resolutionSelect = resolutionLabel.parentElement!.querySelector('select') as HTMLSelectElement;
+      expect(resolutionSelect).toBeInTheDocument();
+
+      expect(screen.getByRole('option', { name: '1K' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: '2K' })).toBeInTheDocument();
+      expect(screen.getByRole('option', { name: '4K' })).toBeInTheDocument();
+    });
+
+    it('calls updateNodeData when resolution is changed', () => {
+      render(<ImageGenNode {...defaultProps} />);
+
+      const settingsButton = screen.getByText('Default').closest('button');
+      fireEvent.click(settingsButton!);
+
+      const resolutionLabel = screen.getByText('Resolution');
+      const resolutionSelect = resolutionLabel.parentElement!.querySelector('select') as HTMLSelectElement;
+      fireEvent.change(resolutionSelect, { target: { value: '4K' } });
+
+      expect(mockUpdateNodeData).toHaveBeenCalledWith('test-node-1', { imageSize: '4K' });
+    });
+  });
+
   describe('auto remove background toggle', () => {
     it('shows auto remove background checkbox', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       expect(screen.getByText('Auto Remove BG')).toBeInTheDocument();
@@ -294,7 +349,7 @@ describe('ImageGenNode', () => {
     it('calls updateNodeData when checkbox is toggled', () => {
       render(<ImageGenNode {...defaultProps} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
@@ -313,7 +368,7 @@ describe('ImageGenNode', () => {
       };
       render(<ImageGenNode {...props} />);
 
-      const settingsButton = screen.getByText('Pixel Art').closest('button');
+      const settingsButton = screen.getByText('Default').closest('button');
       fireEvent.click(settingsButton!);
 
       const checkbox = screen.getByRole('checkbox') as HTMLInputElement;
@@ -331,11 +386,13 @@ describe('ImageGenNode', () => {
 
     it('is disabled when status is running', () => {
       (useWorkflowStore as any).mockReturnValue({
-        getInputsForNode: mockGetInputsForNode,
+        nodeOutputs: {},
         setNodeOutput: mockSetNodeOutput,
         setNodeStatus: mockSetNodeStatus,
         updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
         nodeStatus: { 'test-node-1': 'running' },
+        nodeErrors: {},
       });
 
       render(<ImageGenNode {...defaultProps} />);
@@ -345,9 +402,18 @@ describe('ImageGenNode', () => {
     });
 
     it('calls generateImage with correct options on click', async () => {
-      mockGetInputsForNode.mockReturnValue([
-        { type: 'text', data: 'test prompt' },
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
       ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'test prompt', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
       (generateImage as any).mockResolvedValue({
         image: 'data:image/png;base64,test',
       });
@@ -359,19 +425,104 @@ describe('ImageGenNode', () => {
 
       await waitFor(() => {
         expect(generateImage).toHaveBeenCalledWith({
-          prompt: 'Pixel art style, 8-bit retro game graphics, test prompt',
-          style: 'pixel-art',
+          prompt: 'test prompt',
           aspectRatio: undefined,
+          imageSize: undefined,
           removeBackground: false,
           presetId: undefined,
+          referenceImage: undefined,
         });
       });
     });
 
-    it('sets node status to running during generation', async () => {
-      mockGetInputsForNode.mockReturnValue([
-        { type: 'text', data: 'test prompt' },
+    it('passes imageSize and aspectRatio when set', async () => {
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
       ]);
+      const props = {
+        ...defaultProps,
+        data: {
+          ...defaultProps.data,
+          aspectRatio: '16:9',
+          imageSize: '2K',
+        },
+      };
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'test prompt', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
+      (generateImage as any).mockResolvedValue({
+        image: 'data:image/png;base64,test',
+      });
+
+      render(<ImageGenNode {...props} />);
+
+      const generateButton = screen.getByText('Generate');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(generateImage).toHaveBeenCalledWith({
+          prompt: 'test prompt',
+          aspectRatio: '16:9',
+          imageSize: '2K',
+          removeBackground: false,
+          presetId: undefined,
+          referenceImage: undefined,
+        });
+      });
+    });
+
+    it('passes referenceImage when image edge is connected', async () => {
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
+        { id: 'e2', source: 'img-1', target: 'test-node-1', targetHandle: 'image' },
+      ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: {
+          'text-1': { type: 'text', data: 'test prompt', timestamp: 1 },
+          'img-1': { type: 'image', data: 'data:image/png;base64,refimg', timestamp: 2 },
+        },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
+      (generateImage as any).mockResolvedValue({
+        image: 'data:image/png;base64,test',
+      });
+
+      render(<ImageGenNode {...defaultProps} />);
+
+      const generateButton = screen.getByText('Generate');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(generateImage).toHaveBeenCalledWith(expect.objectContaining({
+          referenceImage: 'data:image/png;base64,refimg',
+        }));
+      });
+    });
+
+    it('sets node status to running during generation', async () => {
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
+      ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'test prompt', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
       (generateImage as any).mockResolvedValue({
         image: 'data:image/png;base64,test',
       });
@@ -385,10 +536,19 @@ describe('ImageGenNode', () => {
     });
 
     it('sets node output and success status on successful generation', async () => {
-      mockGetInputsForNode.mockReturnValue([
-        { type: 'text', data: 'test prompt' },
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
       ]);
       const mockImage = 'data:image/png;base64,test';
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'test prompt', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
       (generateImage as any).mockResolvedValue({
         image: mockImage,
       });
@@ -409,8 +569,6 @@ describe('ImageGenNode', () => {
     });
 
     it('sets node status to error when no prompt input is available', async () => {
-      mockGetInputsForNode.mockReturnValue([]);
-
       render(<ImageGenNode {...defaultProps} />);
 
       const generateButton = screen.getByText('Generate');
@@ -422,9 +580,18 @@ describe('ImageGenNode', () => {
     });
 
     it('sets node status to error when generation fails', async () => {
-      mockGetInputsForNode.mockReturnValue([
-        { type: 'text', data: 'test prompt' },
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
       ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'test prompt', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
       (generateImage as any).mockRejectedValue(new Error('Generation failed'));
 
       render(<ImageGenNode {...defaultProps} />);
@@ -439,7 +606,10 @@ describe('ImageGenNode', () => {
   });
 
   describe('preset workflow integration', () => {
-    it('uses preset prompt without style prefix when preset is selected', async () => {
+    it('sends presetId when preset is selected', async () => {
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
+      ]);
       const props = {
         ...defaultProps,
         data: {
@@ -447,9 +617,15 @@ describe('ImageGenNode', () => {
           presetId: 'enemy-sprite',
         },
       };
-      mockGetInputsForNode.mockReturnValue([
-        { type: 'text', data: 'scout drone' },
-      ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'scout drone', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
       (generateImage as any).mockResolvedValue({
         image: 'data:image/png;base64,test',
       });
@@ -462,42 +638,72 @@ describe('ImageGenNode', () => {
       await waitFor(() => {
         expect(generateImage).toHaveBeenCalledWith({
           prompt: 'scout drone',
-          style: undefined,
           aspectRatio: undefined,
+          imageSize: undefined,
           removeBackground: false,
           presetId: 'enemy-sprite',
+          referenceImage: undefined,
         });
       });
     });
 
-    it('uses custom style when no preset is selected', async () => {
-      const props = {
-        ...defaultProps,
-        data: {
-          ...defaultProps.data,
-          style: 'anime' as const,
-        },
-      };
-      mockGetInputsForNode.mockReturnValue([
-        { type: 'text', data: 'character' },
+    it('sends prompt as-is without style prefix', async () => {
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1', targetHandle: 'prompt' },
       ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'character', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
       (generateImage as any).mockResolvedValue({
         image: 'data:image/png;base64,test',
       });
 
-      render(<ImageGenNode {...props} />);
+      render(<ImageGenNode {...defaultProps} />);
 
       const generateButton = screen.getByText('Generate');
       fireEvent.click(generateButton);
 
       await waitFor(() => {
-        expect(generateImage).toHaveBeenCalledWith({
-          prompt: 'Anime style, Japanese animation, cel-shaded, character',
-          style: 'anime',
-          aspectRatio: undefined,
-          removeBackground: false,
-          presetId: undefined,
-        });
+        expect(generateImage).toHaveBeenCalledWith(expect.objectContaining({
+          prompt: 'character',
+        }));
+      });
+    });
+  });
+
+  describe('edge-based input resolution', () => {
+    it('uses fallback prompt from single edge without targetHandle', async () => {
+      mockUseEdges.mockReturnValue([
+        { id: 'e1', source: 'text-1', target: 'test-node-1' },
+      ]);
+      (useWorkflowStore as any).mockReturnValue({
+        nodeOutputs: { 'text-1': { type: 'text', data: 'fallback text', timestamp: 1 } },
+        setNodeOutput: mockSetNodeOutput,
+        setNodeStatus: mockSetNodeStatus,
+        updateNodeData: mockUpdateNodeData,
+        retryNode: mockRetryNode,
+        nodeStatus: {},
+        nodeErrors: {},
+      });
+      (generateImage as any).mockResolvedValue({
+        image: 'data:image/png;base64,test',
+      });
+
+      render(<ImageGenNode {...defaultProps} />);
+
+      const generateButton = screen.getByText('Generate');
+      fireEvent.click(generateButton);
+
+      await waitFor(() => {
+        expect(generateImage).toHaveBeenCalledWith(expect.objectContaining({
+          prompt: 'fallback text',
+        }));
       });
     });
   });

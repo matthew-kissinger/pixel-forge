@@ -148,6 +148,18 @@ export function torusGeo(
   return new THREE.TorusGeometry(radius, tube, radialSegments, tubularSegments);
 }
 
+/**
+ * Flat plane - helipads, walls, doors, PSP planking, billboard quads.
+ */
+export function planeGeo(
+  width: number,
+  height: number,
+  widthSegments = 1,
+  heightSegments = 1
+): THREE.PlaneGeometry {
+  return new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
+}
+
 // =============================================================================
 // Materials
 // =============================================================================
@@ -186,6 +198,23 @@ export function basicMaterial(
     color,
     transparent: options.transparent ?? false,
     opacity: options.opacity ?? 1,
+  });
+}
+
+/**
+ * Transparent glass/canopy material - cockpits, windshields, windows.
+ */
+export function glassMaterial(
+  color: number | string,
+  options: { opacity?: number; roughness?: number; metalness?: number } = {}
+): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({
+    color,
+    transparent: true,
+    opacity: options.opacity ?? 0.35,
+    roughness: options.roughness ?? 0.1,
+    metalness: options.metalness ?? 0,
+    side: THREE.DoubleSide,
   });
 }
 

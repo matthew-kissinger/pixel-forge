@@ -1,0 +1,78 @@
+{
+  "batch": 6,
+  "name": "Squad Command Icons (11.9)",
+  "description": "10 squad command tactical icons, white on magenta, NATO military symbol style",
+  "status": "pending",
+  "assets": [
+    {
+      "name": "Follow Command Icon",
+      "prompt": "Follow command military tactical icon, white arrow pointing at a small person figure, NATO military symbol style, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-follow.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Hold Position Icon",
+      "prompt": "Hold position command military tactical icon, white raised stop hand palm or anchor symbol, NATO military symbol style, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-hold.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Assault Command Icon",
+      "prompt": "Assault command military tactical icon, white bold forward-pointing arrow with crossed swords or bayonet, NATO military symbol style, aggressive forward movement, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-assault.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Defend Command Icon",
+      "prompt": "Defend command military tactical icon, white shield or fortification symbol, NATO military symbol style, defensive posture, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-defend.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Retreat Command Icon",
+      "prompt": "Retreat command military tactical icon, white backward-pointing arrow, NATO military symbol style, withdrawal movement, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-retreat.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Formation Wedge Icon",
+      "prompt": "Wedge formation military tactical icon, white V-shaped arrow or chevron pointing forward with dots representing soldiers in wedge pattern, NATO military symbol style, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-wedge.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Formation Line Icon",
+      "prompt": "Line formation military tactical icon, white horizontal line with dots representing soldiers spaced evenly in a straight line, NATO military symbol style, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-line.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Flank Left Icon",
+      "prompt": "Flank left military tactical icon, white curved arrow sweeping to the left around an obstacle, NATO military symbol style, flanking maneuver, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-flank-left.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Flank Right Icon",
+      "prompt": "Flank right military tactical icon, white curved arrow sweeping to the right around an obstacle, NATO military symbol style, flanking maneuver, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-flank-right.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Regroup Icon",
+      "prompt": "Regroup command military tactical icon, white converging arrows pointing inward to a center point from multiple directions, NATO military symbol style, rally and regroup, simple bold clean design readable at small size, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/cmd-regroup.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    }
+  ]
+}

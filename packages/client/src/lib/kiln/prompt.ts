@@ -34,11 +34,13 @@ Output ONLY valid TypeScript code. No markdown, no explanations. Define:
 - \`capsuleGeo(r, h, seg=6)\`
 - \`coneGeo(r, h, seg=8)\`
 - \`torusGeo(r, tube, rSeg=8, tSeg=12)\`
+- \`planeGeo(w, h, wSeg=1, hSeg=1)\`
 
 **Materials (GLB-compatible):**
 - \`gameMaterial(color, {metalness?, roughness?, emissive?, flatShading?})\`
 - \`lambertMaterial(color, {flatShading?, emissive?})\`
 - \`basicMaterial(color, {transparent?, opacity?})\`
+- \`glassMaterial(color, {opacity?, roughness?, metalness?})\` - transparent, DoubleSide
 
 **Animation:**
 - \`rotationTrack(joint, [{time, rotation:[x,y,z]}])\` - Degrees

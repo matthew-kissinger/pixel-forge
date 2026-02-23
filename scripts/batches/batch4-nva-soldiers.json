@@ -1,0 +1,71 @@
+{
+  "batch": 4,
+  "name": "NVA Regular Infantry Sprites (10.1)",
+  "description": "9 NVA soldier sprites: 3 directions x 3 poses. Style: 32-bit pixel art with magenta bg.",
+  "status": "pending",
+  "assets": [
+    {
+      "name": "NVA Front Walk 1",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier, pith helmet, khaki-olive uniform with web gear and chest rig ammo pouches, AK-47 rifle held across chest at ready, canvas boots, walking pose left foot forward stride, front facing view, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-front-walk1.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Front Walk 2",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier, pith helmet, khaki-olive uniform with web gear and chest rig ammo pouches, AK-47 rifle held across chest at ready, canvas boots, walking pose right foot forward stride, front facing view, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-front-walk2.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Front Fire",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier, pith helmet, khaki-olive uniform with web gear and chest rig ammo pouches, AK-47 rifle shouldered and aiming forward with small muzzle flash at barrel tip, canvas boots, firing stance feet planted, front facing view, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-front-fire.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Side Walk 1",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier, pith helmet, khaki-olive uniform with web gear and chest rig ammo pouches, AK-47 rifle held at ready, canvas boots, walking pose left foot forward stride, right side profile view facing right, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-side-walk1.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Side Walk 2",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier, pith helmet, khaki-olive uniform with web gear and chest rig ammo pouches, AK-47 rifle held at ready, canvas boots, walking pose right foot forward stride, right side profile view facing right, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-side-walk2.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Side Fire",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier, pith helmet, khaki-olive uniform with web gear and chest rig ammo pouches, AK-47 rifle shouldered aiming right with small muzzle flash at barrel tip, canvas boots, firing stance, right side profile view facing right, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-side-fire.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Back Walk 1",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier seen from behind, pith helmet on head, khaki-olive uniform with backpack and web gear visible from back, AK-47 rifle slung or held, canvas boots, walking pose left foot forward stride, rear back view, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-back-walk1.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Back Walk 2",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier seen from behind, pith helmet on head, khaki-olive uniform with backpack and web gear visible from back, AK-47 rifle slung or held, canvas boots, walking pose right foot forward stride, rear back view, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-back-walk2.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "NVA Back Fire",
+      "prompt": "Single NVA North Vietnamese Army infantry soldier seen from behind, pith helmet on head, khaki-olive uniform with backpack and web gear visible from back, AK-47 rifle shouldered aiming away from viewer with small muzzle flash, canvas boots, firing stance, rear back view, full body head to toe visible, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "soldiers/nva-back-fire.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "batch": 7,
+  "name": "Start Screen Background (11.1)",
+  "description": "Title screen background 1920x1080, full-frame cinematic scene, no bg removal",
+  "status": "pending",
+  "assets": [
+    {
+      "name": "Start Screen Background",
+      "prompt": "Vietnam War jungle scene, atmospheric golden hour, UH-1 Huey helicopter silhouette approaching through mist over dense jungle canopy, orange and gold light beams cutting through tropical trees, dark green jungle below fading into haze, moody cinematic composition, game title screen background, dramatic lighting, no text, no UI, widescreen 16:9 composition",
+      "out": "ui/screens/start-screen.png",
+      "removeBg": false,
+      "aspect": "16:9"
+    }
+  ]
+}

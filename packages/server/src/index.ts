@@ -7,6 +7,7 @@ import { imageRouter } from './routes/image';
 import { modelRouter } from './routes/model';
 import { kilnRouter } from './routes/kiln';
 import { exportRouter } from './routes/export';
+import { galleryRouter } from './routes/gallery';
 import { isAppError, getErrorMessage } from './lib/errors';
 import { logger as pixelLogger } from '@pixel-forge/shared/logger';
 import { rateLimit } from './middleware/rateLimit';
@@ -64,6 +65,9 @@ app.route(
     .use('*', requestTimeout(60000))
     .use('*', rateLimit({ windowMs: 60000, maxRequests: 30 }))
 );
+
+// Asset gallery (no rate limit, read-only)
+app.route('/gallery', galleryRouter);
 
 // 404 handler
 app.notFound((c) => {

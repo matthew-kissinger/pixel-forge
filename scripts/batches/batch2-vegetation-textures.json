@@ -1,0 +1,43 @@
+{
+  "batch": 2,
+  "name": "More Vegetation + Terrain Textures",
+  "description": "Remaining HIGH priority vegetation (9.6-9.8) + first terrain textures",
+  "status": "pending",
+  "assets": [
+    {
+      "name": "Dipterocarp Giant (9.6)",
+      "prompt": "Giant dipterocarp tree, massive straight trunk, buttress roots at base, wide spreading canopy high above, Vietnam old-growth tropical forest, side view, game asset sprite on solid red #FF0000 background, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/dipterocarp-giant.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Banyan Tree (9.7)",
+      "prompt": "Large strangler fig / banyan tree, aerial roots hanging from branches, twisted gnarled trunk, dense dark canopy, Vietnam jungle landmark tree, side view, game asset sprite on solid red #FF0000 background, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/banyan-tree.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Bamboo Grove (9.8)",
+      "prompt": "Dense bamboo grove, tall green canes 8-12m high, characteristic nodes, narrow leaves at top, Vietnam highland bamboo, side view, game asset sprite on solid red #FF0000 background, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/bamboo-grove.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Dense Jungle Floor Texture (8.1)",
+      "prompt": "Seamless tileable texture of dense jungle floor, fallen leaves in various stages of decay (brown, yellow, dark green), exposed roots, small ferns, dappled shade, overhead top-down view, 1024x1024, painted art style",
+      "out": "textures/dense-jungle-floor.png",
+      "removeBg": false,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Muddy Trail Texture (8.2)",
+      "prompt": "Seamless tileable texture of muddy jungle trail, wet brown earth with boot impressions, puddles, scattered pebbles, flattened grass edges, overhead top-down view, 1024x1024, painted art style",
+      "out": "textures/muddy-trail.png",
+      "removeBg": false,
+      "aspect": "1:1"
+    }
+  ]
+}

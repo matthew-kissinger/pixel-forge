@@ -140,10 +140,12 @@ cylinderGeo(radiusTop, radiusBot, height, segments=8)
 coneGeo(radius, height, segments=8)
 capsuleGeo(radius, height, segments=6)
 torusGeo(radius, tube, radialSegs=8, tubularSegs=12)
+planeGeo(width, height, widthSegs=1, heightSegs=1)
 
 // Materials
 gameMaterial(0xcolor, {metalness?, roughness?, emissive?, flatShading?})
 lambertMaterial(0xcolor, {flatShading?, emissive?})
+glassMaterial(0xcolor, {opacity?, roughness?, metalness?})  // transparent, DoubleSide - cockpits, windows
 
 // Animation - IMPORTANT: keyframes use "rotation" or "position" keys, NOT "value"
 rotationTrack(jointName: string, keyframes: [{time, rotation: [x,y,z]}])  // rotation in DEGREES
@@ -391,8 +393,9 @@ createPart(name, geo, mat, {position, rotation, scale, parent, pivot}) - AUTO-AD
   NEVER: root.add(createPart(...))  // WRONG!
   ALWAYS: createPart("Name", geo, mat, { parent: root })  // RIGHT!
 
-boxGeo, sphereGeo, cylinderGeo, coneGeo, capsuleGeo, torusGeo
+boxGeo, sphereGeo, cylinderGeo, coneGeo, capsuleGeo, torusGeo, planeGeo
 gameMaterial(0xcolor, {metalness, roughness, emissive, flatShading})
+glassMaterial(0xcolor, {opacity, roughness, metalness}) - transparent canopy/windows
 rotationTrack("Joint_Name", [{time, rotation:[x,y,z]}]) - degrees, NOT value!
 positionTrack("Joint_Name", [{time, position:[x,y,z]}]) - NOT value!
 createClip(name, duration, tracks) - 3 args!

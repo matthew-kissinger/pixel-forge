@@ -1,0 +1,85 @@
+{
+  "batch": 5,
+  "name": "Weapon Silhouette Icons (11.5)",
+  "description": "11 weapon silhouette icons, white on magenta, 64x64 style",
+  "status": "pending",
+  "assets": [
+    {
+      "name": "M16A1 Icon",
+      "prompt": "M16A1 assault rifle weapon silhouette icon, solid white weapon shape on flat magenta background, clean military HUD style, right-facing side profile view, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-m16a1.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "AK-47 Icon",
+      "prompt": "AK-47 assault rifle weapon silhouette icon, solid white weapon shape on flat magenta background, clean military HUD style, right-facing side profile view, distinctive curved magazine visible, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-ak47.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Ithaca 37 Shotgun Icon",
+      "prompt": "Ithaca 37 pump-action shotgun weapon silhouette icon, solid white weapon shape on flat magenta background, clean military HUD style, right-facing side profile view, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-shotgun.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "M1911 Pistol Icon",
+      "prompt": "M1911 pistol handgun weapon silhouette icon, solid white weapon shape on flat magenta background, clean military HUD style, right-facing side profile view, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-m1911.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "M60 Machine Gun Icon",
+      "prompt": "M60 belt-fed machine gun weapon silhouette icon, solid white weapon shape on flat magenta background, clean military HUD style, right-facing side profile view, ammo belt hanging, bipod visible, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-m60.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "M79 Grenade Launcher Icon",
+      "prompt": "M79 grenade launcher weapon silhouette icon, solid white weapon shape on flat magenta background, break-action single shot, clean military HUD style, right-facing side profile view, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-m79.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "RPG-7 Icon",
+      "prompt": "RPG-7 rocket launcher weapon silhouette icon, solid white weapon shape on flat magenta background, rocket-propelled grenade loaded on front, clean military HUD style, right-facing side profile view, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-rpg7.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "M67 Grenade Icon",
+      "prompt": "M67 fragmentation hand grenade silhouette icon, solid white grenade shape on flat magenta background, round body with spoon lever and pin, clean military HUD style, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-grenade.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "M18 Smoke Grenade Icon",
+      "prompt": "M18 smoke grenade cylindrical canister silhouette icon, solid white shape on flat magenta background, cylindrical body with spoon lever, clean military HUD style, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-smoke.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Mortar Icon",
+      "prompt": "M2 60mm mortar tube weapon silhouette icon, solid white shape on flat magenta background, mortar tube on bipod base plate, clean military HUD style, side profile view, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-mortar.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "M3A1 Grease Gun Icon",
+      "prompt": "M3A1 Grease Gun submachine gun weapon silhouette icon, solid white weapon shape on flat magenta background, distinctive cylindrical receiver with wire stock extended, clean military HUD style, right-facing side profile view, simple recognizable outline, 32-bit pixel art sprite, high-res pixel art style, detailed with visible pixels, bright saturated colors, black pixel outlines, clean hard edges, no anti-aliasing, no blur, game asset on solid magenta #FF00FF background, entire background is flat solid magenta #FF00FF with no gradients",
+      "out": "ui/icons/weapon-m3a1.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    }
+  ]
+}

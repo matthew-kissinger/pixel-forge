@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Pencil } from 'lucide-react';
 import { BaseNode } from './BaseNode';
 import { useWorkflowStore, type BaseNodeData } from '../../stores/workflow';
+import { ImageEditor } from './editor/ImageEditor';
 
 export interface ImageUploadData extends BaseNodeData {
   fileName?: string;
@@ -14,6 +15,16 @@ export function ImageUploadNode(props: NodeProps) {
   const { setNodeOutput, updateNodeData, nodeOutputs } = useWorkflowStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+
+  const handleEditorSave = useCallback(
+    (dataUrl: string) => {
+      setPreview(dataUrl);
+      setNodeOutput(id, { type: 'image', data: dataUrl, timestamp: Date.now() });
+      setEditorOpen(false);
+    },
+    [id, setNodeOutput]
+  );
 
   const output = nodeOutputs[id];
 
@@ -106,6 +117,13 @@ export function ImageUploadNode(props: NodeProps) {
               className="max-h-32 w-full rounded border border-[var(--border-color)] object-contain"
             />
             <button
+              onClick={() => setEditorOpen(true)}
+              className="absolute -right-1 top-5 rounded-full bg-[var(--accent)] p-1 text-white hover:brightness-110"
+              title="Edit image"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button
               onClick={handleClear}
               className="absolute -right-1 -top-1 rounded-full bg-[var(--error)] p-1 text-white hover:bg-red-600"
             >
@@ -130,7 +148,22 @@ export function ImageUploadNode(props: NodeProps) {
             </span>
           </div>
         )}
+        {!preview && !output?.data && (
+          <button
+            onClick={() => setEditorOpen(true)}
+            className="nodrag text-xs text-[var(--accent)] hover:underline"
+          >
+            or draw from scratch
+          </button>
+        )}
       </div>
+      {editorOpen && (
+        <ImageEditor
+          imageDataUrl={preview || output?.data || null}
+          onSave={handleEditorSave}
+          onCancel={() => setEditorOpen(false)}
+        />
+      )}
     </BaseNode>
   );
 }

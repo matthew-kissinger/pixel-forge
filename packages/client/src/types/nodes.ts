@@ -471,7 +471,7 @@ export const nodeDefinitions: NodeDefinition[] = [
     label: 'Image Gen',
     description: 'Generate images using Nano Banana Pro AI',
     category: 'generate',
-    io: { inputs: ['text'], output: 'image' },
+    io: { inputs: ['text', 'image'], output: 'image' },
     defaultData: {
       nodeType: 'imageGen',
       label: 'Image Gen',
@@ -762,7 +762,7 @@ export const nodeDefinitions: NodeDefinition[] = [
     label: 'Preview',
     description: 'Preview any output type',
     category: 'output',
-    io: { inputs: ['text', 'image', 'model', 'metadata'], output: null },
+    io: { inputs: ['text', 'image', 'model', 'metadata'], output: 'image' },
     defaultData: {
       nodeType: 'preview',
       label: 'Preview',

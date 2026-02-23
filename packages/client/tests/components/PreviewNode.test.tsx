@@ -22,6 +22,13 @@ vi.mock('lucide-react', () => ({
   Eye: () => <div data-testid="eye-icon" />,
   Link: () => <div data-testid="link-icon" />,
   Loader2: (props: any) => <div data-testid="loader-icon" className={props.className} />,
+  Download: () => <div data-testid="download-icon" />,
+  X: () => <div data-testid="x-icon" />,
+  Pencil: () => <div data-testid="pencil-icon" />,
+}));
+
+vi.mock('../../src/components/nodes/editor/ImageEditor', () => ({
+  ImageEditor: () => <div data-testid="image-editor" />,
 }));
 
 // Mock BaseNode

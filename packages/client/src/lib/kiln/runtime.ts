@@ -273,8 +273,8 @@ export class KilnRuntime {
         const primitives = arguments[1];
         const {
           createRoot, createPivot, createPart,
-          capsuleGeo, cylinderGeo, boxGeo, sphereGeo, coneGeo, torusGeo,
-          gameMaterial, basicMaterial, lambertMaterial,
+          capsuleGeo, cylinderGeo, boxGeo, sphereGeo, coneGeo, torusGeo, planeGeo,
+          gameMaterial, basicMaterial, lambertMaterial, glassMaterial,
           rotationTrack, positionTrack, scaleTrack, createClip,
           idleBreathing, bobbingAnimation, spinAnimation,
           countTriangles, countMaterials, getJointNames, validateAsset
@@ -496,27 +496,20 @@ export class KilnRuntime {
   async exportGLB(): Promise<string | null> {
     if (!this.asset) return null;
 
-    return new Promise((resolve) => {
+    try {
       const exporter = new GLTFExporter();
-      exporter.parse(
-        this.asset!,
-        (result) => {
-          const blob = new Blob([result as ArrayBuffer], {
-            type: 'model/gltf-binary',
-          });
-          const url = URL.createObjectURL(blob);
-          resolve(url);
-        },
-        (error) => {
-          logger.error('GLB export failed:', error);
-          resolve(null);
-        },
-        {
-          binary: true,
-          animations: this.clips,
-        }
-      );
-    });
+      const result = await exporter.parseAsync(this.asset, {
+        binary: true,
+        animations: this.clips,
+      });
+      const blob = new Blob([result as ArrayBuffer], {
+        type: 'model/gltf-binary',
+      });
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      logger.error('GLB export failed:', error);
+      return null;
+    }
   }
 
   /**

@@ -52,7 +52,7 @@ describe('Node Type System', () => {
       const previewIO = getNodeIOSpec('preview');
       expect(previewIO).toBeDefined();
       expect(previewIO?.inputs.length).toBeGreaterThan(0);
-      expect(previewIO?.output).toBeNull();
+      expect(previewIO?.output).toBe('image'); // passthrough
     });
   });
 
@@ -69,16 +69,16 @@ describe('Node Type System', () => {
       expect(isValidConnectionType('imageGen', 'preview')).toBe(true);
     });
 
-    it('should NOT allow image -> imageGen connection', () => {
-      expect(isValidConnectionType('imageUpload', 'imageGen')).toBe(false);
+    it('should allow image -> imageGen connection (reference image input)', () => {
+      expect(isValidConnectionType('imageUpload', 'imageGen')).toBe(true);
     });
 
     it('should NOT allow text -> resize connection', () => {
       expect(isValidConnectionType('textPrompt', 'resize')).toBe(false);
     });
 
-    it('should NOT allow connections FROM output nodes', () => {
-      expect(isValidConnectionType('preview', 'imageGen')).toBe(false);
+    it('should allow connections FROM preview (passthrough)', () => {
+      expect(isValidConnectionType('preview', 'imageGen')).toBe(true);
     });
 
     it('should NOT allow connections TO input nodes', () => {
@@ -100,12 +100,15 @@ describe('Node Type System', () => {
       expect(targets).toContain('resize');
       expect(targets).toContain('removeBg');
       expect(targets).toContain('preview');
-      expect(targets).not.toContain('imageGen'); // imageGen needs text
+      expect(targets).toContain('imageGen'); // imageGen accepts image as reference input
     });
 
-    it('should return empty array for output nodes', () => {
+    it('should return valid targets for preview (passthrough)', () => {
       const targets = getValidTargets('preview');
-      expect(targets).toHaveLength(0);
+      expect(targets.length).toBeGreaterThan(0);
+      expect(targets).toContain('imageGen'); // image -> imageGen reference
+      expect(targets).toContain('removeBg');
+      expect(targets).toContain('save');
     });
   });
 
@@ -113,7 +116,7 @@ describe('Node Type System', () => {
     it('should return valid sources for imageGen', () => {
       const sources = getValidSources('imageGen');
       expect(sources).toContain('textPrompt');
-      expect(sources).not.toContain('imageUpload');
+      expect(sources).toContain('imageUpload'); // reference image input
     });
 
     it('should return valid sources for preview', () => {

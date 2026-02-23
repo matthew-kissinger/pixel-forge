@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { buildPresetPrompt, getPresetById } from '@pixel-forge/shared/presets';
 import { generateImage, extractSpritesFromSheet } from '../services/gemini';
 import { removeBackground } from '../services/fal';
+import { generateTexture } from '../services/texture';
 import { BadRequestError, TooManyRequestsError } from '../lib/errors';
 import { logger } from '@pixel-forge/shared/logger';
 import type {
@@ -17,6 +18,7 @@ import type {
   RemoveBgResponse,
   CompressImageResponse,
   SliceSheetResponse,
+  GenerateTextureResponse,
 } from '@pixel-forge/shared';
 
 const imageRouter = new Hono();
@@ -39,26 +41,32 @@ const artStyles = [
   'isometric',
 ] as const;
 
-// Aspect ratios supported
+// Aspect ratios supported by Gemini
 const aspectRatios = [
-  '21:9',
-  '16:9',
-  '3:2',
-  '4:3',
-  '5:4',
   '1:1',
-  '4:5',
-  '3:4',
   '2:3',
+  '3:2',
+  '3:4',
+  '4:3',
+  '4:5',
+  '5:4',
   '9:16',
+  '16:9',
+  '21:9',
 ] as const;
+
+// Image sizes supported by Gemini (uppercase K required)
+const imageSizes = ['1K', '2K', '4K'] as const;
 
 const generateSchema = z.object({
   prompt: z.string().min(1, 'Prompt is required').max(2000),
   style: z.enum(artStyles).optional(),
   aspectRatio: z.enum(aspectRatios).optional(),
+  imageSize: z.enum(imageSizes).optional(),
   removeBackground: z.boolean().optional(),
   presetId: z.string().optional(),
+  referenceImage: z.string().optional(),
+  referenceImages: z.array(z.string()).max(6).optional(),
 });
 
 const removeBgSchema = z.object({
@@ -90,7 +98,7 @@ imageRouter.post(
   '/generate',
   zValidator('json', generateSchema),
   async (c) => {
-    const { prompt, removeBackground: shouldRemoveBg, presetId } = c.req.valid('json') as GenerateImageOptions;
+    const { prompt, aspectRatio, imageSize, removeBackground: shouldRemoveBg, presetId, referenceImage, referenceImages } = c.req.valid('json') as GenerateImageOptions;
 
     try {
       const preset = presetId ? getPresetById(presetId) : undefined;
@@ -101,8 +109,14 @@ imageRouter.post(
 
       const finalPrompt = preset ? buildPresetPrompt(preset, prompt) : prompt;
 
-      // Generate the image with the prompt (style is already in the prompt from client)
-      const result = await generateImage(finalPrompt);
+      // Generate the image with the prompt and Gemini imageConfig
+      // Merge legacy single referenceImage into the array
+      const allRefs = referenceImages ?? (referenceImage ? [referenceImage] : undefined);
+      const result = await generateImage(finalPrompt, {
+        referenceImages: allRefs,
+        aspectRatio,
+        imageSize,
+      });
 
       // Optionally remove background
       const shouldRemoveBgFinal = shouldRemoveBg ?? preset?.autoRemoveBg ?? false;
@@ -347,6 +361,38 @@ imageRouter.post(
       logger.error('Batch generation error:', error);
       throw new BadRequestError(
         error instanceof Error ? error.message : 'Batch generation failed'
+      );
+    }
+  }
+);
+
+// Tileable texture generation via FLUX + Seamless Texture LoRA
+const generateTextureSchema = z.object({
+  description: z.string().min(1, 'Texture description is required').max(1000),
+  size: z.number().int().min(64).max(1024).optional().default(512),
+  loraScale: z.number().min(0).max(2).optional().default(1.0),
+  steps: z.number().int().min(4).max(50).optional().default(28),
+  guidance: z.number().min(0).max(20).optional().default(3.5),
+  pixelate: z.boolean().optional().default(true),
+  pixelateTarget: z.number().int().min(32).max(512).optional().default(128),
+  paletteColors: z.number().int().min(0).max(256).optional().default(0),
+});
+
+imageRouter.post(
+  '/generate-texture',
+  zValidator('json', generateTextureSchema),
+  async (c) => {
+    const options = c.req.valid('json');
+
+    try {
+      const result = await generateTexture(options);
+      return c.json<GenerateTextureResponse>(result);
+    } catch (error) {
+      const rateLimitResponse = handleTooManyRequests(c, error);
+      if (rateLimitResponse) return rateLimitResponse;
+      logger.error('Texture generation error:', error);
+      throw new BadRequestError(
+        error instanceof Error ? error.message : 'Texture generation failed'
       );
     }
   }

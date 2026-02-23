@@ -1,0 +1,43 @@
+{
+  "batch": 1,
+  "name": "Vegetation Billboards",
+  "description": "First 5 vegetation billboard sprites for Terror in the Jungle",
+  "status": "completed",
+  "assets": [
+    {
+      "name": "Jungle Fern (9.1)",
+      "prompt": "Dense cluster of tropical ferns, bright green fronds, Vietnam jungle undergrowth, side view from ground level, game asset sprite on solid red #FF0000 background, 512x512, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/jungle-fern.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Elephant Ear Plants (9.2)",
+      "prompt": "Cluster of elephant ear plants (Colocasia gigantea), huge heart-shaped leaves in dark green, Vietnam tropical jungle floor, side view, game asset sprite on solid red #FF0000 background, 512x512, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/elephant-ear-plants.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Fan Palm Cluster (9.3)",
+      "prompt": "Vietnamese fan palm cluster (Licuala grandis), circular fan-shaped fronds on slender stems, tropical jungle understory, side view, game asset sprite on solid red #FF0000 background, 512x512, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/fan-palm-cluster.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Coconut Palm (9.4)",
+      "prompt": "Tall coconut palm tree, full view from base to crown, slender curved trunk, drooping fronds with coconut clusters, Vietnam tropical coast, side view, game asset sprite on solid red #FF0000 background, 512x512, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/coconut-palm.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    },
+    {
+      "name": "Areca Palm Cluster (9.5)",
+      "prompt": "Cluster of areca betel nut palms, 3-4 slender ringed trunks, feathery pinnate fronds, Vietnam jungle mid-canopy, side view, game asset sprite on solid red #FF0000 background, 512x512, clean crisp edges for billboard cutout, painted art style, no shadows on background",
+      "out": "vegetation/areca-palm-cluster.png",
+      "removeBg": true,
+      "aspect": "1:1"
+    }
+  ]
+}

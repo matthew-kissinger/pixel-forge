@@ -1,10 +1,11 @@
 export type ArtStyle = 'pixel-art' | 'painted' | 'vector' | 'anime' | 'realistic' | 'isometric';
-export type AspectRatio = '21:9' | '16:9' | '3:2' | '4:3' | '5:4' | '1:1' | '4:5' | '3:4' | '2:3' | '9:16';
+export type AspectRatio = '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9';
+export type ImageSize = '1K' | '2K' | '4K';
 
 /**
  * Generic API response envelope
  */
-export type ApiResponse<T> = 
+export type ApiResponse<T> =
   | { success: true; data: T }
   | { success: false; error: string; code?: number; details?: any };
 
@@ -14,8 +15,11 @@ export interface GenerateImageOptions {
   prompt: string;
   style?: ArtStyle;
   aspectRatio?: AspectRatio;
+  imageSize?: ImageSize;
   removeBackground?: boolean;
   presetId?: string;
+  referenceImage?: string;  // single reference image (legacy)
+  referenceImages?: string[]; // up to 6 reference images for style consistency
 }
 
 export interface GenerateImageResponse {
@@ -104,6 +108,25 @@ export interface GenerateKilnCodeResponse {
     outputTokens: number;
   };
   error?: string;
+}
+
+// --- Tileable Textures (FLUX + Seamless LoRA) ---
+
+export interface GenerateTextureRequest {
+  description: string;
+  size?: number;
+  loraScale?: number;
+  steps?: number;
+  guidance?: number;
+  pixelate?: boolean;
+  pixelateTarget?: number;
+  paletteColors?: number;
+}
+
+export interface GenerateTextureResponse {
+  image: string; // base64 data URL
+  size: number; // bytes
+  dimensions: { width: number; height: number };
 }
 
 // --- Export / Save ---

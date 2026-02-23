@@ -183,7 +183,14 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, operation: strin
   ]);
 }
 
-async function generateRawImage(prompt: string): Promise<Buffer> {
+export interface ImageGenConfig {
+  referenceImage?: string;  // legacy single image
+  referenceImages?: string[]; // up to 6 reference images
+  aspectRatio?: string;
+  imageSize?: string; // '1K' | '2K' | '4K'
+}
+
+async function generateRawImage(prompt: string, config?: ImageGenConfig): Promise<Buffer> {
   // Input validation
   if (!prompt || prompt.trim().length === 0) {
     throw new BadRequestError('Prompt cannot be empty');
@@ -194,13 +201,39 @@ async function generateRawImage(prompt: string): Promise<Buffer> {
 
   const client = getClient();
 
+  // Collect all reference images (array takes priority over legacy single)
+  const refs = config?.referenceImages ?? (config?.referenceImage ? [config.referenceImage] : []);
+
+  // Build contents: text-only or multimodal with reference images
+  type Part = { text?: string; inlineData?: { mimeType: string; data: string } };
+  let contents: string | Part[];
+  if (refs.length > 0) {
+    const imageParts: Part[] = refs.map((ref) => {
+      const base64Match = ref.match(/^data:(image\/\w+);base64,(.+)$/);
+      return { inlineData: { mimeType: base64Match?.[1] ?? 'image/png', data: base64Match?.[2] ?? ref } };
+    });
+    contents = [...imageParts, { text: prompt }];
+  } else {
+    contents = prompt;
+  }
+
+  // Build imageConfig for Gemini API
+  const imageConfig: Record<string, string> = {};
+  if (config?.aspectRatio) {
+    imageConfig.aspectRatio = config.aspectRatio;
+  }
+  if (config?.imageSize) {
+    imageConfig.imageSize = config.imageSize;
+  }
+
   try {
     const response = await withTimeout(
       client.models.generateContent({
-        model: 'gemini-2.5-flash-preview-05-20', // or 'nano-banana-pro-preview'
-        contents: prompt,
+        model: 'gemini-3-pro-image-preview',
+        contents,
         config: {
           responseModalities: ['image', 'text'],
+          ...(Object.keys(imageConfig).length > 0 ? { imageConfig } : {}),
         },
       }),
       GEMINI_TIMEOUT_MS,
@@ -352,8 +385,8 @@ export async function generateTileableBackground(
 /**
  * Simple image generation (backwards compatible)
  */
-export async function generateImage(prompt: string): Promise<GenerateImageResult> {
-  const rawBuffer = await generateRawImage(prompt);
+export async function generateImage(prompt: string, config?: ImageGenConfig): Promise<GenerateImageResult> {
+  const rawBuffer = await generateRawImage(prompt, config);
   const base64 = rawBuffer.toString('base64');
 
   return {

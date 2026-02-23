@@ -13,6 +13,11 @@ import { useWorkflowStore } from '../../src/stores/workflow';
 vi.mock('lucide-react', () => ({
   Upload: () => <div data-testid="upload-icon" />,
   X: () => <div data-testid="x-icon" />,
+  Pencil: () => <div data-testid="pencil-icon" />,
+}));
+
+vi.mock('../../src/components/nodes/editor/ImageEditor', () => ({
+  ImageEditor: () => <div data-testid="image-editor" />,
 }));
 
 // Mock BaseNode

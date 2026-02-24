@@ -43,9 +43,6 @@ mock.module('../src/services/claude', () => ({
     code: 'mock code',
     usage: { inputTokens: 10, outputTokens: 20 },
   }),
-  streamKilnCode: async function* () {
-    yield { type: 'complete', data: 'mock' };
-  },
   compactCode: async () => ({ success: true, code: 'compact code' }),
   refactorCode: async () => ({ success: true, code: 'refactored code' }),
 }));
@@ -508,60 +505,7 @@ describe('Kiln API', () => {
     expect(data.code).toBeDefined();
   });
 
-  test('POST /api/kiln/stream requires prompt', async () => {
-    const res = await app.fetch(
-      new Request(`${baseUrl}/api/kiln/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      })
-    );
-    expect(res.status).toBe(400);
-  });
-
-  test('POST /api/kiln/stream returns SSE event stream', async () => {
-    const res = await app.fetch(
-      new Request(`${baseUrl}/api/kiln/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: 'test streaming prompt' }),
-      })
-    );
-
-    expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toBe('text/event-stream');
-
-    // Read the SSE stream
-    const text = await res.text();
-
-    // SSE format: event: <type>\ndata: <data>\n\n
-    expect(text).toContain('event: complete');
-    expect(text).toContain('data: mock');
-  });
-
-  test('POST /api/kiln/stream with valid request completes successfully', async () => {
-    // Test that a valid streaming request completes without errors
-    const res = await app.fetch(
-      new Request(`${baseUrl}/api/kiln/stream`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: 'test streaming with options',
-          mode: 'glb',
-          category: 'character',
-        }),
-      })
-    );
-
-    expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toBe('text/event-stream');
-
-    const text = await res.text();
-
-    // The mock yields a complete event
-    expect(text).toContain('event:');
-    expect(text).toContain('data:');
-  });
+  // Stream endpoint removed - structured output only
 });
 
 describe('Export API', () => {

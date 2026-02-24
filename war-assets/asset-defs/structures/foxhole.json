@@ -1,0 +1,9 @@
+{
+  "name": "Foxhole/Fighting Position",
+  "slug": "foxhole",
+  "category": "structures",
+  "assetCategory": "environment",
+  "budget": 1000,
+  "prompt": "Vietnam War era individual fighting position (foxhole). Dug-in infantry position for one or two soldiers.\r\n\r\nPhysical structure:\r\n- Hole: oval-shaped excavation, ~1.8m x 1.2m, ~1.2m deep\r\n  - Dirt walls sloping slightly inward\r\n  - Flat bottom\r\n  - Shown as depression below ground level (Y=0 is ground)\r\n- Parapet: mound of excavated dirt around rim\r\n  - Higher at front (toward enemy), ~0.3m above ground\r\n  - Lower at rear for entry\r\n  - Irregular earth mound\r\n- Sandbags: 3-4 sandbags placed on front parapet for extra protection\r\n- Firing step: small ledge inside at front wall, ~0.5m from bottom\r\n  - Where soldier stands to fire over parapet\r\n- Grenade sump: small deeper hole in corner of floor (drain for grenades)\r\n  - Just a darker patch\r\n- Overhead cover: optional poncho/canvas stretched over rear half (simplified as flat angled panel)\r\n\r\nColors: Dirt walls (0x5a4a30), dirt parapet (0x6B5530), sandbags (0xc2a878), ground surface (0x4a5a2a), canvas cover (0x6B6B4F)\r\nOrientation: Front (parapet) facing +Z, at ground level\r\nScale: Real-world meters (~1.8m x 1.2m, ~1.5m deep including parapet)",
+  "animations": "No animation - static fortification"
+}

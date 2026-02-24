@@ -1,0 +1,9 @@
+{
+  "name": "Barbed Wire Fence Section",
+  "slug": "barbed-wire-fence",
+  "category": "structures",
+  "assetCategory": "prop",
+  "budget": 500,
+  "prompt": "Vietnam War era barbed wire fence section. Standard perimeter fencing using metal stakes and barbed wire.\r\n\r\nPhysical structure:\r\n- Posts: 3 metal angle-iron picket stakes, ~1.5m tall\r\n  - Y-shaped top for wire support\r\n  - Driven into ground at ~2m spacing\r\n  - Total section ~4m wide\r\n- Wire: 3 horizontal runs of barbed wire\r\n  - At heights: 0.4m, 0.8m, 1.2m\r\n  - Each wire: thin cylinder connecting posts\r\n  - Slight sag between posts\r\n- Barbs: too small to model individually at this budget\r\n  - Wire uses metallic shiny material to suggest barbed wire\r\n\r\nColors: Rusty wire (0x8a7060 with metalness 0.6), dark posts (0x555555), rust (0x7a5540)\r\nOrientation: Fence runs along X axis\r\nScale: Real-world meters (~4m wide section, ~1.5m tall)",
+  "animations": "No animation - static obstacle"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "UH-1C Gunship",
+  "slug": "uh1c-gunship",
+  "category": "vehicles/aircraft",
+  "assetCategory": "environment",
+  "budget": 5000,
+  "prompt": "Vietnam War era Bell UH-1C gunship variant. Armed attack helicopter - the \"Hog\" or \"Frog\".\n\nSame basic Huey airframe as UH-1D but with weapon systems:\n- Fuselage: same teardrop shape but with weapon pylons\n  - Cockpit: two-seat, large plexiglass windshield\n  - Cabin: smaller/closed compared to transport variant\n  - Engine cowling: same T53 turboshaft hump\n- Main rotor: two-blade, ~13.4m diameter\n- Tail boom: same as UH-1D with tail rotor and stabilizer\n- Landing skids: tubular skids with cross-tubes\n- WEAPONS (key difference from transport):\n  - Stub wings/pylons: short fixed wings on each side of fuselage, angled down slightly\n  - Rocket pods: M200 19-tube 2.75\" rocket pods on each pylon (cylindrical cluster)\n  - XM21 subsystem: minigun mounted under nose/chin (multi-barrel rotating gun)\n  - Minigun barrels: cluster of barrels pointing forward under nose\n\nColors: Olive drab (0x556B2F), dark weapons (0x2a2a30), glass (0x88aaaa), rocket pod gray (0x555555)\nOrientation: On skids, nose along +Z\nScale: Same as UH-1D transport",
+  "animations": "Main rotor spin: Y axis, 1s revolution\nTail rotor spin: X axis, 0.3s revolution\nMinigun spin: Z axis, 0.2s revolution"
+}

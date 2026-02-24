@@ -1,0 +1,9 @@
+{
+  "name": "Wild Boar",
+  "slug": "wild-boar",
+  "category": "animals",
+  "assetCategory": "character",
+  "budget": 2000,
+  "prompt": "Vietnamese wild boar (Sus scrofa). Common in Vietnam's forests, aggressive when cornered. Known hazard for patrols.\n\nPhysical structure:\n- Body: barrel-shaped, heavy, compact torso\n  - ~1.2m long, ~0.5m wide\n  - High shoulders, lower rump (slight downward slope)\n  - Coarse, bristly appearance\n- Head: large wedge-shaped head\n  - Long snout/muzzle with flat disk-like nose at end\n  - Small eyes on sides\n  - Pointed ears, upright\n  - Tusks: two curved tusks (short cones) protruding from lower jaw upward\n  - Jaw heavy and powerful\n- Legs: 4 short but sturdy legs\n  - Hooved feet (dark)\n  - Relatively short for body size\n- Tail: short, thin, curly tail\n- Overall: stocky, muscular, low to ground, aggressive stance\n\nColors: Dark bristly brown (0x4a3a28), lighter snout (0x7a6a55), pink inner ears (0x8a6a6a), dark hooves (0x1a1a1a), ivory tusks (0xddd8c8)\nOrientation: Standing, facing +Z, on ground at Y=0\nScale: Real-world meters (~1.5m nose to tail, ~0.8m tall at shoulder)",
+  "animations": "Idle breathing: body bob 0.02m, 2s cycle\nHead rooting: head pivot nods down 15 degrees and up, 2s cycle (sniffing ground)"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "AC-47 Spooky Gunship",
+  "slug": "ac47-spooky",
+  "category": "vehicles/aircraft",
+  "assetCategory": "environment",
+  "budget": 8000,
+  "prompt": "Vietnam War era Douglas AC-47 \"Spooky\" / \"Puff the Magic Dragon\" gunship. Modified C-47 Skytrain with side-firing miniguns.\n\nPhysical structure:\n- Fuselage: classic DC-3/C-47 cylindrical fuselage, ~19.4m long\n  - Nose: rounded nose with cockpit windshield panels (5-6 glass panels)\n  - Passenger windows: row of small round/rectangular windows along fuselage\n  - Cargo door: large door on left side (port), shown open\n  - Gun ports: 3 minigun positions visible through left side openings\n- Wings: low-wing monoplane, distinctive tapered wings\n  - Wing span: ~28.9m (each wing ~12m from fuselage)\n  - Wing: tapered, rounded tips\n  - No wing-mounted weapons\n- Engines: two Pratt & Whitney R-1830 radial engines\n  - Engine nacelles on wing leading edges\n  - Three-blade propellers on each engine\n- Tail section:\n  - Horizontal stabilizer: rectangular, mounted on fuselage\n  - Vertical stabilizer: single tall fin with rudder\n  - Tailwheel: small wheel at very rear\n- Landing gear: taildragger configuration\n  - Main gear: two fixed main wheels under engine nacelles (or retracted)\n  - Tail wheel\n- Miniguns (3): SUU-11/A minigun pods visible inside/through left side doors\n  - Show as cylindrical barrel clusters pointing out left side\n\nColors: OD green/gray (0x556B2F), silver/aluminum (0x999999 for unpainted areas), propellers dark (0x333333), glass cockpit (0x88aaaa), engine cowls (0x444444), gun metal (0x2a2a2a)\nOrientation: On landing gear, nose along +Z\nScale: Real-world meters (or 1/2 scale to ~10m for game)",
+  "animations": "Both propellers: spin on Z axis (along engine direction), 0.5s revolution\nNote: Can also animate as flying (slight bobbing)"
+}

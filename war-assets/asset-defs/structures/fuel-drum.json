@@ -1,0 +1,9 @@
+{
+  "name": "Fuel Drum (55 Gallon)",
+  "slug": "fuel-drum",
+  "category": "structures",
+  "assetCategory": "prop",
+  "budget": 300,
+  "prompt": "US military 55-gallon steel drum. Standard fuel/supply container used throughout Vietnam firebases.\r\n\r\nPhysical structure:\r\n- Drum: upright steel cylinder, ~0.6m diameter, ~0.9m tall\r\n  - Cylindrical body with 2 rolling hoops (raised rings at 1/3 and 2/3 height)\r\n  - Top: flat with two bung holes (small cylinders protruding)\r\n  - Bottom: flat base\r\n- Very simple geometry - just a cylinder with minor details\r\n\r\nColors: OD green (0x556B2F) or rusty (0x8a5530 for weathered version)\r\nOrientation: Standing upright at Y=0\r\nScale: Real-world meters (~0.6m diameter, ~0.9m tall)",
+  "animations": "No animation - static prop"
+}

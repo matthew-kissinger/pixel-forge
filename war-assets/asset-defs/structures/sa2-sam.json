@@ -1,0 +1,9 @@
+{
+  "name": "SA-2 Guideline SAM",
+  "slug": "sa2-sam",
+  "category": "structures",
+  "assetCategory": "environment",
+  "budget": 3000,
+  "prompt": "Vietnam War era Soviet SA-2 Guideline (S-75 Dvina) surface-to-air missile on launch rail. The \"flying telephone pole\" that shot down US aircraft over North Vietnam.\n\nPhysical structure:\n- Missile (~10.7m total length):\n  - Booster: large cylindrical rear section with 4 large fins\n    - ~0.65m diameter, ~3m long\n    - 4 delta fins at rear (cruciform arrangement), ~0.5m span each\n  - Sustainer: slimmer main body section\n    - ~0.5m diameter, ~6m long\n    - 4 smaller control fins at mid-body (cruciform)\n    - Nose cone: pointed ogive shape\n  - Junction: slight diameter change between booster and sustainer\n- Launch rail: angled steel beam rail\n  - ~12m long, set at ~45 degree elevation angle\n  - Rail beam: box or I-beam shape\n  - Missile sits on rail, held by cradle/shoes\n- Pedestal: rotating pedestal base at ground level\n  - Circular base, ~2m diameter\n  - Elevation mechanism: hydraulic cylinder (simplified)\n  - Turntable for azimuth\n- Support structure: steel framework connecting rail to pedestal\n  - Truss/frame structure\n\nColors: Missile body: white/cream (0xe8e0d0), green nose/fins (0x556B2F), booster tan (0xc8b878), rail dark steel (0x444444), pedestal (0x555555)\nOrientation: Missile pointing up at ~45 degrees toward +Z, base on ground at Y=0\nScale: Real-world meters (~10.7m missile, ~3m pedestal height, whole assembly ~8m tall)",
+  "animations": "Launcher elevation: rail tilts from 15 to 75 degrees over 4 seconds, then back"
+}

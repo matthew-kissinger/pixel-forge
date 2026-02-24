@@ -1,0 +1,9 @@
+{
+  "name": "M2 Browning .50 Cal",
+  "slug": "m2-browning",
+  "category": "weapons",
+  "assetCategory": "prop",
+  "budget": 2500,
+  "prompt": "Vietnam War era M2 Browning .50 caliber heavy machine gun on M3 tripod mount. Used on firebases and vehicles.\r\n\r\nPhysical structure:\r\n- Receiver: large rectangular receiver body, dark steel\r\n- Barrel: long heavy barrel (~1.1m) with perforated barrel jacket/heat shroud\r\n- Back plate: with dual spade grips (V-shaped handles at rear)\r\n- Butterfly trigger: between the spade grips\r\n- Feed tray: top-loading, accepts belted ammunition from left\r\n- Ammo box: M2A1 ammunition can mounted on left side bracket, olive drab\r\n- Ammo belt: visible belt of .50 cal rounds feeding into receiver\r\n- M3 tripod: tubular steel tripod with:\r\n  - Three splayed legs with ground plates\r\n  - T&E mechanism (traverse and elevation) connecting tripod head to receiver\r\n  - Pintle mount at center\r\n\r\nColors: Dark gun metal (0x2a2a30), olive drab ammo box (0x556B2F), brass belt (0xb5a642), dark tripod (0x333333)\r\nOrientation: Mounted on tripod, barrel along +Z, ready to fire\r\nScale: Real-world meters (receiver ~1.6m with barrel)",
+  "animations": "No animation needed for mounted weapon"
+}

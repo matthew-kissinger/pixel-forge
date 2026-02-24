@@ -1,0 +1,9 @@
+{
+  "name": "M1911A1 Pistol",
+  "slug": "m1911",
+  "category": "weapons",
+  "assetCategory": "prop",
+  "budget": 1500,
+  "prompt": "Vietnam War era Colt M1911A1 semi-automatic pistol. Standard US officer/NCO sidearm since 1911.\r\n\r\nPhysical structure (~0.22m total length):\r\n- Frame: steel lower frame with grip area\r\n  - Trigger: curved trigger in trigger guard\r\n  - Grip: checkered grip panels (walnut or black plastic)\r\n  - Magazine well: at base of grip\r\n  - Grip safety: at rear of grip (beaver tail)\r\n  - Manual safety: thumb safety on left side\r\n- Slide: steel upper slide, reciprocating\r\n  - Rear sight: simple notch\r\n  - Front sight: small blade\r\n  - Ejection port: on right side top\r\n  - Serrations: diagonal grip lines at rear of slide\r\n- Barrel: short ~5-inch barrel, visible at muzzle\r\n  - Barrel bushing: cylindrical at muzzle end\r\n- Hammer: external hammer at rear, cocked or down\r\n- Magazine: 7-round single-stack magazine (hidden inside grip)\r\n\r\nColors: Parkerized gray-green (0x444840) or blued (0x2a2a30), dark grips (0x2a2016), silver controls (0x666666)\r\nOrientation: Lying on right side, barrel along +Z\r\nScale: Real-world meters (~0.22m long, ~0.14m tall)",
+  "animations": "No animation for weapon prop"
+}

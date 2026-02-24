@@ -1,0 +1,9 @@
+{
+  "name": "M60 Machine Gun",
+  "slug": "m60",
+  "category": "weapons",
+  "assetCategory": "prop",
+  "budget": 2500,
+  "prompt": "Vietnam War era M60 general purpose machine gun. \"The Pig\" - the squad automatic weapon carried by US forces.\r\n\r\nPhysical structure (~1.1m total length):\r\n- Receiver: large dark metal body, rectangular profile\r\n- Barrel: heavy barrel with distinctive perforated heat shield (cylindrical with holes pattern - use cylinder geo)\r\n- Bipod: two folding legs at barrel end, splayed outward when deployed\r\n- Feed tray: top-opening feed cover, hinged at front\r\n- Pistol grip: vertical, with trigger\r\n- Buttstock: fixed stock with buffer assembly, rubber buttpad\r\n- Carrying handle: on top of barrel, folding\r\n- Front sight: blade type at barrel end\r\n- Rear sight: on feed cover\r\n- Ammunition belt: disintegrating link belt with cartridges, hanging from left side feed tray (simplified as a strip)\r\n- Gas system: gas tube under barrel\r\n\r\nColors: Dark parkerized metal (0x333338), black furniture (0x1a1a1a), brass ammo belt (0xb5a642)\r\nOrientation: On bipod (deployed), barrel along +Z, slightly elevated\r\nScale: Real-world meters (total length ~1.1m)",
+  "animations": "No animation needed for weapon prop"
+}

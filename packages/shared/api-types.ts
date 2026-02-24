@@ -102,7 +102,6 @@ export interface GenerateKilnCodeResponse {
   success: boolean;
   code?: string;
   effectCode?: string;
-  outputDir?: string;
   usage?: {
     inputTokens: number;
     outputTokens: number;

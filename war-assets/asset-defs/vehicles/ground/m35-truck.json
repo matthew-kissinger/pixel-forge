@@ -1,0 +1,9 @@
+{
+  "name": "M35 Cargo Truck (Deuce-and-a-Half)",
+  "slug": "m35-truck",
+  "category": "vehicles/ground",
+  "assetCategory": "environment",
+  "budget": 4000,
+  "prompt": "Vietnam War era M35 2.5-ton cargo truck \"Deuce-and-a-Half\". Primary supply/troop transport truck.\r\n\r\nPhysical structure:\r\n- Cab: boxy enclosed cab with two doors\r\n  - Windshield: two-piece flat glass with wipers\r\n  - Roof: flat metal roof\r\n  - Side windows\r\n  - Grille: vertical slat grille at front\r\n  - Round headlights: two at front, blackout capable\r\n  - Bumper: heavy front bumper with tow hooks\r\n- Cargo bed: long open bed behind cab (~3.5m long)\r\n  - Wooden plank bed floor\r\n  - Steel side rails and tailgate\r\n  - Canvas cover: arched canvas top over bed supported by bows (ribs)\r\n    - 4-5 arched metal bows creating tunnel shape\r\n    - OD green canvas stretched over bows\r\n  - Rear tailgate: can fold down (shown up)\r\n- Wheels: 6 wheels total (2 front, 4 rear dual)\r\n  - Front: 2 single wheels on front axle\r\n  - Rear: 2 dual-wheel axles (tandem)\r\n  - Large off-road tires, ~0.5m radius\r\n- Exhaust: vertical stack on right side of cab\r\n\r\nColors: Olive drab (0x556B2F), canvas (0x6B6B4F), black tires (0x222222), dark frame (0x333333), windshield (0x88aaaa)\r\nOrientation: Front toward +Z, wheels on ground at Y=0\r\nScale: Real-world meters (~6.7m long, ~2.4m wide, ~3.0m tall with canvas)",
+  "animations": "No animation for static vehicle"
+}

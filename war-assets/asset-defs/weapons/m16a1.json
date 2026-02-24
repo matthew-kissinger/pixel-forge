@@ -1,0 +1,9 @@
+{
+  "name": "M16A1 Assault Rifle",
+  "slug": "m16a1",
+  "category": "weapons",
+  "assetCategory": "prop",
+  "budget": 2000,
+  "prompt": "Vietnam War era Colt M16A1 assault rifle. The iconic American infantry weapon of the conflict.\r\n\r\nPhysical structure (real-world proportions, ~1m total length):\r\n- Upper receiver: flat-top with integral carrying handle (triangular profile with rear sight aperture)\r\n- Lower receiver: with pistol grip (black), trigger guard, magazine well\r\n- Barrel: 20-inch with triangular front sight post on base, birdcage flash hider at muzzle\r\n- Handguard: distinctive triangular cross-section, two-piece (top and bottom), black\r\n- Stock: fixed A1 buttstock, black polymer, with buttplate\r\n- Magazine: 20-round straight aluminum magazine, matte gray, inserted in magazine well\r\n- Forward assist: small cylindrical button on right side of upper receiver\r\n- Charging handle: T-shape at rear of upper receiver\r\n- Bayonet lug: under front sight base\r\n\r\nColors: Black receiver/furniture (0x1a1a1a), gray magazine (0x707070), dark metal barrel (0x2a2a2a)\r\nOrientation: Lying flat, barrel pointing along +Z axis, right side up\r\nScale: Real-world meters (total length ~1.0m)",
+  "animations": "No animation needed for weapon prop"
+}

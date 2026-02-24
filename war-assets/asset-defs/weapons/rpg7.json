@@ -1,0 +1,9 @@
+{
+  "name": "RPG-7 Rocket Launcher",
+  "slug": "rpg7",
+  "category": "weapons",
+  "assetCategory": "prop",
+  "budget": 2000,
+  "prompt": "Vietnam War era Soviet RPG-7 (Ruchnoy Protivotankoviy Granatomyot) rocket-propelled grenade launcher. Primary NVA/VC anti-armor weapon.\r\n\r\nPhysical structure (~0.95m launcher + ~0.45m warhead):\r\n- Launch tube: cylindrical tube ~0.04m diameter, ~0.95m long\r\n  - Flared muzzle: trumpet-shaped flare at front end\r\n  - Rear venturi: wider exhaust cone at rear end\r\n  - Heat shield: wooden or bakelite heat shield wrapped around middle section\r\n- Grip assembly: pistol grip below tube with trigger mechanism\r\n  - Trigger: standard pistol-type\r\n  - Trigger guard\r\n- Optical sight: PGO-7 scope mounted on left side bracket (small cylinder)\r\n- Rocket/warhead (loaded):\r\n  - PG-7V warhead: distinctive bulbous/pear-shaped warhead at front\r\n  - Booster section: cylindrical section between warhead and tube\r\n  - Stabilizer fins: 4 spring-loaded fins at rear of rocket (folded along tube when loaded)\r\n\r\nColors: Dark olive tube (0x444a3a), wood heat shield (0x7B5B3A), dark warhead (0x4a4a40), darker metal (0x333333)\r\nOrientation: On shoulder rest, warhead pointing +Z\r\nScale: Real-world meters (~1.4m total with warhead loaded)",
+  "animations": "No animation for weapon prop"
+}

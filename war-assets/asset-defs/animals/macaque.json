@@ -1,0 +1,9 @@
+{
+  "name": "Macaque Monkey",
+  "slug": "macaque",
+  "category": "animals",
+  "assetCategory": "character",
+  "budget": 1500,
+  "prompt": "Long-tailed macaque (Macaca fascicularis). Common throughout Vietnam's jungles, often seen near villages and camps.\n\nPhysical structure (simplified, ~0.5m body length):\n- Body: small rounded torso, slightly hunched\n  - Chest area, belly slightly rounded\n- Head: round head with flat face\n  - Muzzle: slight protruding snout\n  - Eyes: forward-facing (two small spheres or indentations)\n  - Ears: small rounded ears on sides\n- Arms: two arms, thin, long relative to body\n  - Hands: simplified block hands\n  - Arms slightly bent at elbows\n- Legs: two legs, bent in sitting/crouching pose\n  - Feet: flat\n- Tail: long thin tail, ~0.5m, curves upward then drapes\n  - Use thin cylinder or series of connected parts\n- Overall: small, agile-looking primate\n\nColors: Gray-brown fur (0x8a7d6a), lighter belly/face (0xb5a890), pink face skin (0xc8a090), dark eyes (0x222222)\nOrientation: Sitting on ground, facing +Z\nScale: Real-world meters (~0.5m body, ~0.3m head height when sitting = ~0.4m total sitting)",
+  "animations": "Idle: subtle body sway, 2s cycle\nHead look: head pivot rotates Y-axis +/-20 degrees, 3s cycle"
+}

@@ -162,6 +162,7 @@ const GALLERY_HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pixel Forge - Asset Gallery</title>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e0e0e0; }
@@ -172,7 +173,7 @@ const GALLERY_HTML = `<!DOCTYPE html>
   .filters button { padding: 6px 14px; border: 1px solid #333; border-radius: 6px; background: #1a1a1a; color: #ccc; cursor: pointer; font-size: 13px; }
   .filters button.active { background: #2563eb; border-color: #2563eb; color: white; }
   .filters button:hover { border-color: #555; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px; padding: 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 20px; padding: 24px; padding-bottom: 60px; }
   .card { background: #151515; border: 1px solid #262626; border-radius: 10px; overflow: hidden; }
   .card-header { padding: 12px 16px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
   .card-header h3 { font-size: 15px; font-weight: 500; }
@@ -183,6 +184,7 @@ const GALLERY_HTML = `<!DOCTYPE html>
   .comparison .panel .label { position: absolute; top: 8px; left: 8px; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
   .label.raw { background: rgba(220, 38, 38, 0.8); }
   .label.clean { background: rgba(34, 197, 94, 0.8); }
+  .label.glb { background: rgba(139, 92, 246, 0.8); }
   .card-footer { padding: 8px 16px; font-size: 12px; color: #666; display: flex; justify-content: space-between; }
   .checkerboard { background-image: linear-gradient(45deg, #1a1a1a 25%, transparent 25%), linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1a1a 75%), linear-gradient(-45deg, transparent 75%, #1a1a1a 75%); background-size: 16px 16px; background-position: 0 0, 0 8px, 8px -8px, -8px 0px; }
   .single img { width: 100%; height: auto; display: block; }
@@ -190,7 +192,30 @@ const GALLERY_HTML = `<!DOCTYPE html>
   .tiled-preview { position: relative; overflow: hidden; background-color: #0a0a0a; }
   .tiled-toggle { position: absolute; top: 8px; right: 8px; padding: 4px 10px; background: rgba(37,99,235,0.85); color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; z-index: 2; }
   .empty { padding: 60px; text-align: center; color: #555; font-size: 16px; }
-  .status-bar { padding: 8px 24px; background: #0d0d0d; border-top: 1px solid #222; font-size: 12px; color: #555; position: fixed; bottom: 0; width: 100%; }
+  .status-bar { padding: 8px 24px; background: #0d0d0d; border-top: 1px solid #222; font-size: 12px; color: #555; position: fixed; bottom: 0; width: 100%; z-index: 5; }
+
+  /* GLB model viewer */
+  .glb-viewer { position: relative; background: #0d0d0d; }
+  .glb-viewer model-viewer { width: 100%; height: 320px; --poster-color: transparent; }
+  .glb-viewer .expand-btn { position: absolute; top: 8px; right: 8px; padding: 4px 10px; background: rgba(139,92,246,0.85); color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; z-index: 2; }
+  .glb-viewer .expand-btn:hover { background: rgba(139,92,246,1); }
+
+  /* Expand button for images */
+  .expand-img-btn { position: absolute; top: 8px; right: 8px; padding: 4px 10px; background: rgba(37,99,235,0.85); color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; z-index: 2; }
+  .expand-img-btn:hover { background: rgba(37,99,235,1); }
+
+  /* Fullscreen modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal-content { position: relative; width: 90vw; height: 90vh; max-width: 1400px; background: #111; border: 1px solid #333; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+  .modal-header { padding: 12px 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+  .modal-header h2 { font-size: 16px; font-weight: 500; }
+  .modal-close { padding: 6px 14px; background: #1a1a1a; border: 1px solid #444; border-radius: 6px; color: #ccc; cursor: pointer; font-size: 13px; }
+  .modal-close:hover { border-color: #666; background: #222; }
+  .modal-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .modal-body model-viewer { width: 100%; height: 100%; }
+  .modal-body img { max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
+
   @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } .comparison { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -203,6 +228,17 @@ const GALLERY_HTML = `<!DOCTYPE html>
 <div class="filters" id="filters"></div>
 <div class="grid" id="grid"></div>
 <div class="status-bar" id="status">Scanning war-assets/...</div>
+
+<!-- Fullscreen modal -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-title">Asset</h2>
+      <button class="modal-close" onclick="closeModal()">Close (Esc)</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
 
 <script>
 let allAssets = [];
@@ -241,6 +277,10 @@ function isTexture(asset) {
   return asset.category === 'textures' || asset.name.includes('texture') || asset.name.includes('floor') || asset.name.includes('trail');
 }
 
+function isGlbAsset(asset) {
+  return (asset.cleanPath || '').endsWith('.glb') || (asset.rawPath || '').endsWith('.glb');
+}
+
 function showTiled(id, cols) {
   var single = document.getElementById('ts-' + id);
   var wrap = document.getElementById('tw-' + id);
@@ -260,6 +300,31 @@ function showSingle(id) {
   document.getElementById('ts-' + id).style.display = 'block';
 }
 
+// Fullscreen modal
+function openModalGlb(src, name) {
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-body').innerHTML =
+    '<model-viewer src="' + src + '" alt="' + name + '" camera-controls auto-rotate shadow-intensity="1" environment-image="neutral" style="width:100%;height:100%;background:#0d0d0d;"></model-viewer>';
+  document.getElementById('modal').classList.add('active');
+}
+
+function openModalImg(src, name) {
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-body').innerHTML =
+    '<img src="' + src + '" alt="' + name + '" style="max-width:100%;max-height:100%;object-fit:contain;">';
+  document.getElementById('modal').classList.add('active');
+}
+
+function closeModal(e) {
+  if (e && e.target && e.target !== document.getElementById('modal')) return;
+  document.getElementById('modal').classList.remove('active');
+  document.getElementById('modal-body').innerHTML = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+
 var texId = 0;
 
 function renderGrid() {
@@ -275,16 +340,25 @@ function renderGrid() {
   container.innerHTML = filtered.map(function(asset) {
     var hasRaw = !!asset.rawPath;
     var hasClean = !!asset.cleanPath;
-    var isGlb = (asset.cleanPath || '').endsWith('.glb') || (asset.rawPath || '').endsWith('.glb');
+    var isGlb = isGlbAsset(asset);
     var isTex = isTexture(asset);
     var imgPath = asset.cleanPath || asset.rawPath;
 
     var body;
     if (isGlb) {
-      body = '<div class="single" style="padding:40px;text-align:center;color:#666;">GLB Model - ' + asset.name + '</div>';
+      var glbSrc = '/gallery/file/' + imgPath;
+      body = '<div class="glb-viewer">' +
+        '<span class="label glb" style="position:absolute;top:8px;left:8px;z-index:2;">GLB Model</span>' +
+        '<button class="expand-btn" onclick="openModalGlb(\\'' + glbSrc + '\\', \\'' + asset.name.replace(/'/g, '') + '\\')">Expand</button>' +
+        '<model-viewer src="' + glbSrc + '" alt="' + asset.name + '" camera-controls auto-rotate shadow-intensity="1" environment-image="neutral" loading="lazy" style="width:100%;height:320px;background:#0d0d0d;"></model-viewer>' +
+        '</div>';
     } else if (isTex && imgPath) {
       var tid = texId++;
-      body = '<div class="single" id="ts-' + tid + '"><span class="label clean" style="position:absolute;top:8px;left:8px;">Texture</span><img src="/gallery/file/' + imgPath + '" loading="lazy" style="width:100%;display:block;image-rendering:pixelated;"></div>' +
+      body = '<div class="single" id="ts-' + tid + '">' +
+        '<span class="label clean" style="position:absolute;top:8px;left:8px;">Texture</span>' +
+        '<button class="expand-img-btn" onclick="openModalImg(\\'/gallery/file/' + imgPath + '\\', \\'' + asset.name.replace(/'/g, '') + '\\')">Expand</button>' +
+        '<img src="/gallery/file/' + imgPath + '" loading="lazy" style="width:100%;display:block;image-rendering:pixelated;">' +
+        '</div>' +
         '<div class="tiled-preview" id="tw-' + tid + '" style="display:none;"><button class="tiled-toggle" onclick="showSingle(' + tid + ')">Back to Single</button></div>' +
         '<div style="padding:6px 12px;border-top:1px solid #222;display:flex;gap:6px;">' +
         '<button onclick="showTiled(' + tid + ',3)" style="padding:4px 10px;background:#1a1a1a;border:1px solid #333;border-radius:4px;color:#ccc;cursor:pointer;font-size:11px;">3x3</button>' +
@@ -292,14 +366,23 @@ function renderGrid() {
         '<button onclick="showTiled(' + tid + ',8)" style="padding:4px 10px;background:#1a1a1a;border:1px solid #333;border-radius:4px;color:#ccc;cursor:pointer;font-size:11px;">8x8</button>' +
         '</div>';
     } else if (hasRaw && hasClean) {
-      body = '<div class="comparison">' +
+      body = '<div class="comparison" style="position:relative;">' +
+        '<button class="expand-img-btn" onclick="openModalImg(\\'/gallery/file/' + asset.cleanPath + '\\', \\'' + asset.name.replace(/'/g, '') + '\\')">Expand</button>' +
         '<div class="panel"><span class="label raw">Raw</span><img src="/gallery/file/' + asset.rawPath + '" loading="lazy"></div>' +
         '<div class="panel checkerboard"><span class="label clean">Clean</span><img src="/gallery/file/' + asset.cleanPath + '" loading="lazy"></div>' +
         '</div>';
     } else if (hasClean) {
-      body = '<div class="single checkerboard"><span class="label clean" style="position:absolute;top:8px;left:8px;">Clean</span><img src="/gallery/file/' + asset.cleanPath + '" loading="lazy"></div>';
+      body = '<div class="single checkerboard">' +
+        '<span class="label clean" style="position:absolute;top:8px;left:8px;">Clean</span>' +
+        '<button class="expand-img-btn" onclick="openModalImg(\\'/gallery/file/' + asset.cleanPath + '\\', \\'' + asset.name.replace(/'/g, '') + '\\')">Expand</button>' +
+        '<img src="/gallery/file/' + asset.cleanPath + '" loading="lazy">' +
+        '</div>';
     } else if (hasRaw) {
-      body = '<div class="single"><span class="label raw" style="position:absolute;top:8px;left:8px;">Raw</span><img src="/gallery/file/' + asset.rawPath + '" loading="lazy"></div>';
+      body = '<div class="single">' +
+        '<span class="label raw" style="position:absolute;top:8px;left:8px;">Raw</span>' +
+        '<button class="expand-img-btn" onclick="openModalImg(\\'/gallery/file/' + asset.rawPath + '\\', \\'' + asset.name.replace(/'/g, '') + '\\')">Expand</button>' +
+        '<img src="/gallery/file/' + asset.rawPath + '" loading="lazy">' +
+        '</div>';
     }
 
     return '<div class="card">' +

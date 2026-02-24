@@ -59,7 +59,11 @@ export function createPart(
   mesh.name = `Mesh_${name}`;
 
   if (options.position) mesh.position.set(...options.position);
-  if (options.rotation) mesh.rotation.set(...options.rotation);
+  if (options.rotation) mesh.rotation.set(
+    THREE.MathUtils.degToRad(options.rotation[0]),
+    THREE.MathUtils.degToRad(options.rotation[1]),
+    THREE.MathUtils.degToRad(options.rotation[2]),
+  );
   if (options.scale) mesh.scale.set(...options.scale);
 
   if (options.pivot) {

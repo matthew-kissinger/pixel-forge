@@ -1,0 +1,9 @@
+{
+  "name": "Supply Crate (Large)",
+  "slug": "supply-crate",
+  "category": "structures",
+  "assetCategory": "prop",
+  "budget": 500,
+  "prompt": "Large US military wooden supply crate for airdrop/logistics. Bigger than ammo crate, for equipment and supplies.\r\n\r\nPhysical structure:\r\n- Main box: large wooden crate, ~1.2m x 0.8m x 0.8m\r\n  - Plank construction (visible horizontal planks)\r\n  - Corner reinforcements (darker wood strips at each vertical edge)\r\n- Lid: flat top with cross-brace pattern\r\n  - Two wooden strips forming X on top\r\n- Stencil markings: \"US ARMY\" or \"SUPPLY\" represented as colored strips on one side\r\n  - White/yellow marking areas\r\n- Metal banding: two dark metal straps around crate\r\n  - Horizontal bands at 1/3 and 2/3 height\r\n- Rope handles: on each short end (simplified as short boxes)\r\n\r\nColors: Natural wood (0x8B7B55), darker reinforcements (0x6B5B3A), metal bands (0x555555), white markings (0xe0e0d0)\r\nOrientation: Sitting on ground at Y=0, longest side along X\r\nScale: Real-world meters (~1.2m x 0.8m x 0.8m)",
+  "animations": "No animation - static prop"
+}

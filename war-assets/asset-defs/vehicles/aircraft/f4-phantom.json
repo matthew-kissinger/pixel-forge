@@ -1,0 +1,9 @@
+{
+  "name": "F-4 Phantom II",
+  "slug": "f4-phantom",
+  "category": "vehicles/aircraft",
+  "assetCategory": "environment",
+  "budget": 5000,
+  "prompt": "Vietnam War era McDonnell Douglas F-4E Phantom II. Primary US fighter-bomber, distinctive large twin-engine design.\n\nPhysical structure:\n- Fuselage: large, long fuselage ~19m, wide rear section\n  - Nose: pointed radome, slightly drooped\n  - Tandem cockpit: two seats under long bubble canopy (pilot front, WSO rear)\n  - Spine: raised spine along top of fuselage\n  - Intake ramps: large rectangular air intakes on each side of fuselage under cockpit\n- Wings: swept-back wings with distinctive upturned tips (12-degree dihedral at tips)\n  - Leading edge slats\n  - Trailing edge flaps\n  - ~11.7m span\n- Tail: distinctive low-set horizontal stabilizer with anhedral (downward angle)\n  - Single vertical stabilizer, tall\n- Engines: two J79 turbojets in rear fuselage\n  - Two large exhaust nozzles at rear\n  - Distinctive afterburner \"turkey feathers\"\n- Landing gear: tricycle (can show retracted - gear doors closed)\n- Weapons:\n  - Centerline hardpoint: fuel tank or bomb\n  - Wing pylons: 4 total (2 per wing), can carry bombs or rockets\n  - Show 4-6 Mk 82 bombs on pylons (cylindrical with fins)\n\nColors: SEA camouflage - tan upper (0x8B7355), green patches (0x556B2F), light gray under (0xaaaaaa), dark engine nozzles (0x333333), canopy glass (0x6688aa), bombs OD green (0x556B2F)\nOrientation: On ground or in flight pose (slight nose up), facing +Z\nScale: Real-world meters (~19m long, ~11.7m wingspan)",
+  "animations": "No animation for static aircraft (or subtle engine glow pulse on exhaust)"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "Radio Equipment Stack",
+  "slug": "radio-stack",
+  "category": "structures",
+  "assetCategory": "prop",
+  "budget": 1000,
+  "prompt": "Vietnam War era military radio equipment stack. AN/PRC-77 radio and accessories as used by RTOs (Radio Telephone Operators).\r\n\r\nPhysical structure:\r\n- AN/PRC-77 radio: main unit, rectangular OD green box\r\n  - ~0.28m x 0.08m x 0.24m\r\n  - Front panel: dial/knob (small cylinder), frequency window, handset connector\r\n  - Top: carrying handle\r\n- Handset: H-250 handset beside/on top of radio\r\n  - Old-style telephone-like handset, ~0.2m long\r\n  - Coiled cord (simplified as thin cylinder)\r\n- Battery: rectangular battery pack attached to bottom/back\r\n  - Slightly smaller than radio\r\n- Antenna: long whip antenna extending upward\r\n  - Thin cylinder, ~2m tall, slight flex\r\n  - Base mount on radio top\r\n- Bag/pack: canvas carrying bag partially visible\r\n  - OD green, rectangular soft shape\r\n\r\nColors: OD green radio (0x556B2F), darker controls (0x333333), handset black (0x222222), antenna silver (0x888888), canvas bag (0x6B6B4F)\r\nOrientation: Radio sitting on ground, antenna pointing up, front toward +Z\r\nScale: Real-world meters (radio unit ~0.28m wide, antenna ~2m tall)",
+  "animations": "No animation - static prop"
+}

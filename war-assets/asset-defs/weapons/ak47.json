@@ -1,0 +1,9 @@
+{
+  "name": "AK-47 Assault Rifle",
+  "slug": "ak47",
+  "category": "weapons",
+  "assetCategory": "prop",
+  "budget": 2000,
+  "prompt": "Vietnam War era Soviet AK-47 (Type 56 Chinese copy used by NVA/VC). The ubiquitous enemy weapon.\r\n\r\nPhysical structure (~0.87m total length):\r\n- Receiver: stamped steel with distinctive ribbed dust cover on top\r\n- Barrel: with front sight post (hooded), slanted muzzle brake/compensator\r\n- Gas tube: visible above barrel, cylindrical, between front sight and rear sight\r\n- Handguard: laminated wood (reddish-brown), upper and lower\r\n- Pistol grip: wood, angled\r\n- Stock: solid wood buttstock with steel buttplate, slightly curved\r\n- Magazine: iconic curved 30-round banana magazine, dark steel\r\n- Rear sight: tangent leaf sight on rear of receiver\r\n- Charging handle: right side of bolt carrier\r\n- Cleaning rod: thin rod under barrel (can simplify)\r\n\r\nColors: Blued steel (0x2d2d35), reddish-brown wood (0x8B4513), dark magazine (0x333333)\r\nOrientation: Lying flat, barrel pointing along +Z axis, right side up\r\nScale: Real-world meters (total length ~0.87m)",
+  "animations": "No animation needed for weapon prop"
+}

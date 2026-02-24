@@ -1,9 +1,8 @@
-import { describe, it, expect, mock, beforeEach, spyOn, afterEach } from 'bun:test';
+import { describe, it, expect, mock, beforeEach } from 'bun:test';
 
 // Mocks must be declared before importing the module under test
-let queryImpl = async function* (args: any): AsyncGenerator<any> {
-  yield { type: 'assistant', message: { content: [{ type: 'text', text: 'some response' }] } };
-  yield { type: 'result', session_id: 'test-session' };
+let queryImpl = async function* (_args: any): AsyncGenerator<any> {
+  yield { type: 'result', subtype: 'success', result: '', session_id: 'test-session' };
 };
 
 mock.module('@anthropic-ai/claude-agent-sdk', () => ({
@@ -27,100 +26,52 @@ const importClaude = async () => {
 };
 
 describe('Claude Service', () => {
-  let fileSpy: any;
-  let writeSpy: any;
-  let mockFiles: Record<string, string> = {};
-
   beforeEach(async () => {
-    mockFiles = {};
-    
     // Reset query implementation
-    queryImpl = async function* (args: any): AsyncGenerator<any> {
-      yield { type: 'assistant', message: { content: [{ type: 'text', text: 'some response' }] } };
-      yield { type: 'result', session_id: 'test-session' };
+    queryImpl = async function* (_args: any): AsyncGenerator<any> {
+      yield { type: 'result', subtype: 'success', result: '', session_id: 'test-session' };
     };
-
-    // Spy on Bun.file and Bun.write
-    fileSpy = spyOn(Bun, 'file').mockImplementation(((path: string | URL) => ({
-      exists: async () => !!mockFiles[path.toString()],
-      text: async () => mockFiles[path.toString()] || '',
-    })) as any);
-
-    writeSpy = spyOn(Bun, 'write').mockImplementation(async (path: any, content: any) => {
-      if (typeof path === 'string') {
-        mockFiles[path] = content.toString();
-      }
-      return 100;
-    });
 
     claude = await importClaude();
   });
 
-  afterEach(() => {
-    fileSpy.mockRestore();
-    writeSpy.mockRestore();
-  });
-
   describe('generateKilnCode', () => {
-    it('successfully generates geometry code', async () => {
-      const request: any = {
+    it('successfully generates code via structured output', async () => {
+      queryImpl = async function* () {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: { code: 'const meta = { name: "Test" };\nfunction build() {}' },
+          session_id: 'test-session',
+        };
+      };
+
+      const result = await claude.generateKilnCode({
         prompt: 'test prompt',
         mode: 'glb',
         category: 'prop',
-      };
-
-      // Mock the files that runQuery expects to find after agent finishes
-      // We need to capture the generated path to know where to put the files
-      // But we can just use a wildcard or check what was written to manifest
-      
-      // Let's adjust the queryImpl to simulate file writing if we want, 
-      // but generateKilnCode reads them AFTER the generator finishes.
-      // So we just need to make sure they exist in mockFiles.
-      
-      // Since generateKilnCode generates a timestamped dir, we might need 
-      // to intercept the write to manifest.json to find the dir.
-      
-      let capturedDir = '';
-      writeSpy.mockImplementation(async (path: any, content: any) => {
-        if (typeof path === 'string') {
-          mockFiles[path] = content.toString();
-          if (path.endsWith('manifest.json')) {
-            capturedDir = path.replace('/manifest.json', '');
-            // Simulate agent writing geometry.ts
-            mockFiles[`${capturedDir}/geometry.ts`] = 'const meta = { name: "Test" }; function build() {}';
-          }
-        }
-        return 100;
       });
-
-      const result = await claude.generateKilnCode(request);
 
       expect(result.success).toBe(true);
       expect(result.code).toContain('const meta');
       expect(result.sessionId).toBe('test-session');
-      expect(result.outputDir).toBe(capturedDir);
     });
 
-    it('generates both geometry and effect code in both mode', async () => {
-      const request: any = {
+    it('generates both geometry and effect code', async () => {
+      queryImpl = async function* () {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: { code: 'geometry code', effectCode: 'effect code' },
+          session_id: 'both-session',
+        };
+      };
+
+      const result = await claude.generateKilnCode({
         prompt: 'test both',
         mode: 'both',
         category: 'prop',
-      };
-
-      writeSpy.mockImplementation(async (path: any, content: any) => {
-        if (typeof path === 'string') {
-          mockFiles[path] = content.toString();
-          if (path.endsWith('manifest.json')) {
-            const dir = path.replace('/manifest.json', '');
-            mockFiles[`${dir}/geometry.ts`] = 'geometry code';
-            mockFiles[`${dir}/effect.ts`] = 'effect code';
-          }
-        }
-        return 100;
       });
-
-      const result = await claude.generateKilnCode(request);
 
       expect(result.success).toBe(true);
       expect(result.code).toBe('geometry code');
@@ -142,23 +93,46 @@ describe('Claude Service', () => {
       expect(result.error).toBe('Claude is busy');
     });
 
-    it('handles missing files gracefully', async () => {
-      // Don't mock geometry.ts existence
+    it('handles error result messages', async () => {
+      queryImpl = async function* () {
+        yield {
+          type: 'result',
+          subtype: 'error_during_execution',
+          errors: ['Something went wrong'],
+          session_id: 'err-session',
+        };
+      };
+
       const result = await claude.generateKilnCode({
-        prompt: 'missing',
+        prompt: 'error result',
         mode: 'glb',
         category: 'prop',
       });
 
-      expect(result.success).toBe(true);
-      expect(result.code).toBe(''); // Should be empty if file not found
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Something went wrong');
+    });
+
+    it('handles auth errors', async () => {
+      queryImpl = async function* () {
+        yield { type: 'auth_status', error: 'Not authenticated' };
+      };
+
+      const result = await claude.generateKilnCode({
+        prompt: 'auth fail',
+        mode: 'glb',
+        category: 'prop',
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Auth failed');
     });
 
     it('handles request with animation disabled', async () => {
       let capturedPrompt = '';
       queryImpl = async function* (args: any) {
         capturedPrompt = args.prompt;
-        yield { type: 'result', session_id: 'test' };
+        yield { type: 'result', subtype: 'success', result: '', session_id: 'test' };
       };
 
       await claude.generateKilnCode({
@@ -170,52 +144,25 @@ describe('Claude Service', () => {
 
       expect(capturedPrompt).toContain('Do NOT include an animate() function');
     });
-  });
 
-  describe('streamKilnCode', () => {
-    it('yields chunks from the assistant', async () => {
+    it('falls back to result text when structured_output is missing', async () => {
       queryImpl = async function* () {
-        yield { type: 'assistant', message: { content: [{ type: 'text', text: 'part 1' }] } };
-        yield { type: 'assistant', message: { content: [{ type: 'text', text: ' part 2' }] } };
+        yield {
+          type: 'result',
+          subtype: 'success',
+          result: '{"code":"const meta = {}; function build() {}"}',
+          session_id: 'fallback-session',
+        };
       };
 
-      const generator = claude.streamKilnCode({
-        prompt: 'stream',
+      const result = await claude.generateKilnCode({
+        prompt: 'fallback',
         mode: 'glb',
         category: 'prop',
       });
 
-      const chunks = [];
-      for await (const chunk of generator) {
-        chunks.push(chunk);
-      }
-
-      expect(chunks).toEqual([
-        { type: 'chunk', data: 'part 1' },
-        { type: 'chunk', data: ' part 2' },
-        { type: 'done', data: '' },
-      ]);
-    });
-
-    it('yields error chunk on failure', async () => {
-      queryImpl = async function* () {
-        throw new Error('Streaming failed');
-      };
-
-      const generator = claude.streamKilnCode({
-        prompt: 'fail',
-        mode: 'glb',
-        category: 'prop',
-      });
-
-      const chunks = [];
-      for await (const chunk of generator) {
-        chunks.push(chunk);
-      }
-
-      expect(chunks).toEqual([
-        { type: 'error', data: 'Streaming failed' },
-      ]);
+      expect(result.success).toBe(true);
+      expect(result.code).toContain('const meta');
     });
   });
 
@@ -254,10 +201,14 @@ describe('Claude Service', () => {
   });
 
   describe('refactorCode', () => {
-    it('refactors geometry code via parsing response', async () => {
+    it('refactors code via structured output', async () => {
       queryImpl = async function* () {
-        yield { type: 'assistant', message: { content: [{ type: 'text', text: '```geometry\nfunction build() { /* refactored */ }\n```' }] } };
-        yield { type: 'result', session_id: 'refactor-session' };
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: { code: 'function build() { /* refactored */ }' },
+          session_id: 'refactor-session',
+        };
       };
 
       const result = await claude.refactorCode({
@@ -267,39 +218,30 @@ describe('Claude Service', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.code).toBe('function build() { /* refactored */ }');
+      expect(result.code).toContain('refactored');
       expect(result.sessionId).toBe('refactor-session');
     });
 
-    it('refactors effect code via parsing response', async () => {
+    it('refactors both geometry and effect code', async () => {
       queryImpl = async function* () {
-        yield { type: 'assistant', message: { content: [{ type: 'text', text: '```effect\nimport { material } from "three/tsl";\nexport { material };\n```' }] } };
-        yield { type: 'result', session_id: 'refactor-session' };
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: { code: 'new geometry', effectCode: 'new effect' },
+          session_id: 'both-refactor',
+        };
       };
 
       const result = await claude.refactorCode({
-        instruction: 'glow blue',
-        effectCode: 'original',
-        target: 'effect',
-      });
-
-      expect(result.success).toBe(true);
-      expect(result.effectCode).toContain('export { material };');
-    });
-
-    it('reads refactored code from files if outputDir provided', async () => {
-      mockFiles['/tmp/geometry.ts'] = 'file geometry';
-      mockFiles['/tmp/effect.ts'] = 'file effect';
-
-      const result = await claude.refactorCode({
-        instruction: 'refactor to files',
-        outputDir: '/tmp',
+        instruction: 'update both',
+        geometryCode: 'old geo',
+        effectCode: 'old eff',
         target: 'both',
       });
 
       expect(result.success).toBe(true);
-      expect(result.code).toBe('file geometry');
-      expect(result.effectCode).toBe('file effect');
+      expect(result.code).toBe('new geometry');
+      expect(result.effectCode).toBe('new effect');
     });
 
     it('handles refactor errors', async () => {
@@ -319,18 +261,14 @@ describe('Claude Service', () => {
 
   describe('editKilnCode', () => {
     it('calls generateKilnCode with existingCode', async () => {
-      // We can check if generateKilnCode was called correctly 
-      // by looking at how buildUserPrompt uses existingCode.
-      // But generateKilnCode is what we export.
-      
-      // Let's just make sure it returns a result.
-      writeSpy.mockImplementation(async (path: any, content: any) => {
-        if (typeof path === 'string' && path.endsWith('manifest.json')) {
-          const dir = path.replace('/manifest.json', '');
-          mockFiles[`${dir}/geometry.ts`] = 'edited code';
-        }
-        return 100;
-      });
+      queryImpl = async function* () {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          structured_output: { code: 'edited code' },
+          session_id: 'edit-session',
+        };
+      };
 
       const result = await claude.editKilnCode('old code', 'make it new');
 

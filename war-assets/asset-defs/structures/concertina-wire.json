@@ -1,0 +1,9 @@
+{
+  "name": "Concertina Wire Coil",
+  "slug": "concertina-wire",
+  "category": "structures",
+  "assetCategory": "prop",
+  "budget": 500,
+  "prompt": "Vietnam War era concertina wire (razor wire) defensive obstacle. Standard perimeter defense material.\r\n\r\nPhysical structure:\r\n- Single coil of concertina wire, ~1m diameter when expanded\r\n  - Wire forms a helix/spiral shape\r\n  - Use torus geometry segments to create the spiral look\r\n  - 3-4 overlapping torus rings at slightly different angles to simulate coiled wire\r\n  - Each torus: radius ~0.5m, tube radius ~0.01m (thin wire)\r\n- Wire has razor barbs (too small to model individually at this budget - just use metallic shiny material)\r\n- Slightly compressed/oval shape (wider than tall)\r\n- Wire is springy steel, bright/shiny when new, slightly rusty in field\r\n\r\nBuild as a simple cluster of 3-4 torus shapes at varying rotations to create an interlocking coil effect.\r\n\r\nColors: Bright steel wire (0xaaaaaa with metalness 0.8, roughness 0.3), slight rust (0x888070)\r\nOrientation: Coil lying on ground, running along X axis\r\nScale: Real-world meters (~1m diameter, ~2m stretched length)",
+  "animations": "No animation - static obstacle"
+}

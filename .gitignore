@@ -55,3 +55,10 @@ npm-debug.log*
 # Cache
 .cache/
 .turbo/
+
+# Temporary generation files
+tmp-*.json
+NUL
+
+# Claude Code local settings
+.claude/settings.local.json

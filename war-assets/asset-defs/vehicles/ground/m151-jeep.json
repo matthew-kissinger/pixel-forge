@@ -1,9 +1,0 @@
-{
-  "name": "M151 MUTT Jeep",
-  "slug": "m151-jeep",
-  "category": "vehicles/ground",
-  "assetCategory": "environment",
-  "budget": 3000,
-  "prompt": "Vietnam War era M151 MUTT (Military Utility Tactical Truck) - the standard US military quarter-ton utility vehicle.\n\nPhysical structure:\n- Body: open-top steel body, rectangular with rounded front fenders\n  - Hood: flat/slightly angled, with two latches\n  - Windshield: folding windshield frame (can be up), flat glass\n  - Dashboard: simple flat panel behind windshield\n  - Seats: driver and passenger bucket seats, rear bench seat\n  - Rear cargo area: flat bed behind seats\n  - Fenders: rounded front fenders over front wheels, flat rear fenders\n- Wheels: 4 wheels with off-road tires\n  - ~0.35m radius, black rubber with olive hub\n- Gun mount: M60 or M2 pedestal mount behind front seats (ring mount)\n- Spare tire: mounted on rear\n- Grille: vertical slat grille at front (simplified)\n- Headlights: two round lights on front fenders with blackout covers\n\nColors: Olive drab (0x556B2F), black tires (0x222222), windshield glass (0x88aaaa), dark metal (0x333333), canvas seats (0x6B5B3F)\nOrientation: Front toward +Z, sitting on wheels at Y=0\nScale: Real-world meters (~3.4m long, ~1.6m wide, ~1.8m tall)",
-  "animations": "Wheel rotation: all 4 wheels spin on their X axis, 1 revolution per second"
-}

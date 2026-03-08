@@ -1,9 +1,0 @@
-{
-  "name": "Water Buffalo",
-  "slug": "water-buffalo",
-  "category": "animals",
-  "assetCategory": "character",
-  "budget": 3000,
-  "prompt": "Vietnamese water buffalo (Bubalus bubalis). Domestic work animal seen throughout Vietnam, used for rice paddy cultivation.\n\nPhysical structure (build from primitive shapes):\n- Body: large barrel-shaped torso using elongated box or cylinder\n  - ~2m long, ~1.2m wide at belly, muscular and heavy\n  - Slight hump at shoulders\n- Head: wide, blocky head with broad muzzle\n  - Mounted on short thick neck\n  - Nostrils: wide\n  - Eyes: small, on sides of head\n- Horns: two large curved horns sweeping backward from top of head\n  - Wide spread, ~0.8m tip to tip\n  - Use curved cylinder or cone shapes\n  - Horns curve back and slightly up\n- Legs: 4 stocky legs, short relative to body mass\n  - Front legs: slightly thicker\n  - Hooves: dark, wide\n  - Use cylinders for legs\n- Tail: thin, medium length, hangs down with tuft at end\n- Overall: very stocky, heavy build, low center of gravity\n- Skin: mostly hairless, dark gray/brown\n\nColors: Dark charcoal gray hide (0x3a3535), slightly lighter underbelly (0x4a4545), dark horns (0x2a2520), black hooves (0x1a1a1a), pink inner muzzle (0x8a5a5a)\nOrientation: Standing on 4 legs at Y=0, facing +Z\nScale: Real-world meters (~2.5m long, ~1.5m tall at shoulder)",
-  "animations": "Idle breathing: subtle body bob, 3s cycle, 0.03m height\nTail swish: tail pivot rotates Z-axis +/-15 degrees, 2s cycle\nHead nod: head pivot rotates X-axis +/-5 degrees, 4s cycle"
-}

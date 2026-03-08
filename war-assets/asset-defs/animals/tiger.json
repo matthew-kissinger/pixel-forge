@@ -1,9 +1,0 @@
-{
-  "name": "Tiger",
-  "slug": "tiger",
-  "category": "animals",
-  "assetCategory": "character",
-  "budget": 3000,
-  "prompt": "Indochinese tiger (Panthera tigris corbetti). Apex predator of Vietnam's jungles, feared by soldiers on all sides.\n\nPhysical structure (low-poly, built from primitives):\n- Body: elongated powerful torso\n  - Chest area wider, tapering toward hips\n  - ~2m body length\n  - Use elongated box or capsule shape\n- Head: rounded, broad head\n  - Short muzzle/snout\n  - Small rounded ears on top\n  - Whisker area (simplified)\n  - Open mouth: lower jaw slightly dropped showing teeth (optional)\n- Legs: 4 powerful legs\n  - Front legs: thick, straight\n  - Rear legs: slightly angled at hock\n  - Large paws (flat boxes)\n  - ~0.8m tall legs\n- Tail: long, thick at base, tapering\n  - ~1m long, slight curve\n  - Striped pattern (use multiple short segments with alternating colors)\n- Overall: powerful, muscular, low-slung predatory stance\n\nColors: Orange body (0xcc6622), white belly/chest (0xe8dcc8), black stripes (build separate parts for stripes or use darker material patches), black nose/ears (0x222222), green eyes (0x44aa22)\nNote: Stripes can be simplified as dark box strips on body surface (offset 0.01 to avoid z-fighting)\nOrientation: Standing, facing +Z, legs on ground at Y=0\nScale: Real-world meters (~2.5m nose to tail tip, ~0.9m tall at shoulder)",
-  "animations": "Walk cycle: legs move in alternating pairs, 2s cycle\nTail sway: tail pivot rotates Z-axis +/-15 degrees, 1.5s cycle\nHead bob: head pivot slight Y rotation +/-5 degrees, 3s cycle"
-}

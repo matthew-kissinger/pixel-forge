@@ -1,9 +1,0 @@
-{
-  "name": "PBR Mark II Patrol Boat",
-  "slug": "pbr",
-  "category": "vehicles/watercraft",
-  "assetCategory": "environment",
-  "budget": 5000,
-  "prompt": "Vietnam War era PBR (Patrol Boat, River) Mark II. US Navy \"brown water navy\" patrol craft for river operations.\n\nPhysical structure (~9.5m long):\n- Hull: fiberglass V-hull, fast patrol boat\n  - Pointed bow, wide stern\n  - Low profile, ~0.8m freeboard\n  - Flat deck areas fore and aft\n  - Slight flare at bow\n- Pilot house: small raised cabin amidships\n  - Windshield: flat glass panels (3) with wipers\n  - Open top (no roof) or canvas sun cover\n  - Helm/steering console inside\n  - Radio antenna: whip on side\n- Weapons:\n  - Forward: twin M2 .50 cal on bow mount (twin barrel setup on pedestal)\n  - Aft: single M2 .50 cal on stern pedestal mount\n  - Amidships: M60 machine gun mount on each side\n- Engine cover: raised engine housing at stern\n  - Water jet intakes at stern bottom\n- Ceramic armor: flat armor plates on sides of pilot house\n- Flag staff: at stern for American flag\n- Cleats and fittings: simplified bumpers/cleats along gunwale\n\nColors: Dark navy green (0x3a4a35), gray hull (0x666660), windshield glass (0x88aaaa), dark weapons (0x2a2a2a), deck (0x555550)\nOrientation: Hull on water (Y=0), bow pointing +Z\nScale: Real-world meters (~9.5m long, ~3.5m wide)",
-  "animations": "Water rocking: gentle bob and roll, 4s cycle"
-}

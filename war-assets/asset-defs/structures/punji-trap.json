@@ -1,9 +1,0 @@
-{
-  "name": "Punji Stake Trap",
-  "slug": "punji-trap",
-  "category": "structures",
-  "assetCategory": "prop",
-  "budget": 500,
-  "prompt": "Vietnam War era Viet Cong punji stake trap. Camouflaged pit trap with sharpened bamboo stakes.\n\nPhysical structure:\n- Pit: rectangular hole in ground, ~0.6m x 0.6m, ~0.5m deep\n  - Dirt walls (dark brown inner walls)\n  - Show as a recessed box below ground level\n- Stakes: 6-8 sharpened bamboo stakes pointing upward from pit floor\n  - Each stake: thin cone, ~0.3m tall, ~0.02m base diameter\n  - Slightly varying heights and angles (not perfectly uniform)\n  - Arranged in irregular cluster at pit bottom\n- Camouflage cover: thin layer of leaves/sticks over pit (shown partially broken/displaced)\n  - Flat irregular plane with leaf-green color, partially covering pit\n  - Some cover fallen into pit (a few small flat pieces among stakes)\n- Ground surface: dirt/jungle floor level at Y=0\n  - Pit is below surface\n\nColors: Bamboo stakes (0xc8a850), dirt pit walls (0x5a4030), ground surface (0x4a5a2a), leaf cover (0x3a5a1a), fallen debris (0x5a6a2a)\nOrientation: Pit in ground, cover breaks toward +Z\nScale: Real-world meters (~0.6m square, ~0.5m deep)",
-  "animations": "No animation - static trap"
-}

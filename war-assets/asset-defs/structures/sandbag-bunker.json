@@ -1,9 +1,0 @@
-{
-  "name": "Sandbag Bunker",
-  "slug": "sandbag-bunker",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 3000,
-  "prompt": "Vietnam War firebase command/fighting bunker. Hardened fortification for crew-served weapons or command post.\r\n\r\nPhysical structure:\r\n- U-shaped sandbag walls about 1.5m tall, 0.6m thick (double-stacked bags)\r\n  - Front wall: 3m wide with horizontal firing slot (0.3m tall gap at eye level ~1.2m up)\r\n  - Side walls: 2.5m deep, connecting front to rear\r\n  - Rear: open entrance, 1m wide gap\r\n- Roof: PSP (pierced steel planking) sheets laid across top - use flat dark metal boxes\r\n  - Sandbags stacked on roof for overhead protection (~0.3m layer)\r\n- Interior: dirt floor at ground level, about 2m x 2m clear space\r\n- Radio antenna: thin vertical pole on roof corner (~2m tall above roof)\r\n- Sandbags same style as wall section: tan/olive, slightly irregular stacking\r\n\r\nColors: Sandy tan bags (0xc2a878), darker bags (0xa89060), dark steel PSP roof (0x555555), antenna (0x666666)\r\nOrientation: Front facing +Z, entrance at -Z\r\nScale: Real-world meters (~3m wide, ~2.5m deep, ~1.8m tall with roof)",
-  "animations": "No animation - static structure"
-}

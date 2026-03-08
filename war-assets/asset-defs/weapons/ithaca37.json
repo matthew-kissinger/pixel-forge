@@ -1,9 +1,0 @@
-{
-  "name": "Ithaca 37 Shotgun",
-  "slug": "ithaca37",
-  "category": "weapons",
-  "assetCategory": "prop",
-  "budget": 2000,
-  "prompt": "Vietnam War era Ithaca 37 pump-action shotgun. Used by tunnel rats and point men in dense jungle.\n\nPhysical structure (~0.95m total length):\n- Receiver: smooth steel receiver body, bottom-ejecting (distinctive feature)\n- Barrel: 20-inch barrel, smooth bore, no rib\n  - Front bead sight at muzzle end\n- Pump/slide: tubular forend that slides back and forth for pump action\n  - Grooved wooden pump grip\n- Stock: full wooden buttstock, smooth walnut\n  - Rubber buttpad\n- Trigger guard: steel loop around trigger\n- Magazine tube: tubular magazine under barrel, extends nearly to muzzle\n- Action bars: two thin bars connecting pump to bolt (visible between barrel and mag tube)\n- No pistol grip - traditional stock configuration\n\nColors: Deep blued steel (0x1a1a2a), walnut wood (0x5C3317), lighter wood pump (0x6B4226), dark metal (0x222228)\nOrientation: Lying flat, barrel along +Z, right side up\nScale: Real-world meters (~0.95m total length)",
-  "animations": "No animation for weapon prop"
-}

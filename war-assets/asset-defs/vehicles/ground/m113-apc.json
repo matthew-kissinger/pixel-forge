@@ -1,9 +1,0 @@
-{
-  "name": "M113 Armored Personnel Carrier",
-  "slug": "m113-apc",
-  "category": "vehicles/ground",
-  "assetCategory": "environment",
-  "budget": 5000,
-  "prompt": "Vietnam War era M113 APC \"Green Dragon\" - the ubiquitous armored box on tracks.\n\nPhysical structure:\n- Hull: angular aluminum box shape, wider at bottom, sloped front\n  - Front plate: angled armor plate ~60 degrees\n  - Side plates: vertical, with slight outward angle at bottom\n  - Rear: large drop-down ramp/door (shown closed, angled)\n  - Top deck: flat with hatches\n- Track system:\n  - Drive sprocket: toothed wheel at front, ~0.3m radius\n  - Idler wheel: at rear\n  - Road wheels: 5 per side, smaller\n  - Track: continuous band around wheels (simplified as box segments or single long box per side)\n  - Track skirts: not present on M113\n- Cupola: commander's cupola on top right front\n  - M2 .50 cal machine gun mounted on cupola ring\n  - Gun shield: small curved plate around gun\n- Hatches: driver's hatch (front left), commander's hatch (cupola)\n- Trim vane: folding bow plate at very front (for swimming), shown folded flat on glacis\n- Antenna: whip antenna on rear right\n\nColors: Olive drab (0x556B2F), dark tracks (0x333333), black road wheels (0x222222), gun metal (0x3a3a3a)\nOrientation: Front toward +Z, sitting on tracks at Y=0\nScale: Real-world meters (~4.9m long, ~2.7m wide, ~2.5m tall to cupola)",
-  "animations": "No animation for static prop"
-}

@@ -1,9 +1,0 @@
-{
-  "name": "Guard Tower",
-  "slug": "guard-tower",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 3000,
-  "prompt": "Vietnam War firebase guard/observation tower. Elevated fighting position for perimeter defense.\n\nPhysical structure:\n- Four vertical post legs: wooden poles (~0.15m diameter cylinders), ~6m tall\n  - Legs slightly splayed outward for stability (wider at base than top)\n  - Spacing: ~2m x 2m at top, ~2.5m x 2.5m at base\n- Cross-bracing: diagonal wooden beams between legs on each face (X-pattern)\n  - At least 2 levels of cross-bracing\n- Platform: wooden floor at top (~5.5m height), ~2.2m x 2.2m\n  - Floor planks (flat boxes)\n- Railing walls: sandbag walls on all 4 sides of platform, ~1m tall\n  - Waist-high protection for standing soldier\n- Roof: corrugated tin/metal, slightly pitched (front-to-back slope)\n  - Extends ~0.3m beyond platform edges for rain protection\n- Ladder: simple wooden ladder from ground to platform, on one face\n  - Two vertical rails with ~8 horizontal rungs\n- Searchlight: mounted on one corner post above roof\n  - Cylindrical housing with lens, on small pivot mount\n\nColors: Weathered wood (0x8B7355), darker aged wood (0x6B5B3F), tin roof (0x888888), sandbags (0xc2a878), searchlight (0xaaaaaa), light lens (0xffffcc with emissive)\nOrientation: Standing on ground, front face toward +Z\nScale: Real-world meters (~6m tall, ~2.2m platform width)",
-  "animations": "Searchlight sweep: slow rotation track on searchlight pivot, Y axis, sweeping ~60 degrees back and forth over 4 seconds"
-}

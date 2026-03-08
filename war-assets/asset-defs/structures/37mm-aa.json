@@ -1,9 +1,0 @@
-{
-  "name": "37mm Anti-Aircraft Gun",
-  "slug": "37mm-aa",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 3000,
-  "prompt": "Vietnam War era Soviet 61-K 37mm automatic anti-aircraft cannon. Medium-altitude NVA air defense.\n\nPhysical structure:\n- Barrel: single long 37mm barrel (~2.5m), with muzzle brake (two-port)\n  - Flash hider at muzzle\n  - Barrel jacket/sleeve around breech area\n- Receiver: large breech/receiver mechanism\n  - Ammunition clips feed from top (5-round clips)\n  - Ejection port on side\n- Cradle: gun mounts on elevation cradle\n  - Trunnions for elevation (-5 to +85 degrees)\n  - Balance spring housing\n- Turntable: 360-degree traverse mount\n  - Central pedestal/post\n  - Platform base\n- Seats: two seats (gunner and loader), one each side\n  - Shoulder rests with control wheels\n  - Elevation handwheel\n  - Traverse handwheel\n- Legs: 4 outrigger stabilizer legs, deployed in X pattern\n  - Ground pads at ends\n- Shield: small curved armor shield in front of gunner position (optional)\n- Ammunition box: ammo can near loader position\n\nColors: Military dark green (0x3d4a2a), gun steel (0x3a3a3a), darker metal (0x2a2a2a), seats (0x555555)\nOrientation: Barrel pointing +Z, elevated ~30 degrees, deployed on ground\nScale: Real-world meters (~4m long including barrel, ~2m tall in firing position)",
-  "animations": "Barrel elevation: elevates from 30 to 80 degrees over 3 seconds, then back"
-}

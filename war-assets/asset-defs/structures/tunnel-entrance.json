@@ -1,9 +1,0 @@
-{
-  "name": "Tunnel Entrance (VC)",
-  "slug": "tunnel-entrance",
-  "category": "structures",
-  "assetCategory": "prop",
-  "budget": 1000,
-  "prompt": "Vietnam War era Viet Cong tunnel entrance. Hidden entrance to the extensive Cu Chi tunnel network.\n\nPhysical structure:\n- Entrance frame: rectangular hole in ground, ~0.6m x 0.5m\n  - Reinforced with bamboo/wood frame around edges\n  - Frame sits flush with ground surface\n- Trapdoor: wooden/bamboo hinged cover\n  - Flat panel matching ground level\n  - Show partially open (tilted up ~45 degrees on hinge)\n  - Thin construction (~0.03m thick)\n  - Leaf/dirt camouflage on top surface\n- Tunnel shaft: dark hole visible below trapdoor\n  - Rectangular shaft going down, ~1m deep before turning\n  - Dark interior (dark brown/black materials)\n- Camouflage: leaves, twigs, dirt around entrance\n  - Small flat irregular pieces scattered on ground near entrance\n  - Ground surface is jungle floor\n- Ventilation: small bamboo tube poking up nearby (optional, ~0.02m diameter, ~0.3m tall)\n  - Disguised as plant stem\n\nColors: Bamboo frame (0xb5a068), trapdoor wood (0x6B5B3F), leaf camouflage (0x3a5a1a), dirt (0x5a4a2a), dark tunnel interior (0x1a1510), jungle floor (0x4a5a2a)\nOrientation: Flush with ground at Y=0, trapdoor opens toward +Z\nScale: Real-world meters (~0.6m x 0.5m entrance, ~1m deep shaft)",
-  "animations": "Trapdoor: opens (rotates -90 degrees on X axis from closed) then closes over 3s cycle"
-}

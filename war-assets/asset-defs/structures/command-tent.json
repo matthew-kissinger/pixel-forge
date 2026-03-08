@@ -1,9 +1,0 @@
-{
-  "name": "Command Tent",
-  "slug": "command-tent",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 1500,
-  "prompt": "Vietnam War firebase command/GP (general purpose) tent. Standard US military canvas tent for command post or quarters.\r\n\r\nPhysical structure:\r\n- Frame: ridge-pole tent, rectangular\r\n  - ~4m x 3m base footprint\r\n  - ~2.5m tall at center ridge\r\n  - Ridge pole runs along length (X axis)\r\n  - Sloped roof from ridge to sides\r\n- Canvas: OD green canvas covering\r\n  - Roof panels: two angled panels meeting at ridge\r\n  - Side walls: ~1.5m tall vertical walls, canvas\r\n  - Front: rolled-up flap entrance (open, showing interior)\r\n  - Rear: closed panel\r\n  - Guy ropes: 4-6 thin lines from roof edges to ground stakes (simplified)\r\n- Poles: center poles (2) visible inside through open entrance\r\n  - Wooden or metal uprights supporting ridge\r\n- Floor: raised wooden platform or ground-level canvas floor\r\n- Details:\r\n  - Sandbag wall: small sandbag protection wall along one side, 2 bags high\r\n  - Antenna: radio whip antenna near entrance\r\n\r\nColors: OD green canvas (0x5a6b4a), darker shadows (0x4a5a3a), wood poles (0x8B7355), sandbags (0xc2a878), rope (0x8a7a5a)\r\nOrientation: Entrance facing +Z, at ground level\r\nScale: Real-world meters (~4m x 3m, ~2.5m tall)",
-  "animations": "No animation - static structure"
-}

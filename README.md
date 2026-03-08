@@ -87,6 +87,19 @@ All assets below were generated entirely by AI through Pixel Forge pipelines.
 | **3D Models** | Claude (Anthropic) | Object description | GLB models via Three.js primitives |
 | **Background Removal** | BiRefNet (FAL) | Any image | Clean transparency |
 
+### Background Color Selection
+
+Clean transparency requires choosing a background color that contrasts with the asset's dominant colors. This prevents color bleed at edges after BiRefNet removal.
+
+| Asset Type | Background | Why |
+|-----------|-----------|-----|
+| Vegetation, soldiers, terrain | Magenta `#FF00FF` | Maximum contrast with greens, browns, skin tones |
+| Icons, UI elements (white/grey) | Blue `#0000FF` | Better BiRefNet separation for light subjects |
+| Fire, explosions (red/orange) | Blue `#0000FF` | Avoids red channel bleed |
+| Colored emblems/insignia | Green `#00FF00` | Skip BiRefNet entirely, use green chroma key |
+
+All sprite presets use magenta by default. Never use red (`#FF0000`) for sprites - it bleeds into greens, browns, and skin tones.
+
 ### Key Features
 
 - **30 node types** - image gen, bg removal, 3D gen, canvas ops, batch processing, analysis, export

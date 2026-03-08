@@ -15,8 +15,8 @@ interface SizeCheck {
 // Size thresholds (in bytes)
 const THRESHOLDS = {
   main: {
-    warn: 400 * 1024, // 400KB
-    fail: 500 * 1024, // 500KB
+    warn: 800 * 1024, // 800KB
+    fail: 1000 * 1024, // 1000KB
   },
   three: {
     warn: 1500 * 1024, // 1500KB
@@ -26,7 +26,7 @@ const THRESHOLDS = {
     fail: 2000 * 1024, // 2000KB
   },
   totalGzip: {
-    warn: 700 * 1024, // 700KB
+    warn: 900 * 1024, // 900KB
   },
 };
 

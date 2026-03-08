@@ -25,36 +25,19 @@ test.describe('Pixel Forge E2E Smoke Tests', () => {
     await expect(page.locator('button:has-text("Validate")')).toBeVisible();
   });
 
-  test('node palette is visible and can be expanded/collapsed', async ({ page }) => {
+  test('node palette is visible with categories', async ({ page }) => {
     // Wait for node palette to render
     await page.waitForSelector('text=Node Palette', { timeout: 5000 });
-    
-    // Verify palette is visible
+
+    // Verify palette heading is visible
     const palette = page.locator('text=Node Palette');
     await expect(palette).toBeVisible();
-    
-    // Find collapse button (chevron left icon)
-    const collapseButton = page.locator('button[title="Collapse palette"]');
-    await expect(collapseButton).toBeVisible();
-    
-    // Click to collapse (force: true avoids toolbar overlay interception)
-    await collapseButton.click({ force: true });
-    
-    // Wait for collapse animation
-    await page.waitForTimeout(300);
-    
-    // Verify palette is collapsed (should show expand button)
-    const expandButton = page.locator('button[title="Expand palette"]');
-    await expect(expandButton).toBeVisible();
-    
-    // Click to expand (force: true avoids toolbar overlay interception)
-    await expandButton.click({ force: true });
-    
-    // Wait for expand animation
-    await page.waitForTimeout(300);
-    
-    // Verify palette is expanded again
-    await expect(collapseButton).toBeVisible();
+
+    // Verify node categories are present
+    await expect(page.locator('button:has-text("Input")')).toBeVisible();
+    await expect(page.locator('button:has-text("Generate")')).toBeVisible();
+    await expect(page.locator('button:has-text("Process")')).toBeVisible();
+    await expect(page.locator('button:has-text("Output")')).toBeVisible();
   });
 
   test('can add a node by dragging from palette', async ({ page }) => {

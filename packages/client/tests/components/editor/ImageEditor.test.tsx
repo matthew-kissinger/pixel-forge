@@ -3,13 +3,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 // Mock Konva - happy-dom doesn't have canvas rendering
-vi.mock('react-konva', () => ({
-  Stage: ({ children, ...props }: any) => <div data-testid="konva-stage" {...props}>{children}</div>,
-  Layer: ({ children }: any) => <div>{children}</div>,
-  Image: () => <div data-testid="konva-image" />,
-  Line: () => <div />,
-  Rect: () => <div />,
-}));
+// Stage must forward ref so stageRef.current?.batchDraw() doesn't throw
+vi.mock('react-konva', async () => {
+  const R = await import('react');
+  return {
+    Stage: R.forwardRef(({ children, ...props }: any, ref: any) => {
+      R.useImperativeHandle(ref, () => ({
+        batchDraw: vi.fn(),
+        findOne: vi.fn(() => ({ batchDraw: vi.fn() })),
+        getPointerPosition: vi.fn(() => null),
+      }));
+      return R.createElement('div', { 'data-testid': 'konva-stage', ...props }, children);
+    }),
+    Layer: ({ children }: any) => R.createElement('div', null, children),
+    Image: () => R.createElement('div', { 'data-testid': 'konva-image' }),
+    Line: () => R.createElement('div'),
+    Rect: () => R.createElement('div'),
+  };
+});
 
 vi.mock('konva', () => ({}));
 
@@ -23,6 +34,66 @@ vi.mock('../../../src/lib/image-utils', () => ({
     naturalHeight: 100,
   })),
   colorDistance: vi.fn(() => 0),
+}));
+
+// Mock useEditorState to avoid canvas/context2d issues in happy-dom
+vi.mock('../../../src/components/nodes/editor/useEditorState', () => ({
+  useEditorState: () => ({
+    tool: 'brush',
+    setTool: vi.fn(),
+    brushColor: '#000000',
+    setBrushColor: vi.fn(),
+    brushSize: 8,
+    setBrushSize: vi.fn(),
+    wandTolerance: 32,
+    setWandTolerance: vi.fn(),
+    layers: [],
+    activeLayerId: 'layer-1',
+    setActiveLayerId: vi.fn(),
+    addLayer: vi.fn(),
+    removeLayer: vi.fn(),
+    setLayerVisibility: vi.fn(),
+    setLayerOpacity: vi.fn(),
+    layerVersion: 0,
+    selection: null,
+    clearSelection: vi.fn(),
+    snapGuides: { x: null, y: null },
+    selectionOffset: null,
+    undo: vi.fn(),
+    redo: vi.fn(),
+    canUndo: false,
+    canRedo: false,
+    historyCounter: 0,
+    handlePointerDown: vi.fn(),
+    handlePointerMove: vi.fn(),
+    handlePointerUp: vi.fn(),
+    dragRef: { current: null },
+    flipH: vi.fn(),
+    flipV: vi.fn(),
+    rotateCW: vi.fn(),
+    rotateCCW: vi.fn(),
+    cut: vi.fn(),
+    copy: vi.fn(),
+    paste: vi.fn(),
+    initLayers: vi.fn(),
+    flattenLayers: vi.fn(() => 'data:image/png;base64,flattened'),
+  }),
+}));
+
+// Mock pixelOps to avoid canvas dependencies
+vi.mock('../../../src/components/nodes/editor/pixelOps', () => ({
+  marchingAntsPath: vi.fn(() => []),
+  createRectMask: vi.fn(),
+  createLassoMask: vi.fn(),
+  floodFillSelect: vi.fn(),
+  flipHorizontal: vi.fn(),
+  flipVertical: vi.fn(),
+  rotate90CW: vi.fn(),
+  rotate90CCW: vi.fn(),
+  extractPixels: vi.fn(),
+  clearPixels: vi.fn(),
+  pastePixels: vi.fn(),
+  translateMask: vi.fn(),
 }));
 
 // Mock lucide-react icons

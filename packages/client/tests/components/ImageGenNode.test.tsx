@@ -268,7 +268,7 @@ describe('ImageGenNode', () => {
       fireEvent.click(settingsButton!);
 
       expect(screen.getByText(/512x512/)).toBeInTheDocument();
-      expect(screen.getByText(/red bg/)).toBeInTheDocument();
+      expect(screen.getByText(/magenta bg/)).toBeInTheDocument();
     });
   });
 
@@ -505,7 +505,7 @@ describe('ImageGenNode', () => {
 
       await waitFor(() => {
         expect(generateImage).toHaveBeenCalledWith(expect.objectContaining({
-          referenceImage: 'data:image/png;base64,refimg',
+          referenceImages: ['data:image/png;base64,refimg'],
         }));
       });
     });

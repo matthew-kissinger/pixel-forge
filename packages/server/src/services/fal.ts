@@ -280,13 +280,20 @@ export async function removeBackground(imageBase64: string, backgroundColor?: st
  * the expected background color channel signature.
  */
 async function chromaCleanup(imageBuffer: Buffer, backgroundColor?: string): Promise<Buffer> {
-  const { data, info } = await sharp(imageBuffer)
-    .ensureAlpha()
+  // Convert to RGBA PNG first (compatible with all sharp builds including wasm32),
+  // then decode raw pixels. This replaces ensureAlpha() which isn't available in wasm.
+  const pngBuf = await sharp(imageBuffer).png().toBuffer();
+  const { data, info } = await sharp(pngBuf)
     .raw()
     .toBuffer({ resolveWithObject: true });
 
   const pixels = new Uint8Array(data.buffer);
-  const { width, height } = info;
+  const { width, height, channels } = info;
+
+  // If image doesn't have alpha channel, nothing to clean
+  if (channels !== 4) {
+    return imageBuffer;
+  }
 
   for (let i = 0; i < width * height * 4; i += 4) {
     const r = pixels[i]!;

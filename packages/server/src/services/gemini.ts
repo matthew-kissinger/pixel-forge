@@ -229,7 +229,7 @@ async function generateRawImage(prompt: string, config?: ImageGenConfig): Promis
   try {
     const response = await withTimeout(
       client.models.generateContent({
-        model: 'gemini-3-pro-image-preview',
+        model: 'gemini-3.1-flash-image-preview',
         contents,
         config: {
           responseModalities: ['image', 'text'],

@@ -174,7 +174,9 @@ export function useEditorState(_initialImage: string | null, canvasWidth: number
     }
   }, [restoreHistory]);
 
+  // eslint-disable-next-line react-hooks/refs -- canUndo/canRedo are derived from refs for UI state only
   const canUndo = historyIndexRef.current > 0;
+  // eslint-disable-next-line react-hooks/refs -- canUndo/canRedo are derived from refs for UI state only
   const canRedo = historyIndexRef.current < historyRef.current.length - 1;
 
   // =========================================================================

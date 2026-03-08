@@ -25,7 +25,7 @@ Pixel Forge is a visual node editor for generating game-ready assets with AI. Dr
 
 Build asset pipelines by connecting nodes. Each node handles one step - generation, processing, or export.
 
-![Node Editor - Demo Pipeline](docs/screenshots/editor-demo-pipeline.png)
+![Node Editor - Asset Pipeline](docs/screenshots/editor-pipeline.png)
 
 ### Asset Gallery
 
@@ -82,7 +82,7 @@ All assets below were generated entirely by AI through Pixel Forge pipelines.
 
 | Pipeline | AI Service | Input | Output |
 |----------|-----------|-------|--------|
-| **2D Sprites** | Gemini (nano-banana-pro) | Text prompt + style preset | Transparent PNG sprites |
+| **2D Sprites** | Gemini 3.1 Flash Image | Text prompt + style preset | Transparent PNG sprites |
 | **Tileable Textures** | FLUX 2 + Seamless LoRA (FAL) | Terrain description | Seamless pixel-art tiles |
 | **3D Models** | Claude (Anthropic) | Object description | GLB models via Three.js primitives |
 | **Background Removal** | BiRefNet (FAL) | Any image | Clean transparency |

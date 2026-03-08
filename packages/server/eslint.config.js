@@ -16,6 +16,9 @@ export default defineConfig([
       sourceType: 'module',
       globals: globals.node,
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
   },
   {
     files: ['test/**/*.ts', '**/*.test.ts', '**/*.spec.ts'],

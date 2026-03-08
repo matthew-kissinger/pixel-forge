@@ -1,5 +1,5 @@
 export type PresetCategory = 'sprite' | 'texture' | 'icon' | 'sheet';
-export type PresetBackground = 'red' | 'green' | 'black' | 'white';
+export type PresetBackground = 'red' | 'green' | 'blue' | 'magenta' | 'black' | 'white';
 export type PresetFormat = 'png' | 'jpeg' | 'webp';
 
 export interface Preset {
@@ -35,7 +35,7 @@ export const PRESETS: Preset[] = [
     category: 'sprite',
     promptPrefix: 'Sci-fi enemy spacecraft, top-down view, symmetrical design',
     promptSuffix: 'Game-ready asset, clean edges, centered, glowing energy core, metallic hull',
-    background: 'red',
+    background: 'magenta',
     outputSize: { width: 512, height: 512 },
     autoRemoveBg: true,
     format: 'png',
@@ -47,7 +47,7 @@ export const PRESETS: Preset[] = [
     category: 'icon',
     promptPrefix: 'Game UI icon, simple silhouette, high contrast, glowing edges',
     promptSuffix: 'Readable at small scale, centered in frame',
-    background: 'red',
+    background: 'blue',
     outputSize: { width: 64, height: 64 },
     autoRemoveBg: true,
     format: 'png',
@@ -59,7 +59,7 @@ export const PRESETS: Preset[] = [
     category: 'sheet',
     promptPrefix: 'Isometric asset sheet, 6 rows x 5 columns, each row one asset, first 4 isometric views, last special view',
     promptSuffix: 'Hyper-realistic style, no shadows, consistent lighting',
-    background: 'red',
+    background: 'magenta',
     outputSize: { width: 2048, height: 2048 },
     autoRemoveBg: true,
     format: 'png',
@@ -71,7 +71,7 @@ export const PRESETS: Preset[] = [
     category: 'sprite',
     promptPrefix: 'Pixel art vegetation sprite, top-down angled view for 3D billboard, tropical aesthetic, vibrant greens, clean edges',
     promptSuffix: 'Game-ready sprite, no ground shadow, centered, suitable for billboard rendering',
-    background: 'red',
+    background: 'magenta',
     outputSize: { width: 256, height: 256 },
     autoRemoveBg: true,
     format: 'png',
@@ -83,7 +83,7 @@ export const PRESETS: Preset[] = [
     category: 'sheet',
     promptPrefix: 'Pixel art animation strip, 8 frames in a horizontal row, each frame showing progressive animation stage',
     promptSuffix: 'Bright colors, high contrast, game-ready VFX, evenly spaced frames',
-    background: 'red',
+    background: 'magenta',
     outputSize: { width: 1024, height: 128 },
     autoRemoveBg: true,
     format: 'png',
@@ -95,7 +95,7 @@ export const PRESETS: Preset[] = [
     category: 'sprite',
     promptPrefix: 'Pixel art soldier character, military uniform, front-facing pose, clean pixel art style',
     promptSuffix: 'Game-ready sprite, centered, clean edges, suitable for billboard rendering in 3D scene',
-    background: 'red',
+    background: 'magenta',
     outputSize: { width: 64, height: 64 },
     autoRemoveBg: true,
     format: 'png',
@@ -130,6 +130,10 @@ export function backgroundToPrompt(background: PresetBackground): string {
       return 'Solid bright red (#FF0000) background, uniform red, no shadows on background';
     case 'green':
       return 'Solid bright green (#00FF00) background, uniform green, no shadows on background';
+    case 'blue':
+      return 'Solid bright blue (#0000FF) background, uniform blue, no shadows on background';
+    case 'magenta':
+      return 'Solid magenta (#FF00FF) background, entire background is flat solid magenta with no gradients, no shadows on background';
     case 'white':
       return 'Solid white (#FFFFFF) background';
     case 'black':

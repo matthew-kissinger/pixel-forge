@@ -21,7 +21,7 @@ bun run test:e2e                        # Playwright smoke + mobile viewport + w
 
 React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
 
-**AI Services:** Gemini nano-banana-pro (2D sprites), FAL BiRefNet (bg removal), FAL FLUX 2 + Seamless LoRA (tileable textures), FAL Meshy (3D), Claude/Kiln (3D primitives)
+**AI Services:** Gemini 3.1 Flash Image (2D sprites), FAL BiRefNet (bg removal), FAL FLUX 2 + Seamless LoRA (tileable textures), FAL Meshy (3D), Claude/Kiln (3D primitives)
 
 ## Structure
 

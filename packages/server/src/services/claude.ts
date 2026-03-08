@@ -224,7 +224,8 @@ Keep working code - only modify what's necessary for the refactor.`;
         return parseResultText(message.result, sessionId);
       }
       if (message.type === 'result' && message.subtype?.startsWith('error')) {
-        return { success: false, error: (message as any).errors?.join('; ') || 'Refactor failed' };
+        const errMsg = (message as Record<string, unknown>).errors;
+        return { success: false, error: Array.isArray(errMsg) ? errMsg.join('; ') : 'Refactor failed' };
       }
       if (message.type === 'auth_status' && message.error) {
         return { success: false, error: `Auth failed: ${message.error}. Run "claude auth login".` };
@@ -245,7 +246,7 @@ Keep working code - only modify what's necessary for the refactor.`;
 async function runStructuredQuery(
   userPrompt: string,
   systemPrompt: string,
-  mode: RenderMode
+  _mode: RenderMode
 ): Promise<KilnGenerateResponse> {
   const abortController = new AbortController();
   const timeout = setTimeout(() => {
@@ -288,9 +289,9 @@ async function runStructuredQuery(
         return parseResultText(message.result, message.session_id);
       }
       if (message.type === 'result' && message.subtype?.startsWith('error')) {
-        const errors = (message as any).errors;
+        const errors = (message as Record<string, unknown>).errors;
         logger.error('[Kiln] Query error:', errors);
-        return { success: false, error: errors?.join('; ') || 'Generation failed' };
+        return { success: false, error: Array.isArray(errors) ? errors.join('; ') : 'Generation failed' };
       }
       if (message.type === 'auth_status' && message.error) {
         logger.error('[Kiln] Auth error:', message.error);

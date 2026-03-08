@@ -11,11 +11,11 @@ Generate consistent, high-quality game assets using Google Gemini's Nano Banana 
 
 | Model | Use Case | Speed |
 |-------|----------|-------|
-| `nano-banana-pro-preview` | High-fidelity, complex reasoning | Slower |
+| `gemini-3.1-flash-image-preview` | Latest image gen, 2K support | Fast |
 | `gemini-2.5-flash-image` | Fast edits, style transfers | Faster |
-| `gemini-3-pro-image-preview` | Alias for nano-banana-pro | - |
+| `gemini-3-pro-image-preview` | Legacy alias (deprecated) | - |
 
-**For game assets**: Use `nano-banana-pro-preview` for quality.
+**For game assets**: Use `gemini-3.1-flash-image-preview` for quality.
 
 ## API Configuration
 

@@ -31,7 +31,7 @@ Build asset pipelines by connecting nodes. Each node handles one step - generati
 
 Browse, compare, and review generated assets. Raw vs clean comparison for sprites, tiled preview for textures, interactive 3D viewer for GLB models.
 
-![Asset Gallery - Weapons](docs/screenshots/gallery.png)
+![Asset Gallery - Weapons](docs/screenshots/gallery-weapons.png)
 
 ### Generated Assets
 

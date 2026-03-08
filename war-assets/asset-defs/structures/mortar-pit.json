@@ -1,9 +1,0 @@
-{
-  "name": "Mortar Pit",
-  "slug": "mortar-pit",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 2000,
-  "prompt": "Vietnam War era 81mm mortar emplacement. Circular sandbag pit with M29 mortar.\r\n\r\nPhysical structure:\r\n- Pit: circular sandbag wall enclosure, ~2.5m diameter\r\n  - Sandbag walls ~0.6m tall, 2 layers thick\r\n  - Small gap/opening on one side for entrance\r\n  - Sandbags in standard stacking pattern\r\n- Mortar: M29 81mm mortar in center\r\n  - Baseplate: flat circular plate on ground\r\n  - Tube: ~1.2m long angled tube at ~45 degrees\r\n  - Bipod: two-leg support connecting tube to ground\r\n  - Sight: small optical sight on tube\r\n- Ammo: 2-3 mortar round tubes (cylindrical containers) standing near wall\r\n  - ~0.5m tall cardboard tube containers, olive drab\r\n- Baseplate: heavy steel plate embedded in ground\r\n\r\nColors: Sandbags (0xc2a878), mortar metal (0x333338), baseplate (0x444444), ammo tubes (0x556B2F), ground dirt (0x5a4a2a)\r\nOrientation: Opening toward +Z, mortar tube angled toward +Z\r\nScale: Real-world meters (~2.5m pit diameter)",
-  "animations": "No animation - static emplacement"
-}

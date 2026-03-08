@@ -1,9 +1,0 @@
-{
-  "name": "M79 Grenade Launcher",
-  "slug": "m79",
-  "category": "weapons",
-  "assetCategory": "prop",
-  "budget": 1500,
-  "prompt": "Vietnam War era M79 grenade launcher \"Thumper\" / \"Blooper\". Single-shot break-action 40mm grenade launcher.\r\n\r\nPhysical structure (~0.73m total length):\r\n- Barrel: short fat barrel (~0.35m long, ~0.05m diameter), smooth bore\r\n  - Front sight: blade at muzzle\r\n  - Barrel latch: at top where barrel meets receiver\r\n- Receiver: short action body where barrel pivots\r\n  - Break-action hinge: barrel tips forward to load (show closed)\r\n  - Rear sight: folding leaf sight on top\r\n- Stock: short wooden stock, almost like a large pistol grip extending into buttstock\r\n  - Rubber buttpad\r\n  - Sling swivel at front and rear\r\n- Trigger guard: large trigger guard (can be used with gloves)\r\n- Overall very compact, stubby weapon with oversized barrel\r\n\r\nColors: Parkerized dark (0x3a3a38), wood stock (0x7B5B3A), barrel interior (0x333333)\r\nOrientation: Lying flat, barrel along +Z\r\nScale: Real-world meters (~0.73m total length)",
-  "animations": "No animation for weapon prop"
-}

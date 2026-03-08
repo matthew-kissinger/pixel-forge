@@ -1,9 +1,0 @@
-{
-  "name": "M48 Patton Tank",
-  "slug": "m48-patton",
-  "category": "vehicles/ground",
-  "assetCategory": "environment",
-  "budget": 8000,
-  "prompt": "Vietnam War era M48A3 Patton medium tank. Primary US Army tank used in Vietnam.\n\nPhysical structure:\n- Hull: cast/welded steel hull with distinctive rounded shape\n  - Glacis plate: rounded front armor\n  - Hull sides: vertical with slight tumblehome (inward angle at top)\n  - Rear: engine deck with grilles\n  - Driver's hatch: front center of hull top\n  - Hull length ~6.9m\n- Turret: large hemispherical cast turret\n  - Commander's cupola: raised cupola on top right with M2 .50 cal\n  - Loader's hatch: on top left\n  - Mantlet: thick curved gun mount at front of turret\n  - Bustle: rear overhang of turret for radio equipment\n  - Searchlight: infrared searchlight above main gun\n- Main gun: 90mm M41 gun, ~4.5m barrel\n  - Bore evacuator (bulge) near muzzle\n  - Muzzle brake (T-shaped)\n- Track system:\n  - 6 road wheels per side\n  - Drive sprocket at rear\n  - Idler wheel at front\n  - Return rollers on top\n  - Wide tracks with chevron pattern (simplified as box)\n  - Side skirts: none (tracks visible)\n- Exhaust: rear, large grille with exhaust port\n- Fenders: flat fenders over tracks with stowage\n\nColors: Olive drab (0x556B2F), dark tracks (0x2a2a2a), gun steel (0x3a3a3a), road wheels (0x444444), searchlight lens (0xffffcc)\nOrientation: Hull facing +Z, sitting on tracks at Y=0\nScale: Real-world meters (~6.9m long, ~3.6m wide, ~3.1m tall)",
-  "animations": "Turret traverse: turret rotates Y-axis 45 degrees left then right, 6s cycle\nGun elevation: gun barrel tilts up 10 degrees then down 5 degrees, 4s cycle"
-}

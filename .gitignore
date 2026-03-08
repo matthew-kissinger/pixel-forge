@@ -34,7 +34,9 @@ test-*.jpg
 test-*.glb
 test-*.fbx
 
-# Generated assets (use the app, not ad-hoc scripts)
+# Generated assets (local only, not tracked)
+war-assets/
+deploy-3d-assets/
 output/
 generated_spaceships/
 final_spaceships/

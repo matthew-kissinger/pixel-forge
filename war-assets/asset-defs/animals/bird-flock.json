@@ -1,9 +1,0 @@
-{
-  "name": "Bird Flock (Egrets)",
-  "slug": "bird-flock",
-  "category": "animals",
-  "assetCategory": "prop",
-  "budget": 500,
-  "prompt": "Flock of 5 white egrets (cattle egrets) in flight formation. Common sight over Vietnam rice paddies and waterways.\n\nPhysical structure (5 very simple birds):\n- Each bird (budget ~100 tris each):\n  - Body: small elongated capsule or box, ~0.15m long\n  - Wings: two flat thin boxes angled outward and slightly back, wingspan ~0.4m\n    - Wings slightly angled up from body (dihedral)\n  - Head: tiny sphere on front, ~0.03m\n  - Neck: thin short cylinder connecting head to body\n  - Tail: tiny thin flat box at rear\n  - Beak: tiny cone pointing forward from head\n  - Legs: omitted (tucked in flight) or tiny thin cylinders trailing behind\n- Flock arrangement: V-formation or loose cluster\n  - Bird 1 (lead): center, slightly forward\n  - Birds 2-3: flanking left and right, slightly behind and offset\n  - Birds 4-5: further back, wider spread\n  - Vertical variation: slight height differences (0.1-0.3m apart in Y)\n\nColors: White body/wings (0xf0f0f0), yellow beak (0xddaa33), dark wing tips (0xcccccc), legs (0x444444)\nOrientation: Flying toward +Z, flock center at ~2m height (Y=2)\nScale: Real-world proportioned but each bird simplified (~0.4m wingspan)",
-  "animations": "Wing flap: all wings animate up/down, 1s cycle (position track on wing pivots)\nFlock bob: root node gentle sine wave position, 3s cycle"
-}

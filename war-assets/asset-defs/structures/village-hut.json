@@ -1,9 +1,0 @@
-{
-  "name": "Vietnamese Village Hut",
-  "slug": "village-hut",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 3000,
-  "prompt": "Traditional Vietnamese village hut (nha san) - stilted house found in Mekong Delta and Central Highlands villages.\r\n\r\nPhysical structure:\r\n- Stilts: 4-6 wooden poles/posts raising the floor ~1.5m above ground\r\n  - Rough-hewn timber, ~0.15m diameter\r\n  - Slightly tapered, driven into ground\r\n- Floor: rectangular wooden plank platform ~4m x 3m\r\n  - Bamboo mat/plank floor\r\n- Walls: woven bamboo/thatch walls on 3 sides\r\n  - Walls ~2m tall from floor\r\n  - Bamboo frame visible at edges\r\n  - Front wall: open or with simple woven panel door\r\n- Roof: steep thatched palm leaf roof\r\n  - A-frame style, high peaked ~45 degree angle\r\n  - Ridge line runs along length\r\n  - Thatch overhangs walls by ~0.5m\r\n  - Color is golden-brown dried palm\r\n- Ladder: simple bamboo ladder from ground to floor platform at entrance\r\n  - 4-5 rungs\r\n- Cross-bracing: diagonal supports between stilts\r\n\r\nColors: Aged wood stilts (0x8B7355), bamboo walls (0xb5a068), golden thatch roof (0xc8a850), darker thatch (0xa88830), bamboo floor (0xbfa858)\r\nOrientation: Entrance facing +Z, stilts on ground at Y=0\r\nScale: Real-world meters (~4m long, ~3m wide, ~4m total height)",
-  "animations": "No animation - static structure"
-}

@@ -1,9 +1,0 @@
-{
-  "name": "Claymore Mine",
-  "slug": "claymore-mine",
-  "category": "structures",
-  "assetCategory": "prop",
-  "budget": 300,
-  "prompt": "M18A1 Claymore anti-personnel mine. Iconic directional mine with \"FRONT TOWARD ENEMY\" embossed text.\r\n\r\nPhysical structure:\r\n- Body: curved rectangular box, ~0.22m wide, ~0.08m tall, ~0.03m deep\r\n  - Slightly convex front face (the killing side)\r\n  - Flat back\r\n  - Olive drab green\r\n  - \"FRONT TOWARD ENEMY\" - represented as a lighter colored strip across the front upper area\r\n- Legs: two folding scissor-type legs (wire legs) at bottom\r\n  - Spike into ground\r\n  - Each leg: thin angled rod, ~0.1m long\r\n  - Splayed outward for stability\r\n- Detonator well: small cylindrical port on top\r\n- Wire: thin detonating wire trailing from top, running back ~0.5m along ground\r\n  - Very thin cylinder\r\n\r\nColors: OD green body (0x556B2F), lighter text area (0x7B7B5F), wire (0x444444), metal legs (0x666666)\r\nOrientation: Front face toward +Z, sitting on legs at Y=0\r\nScale: Real-world meters (~0.22m wide, ~0.08m tall)",
-  "animations": "No animation - static device"
-}

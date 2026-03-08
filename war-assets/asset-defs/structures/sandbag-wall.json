@@ -1,9 +1,0 @@
-{
-  "name": "Sandbag Wall Section",
-  "slug": "sandbag-wall",
-  "category": "structures",
-  "assetCategory": "prop",
-  "budget": 1000,
-  "prompt": "Vietnam War era sandbag wall fortification section. Standard firebase perimeter defense.\n\nPhysical structure:\n- Three rows of sandbags stacked high (~0.45m total height)\n- Wall section about 2 meters wide\n- Each sandbag: roughly 0.4m x 0.15m x 0.2m, slightly rounded/bulging (use boxes with slight scale variations)\n- Alternating brick pattern: bags in each row offset from row below\n- Bottom row: 5 bags side by side\n- Middle row: 4-5 bags offset\n- Top row: 4 bags\n- Bags should look slightly irregular - vary positions by +/-0.01 for realism\n- Some bags slightly compressed/sagging\n\nColors: Sandy tan (0xc2a878), darker tan for shadow bags (0xa89060), dusty olive for some bags (0x8a7d5a)\nOrientation: Wall runs along X axis, height along Y\nScale: Real-world meters (~2m wide, ~0.45m tall, ~0.4m deep)",
-  "animations": "No animation - static fortification"
-}

@@ -1,9 +1,0 @@
-{
-  "name": "PT-76 Amphibious Tank (NVA)",
-  "slug": "pt76",
-  "category": "vehicles/ground",
-  "assetCategory": "environment",
-  "budget": 5000,
-  "prompt": "Vietnam War era Soviet PT-76 amphibious light tank. Used by NVA, notably at Battle of Lang Vei.\n\nPhysical structure:\n- Hull: flat-bottomed boat-shaped hull for amphibious ops\n  - Low profile, wide and flat\n  - Bow: pointed, with trim vane (folding plate at very front for water ops, shown raised at 45 degrees)\n  - Flat deck, very low freeboard\n  - Rear: water jet outlets, engine grilles\n  - Length ~6.9m, width ~3.1m\n- Turret: small rounded turret, offset slightly forward\n  - Flattened dome shape\n  - Commander's hatch on top\n- Main gun: 76mm D-56T gun, medium length barrel\n  - No muzzle brake\n  - Bore evacuator near midpoint\n  - Coaxial MG mount beside main gun\n- Track system:\n  - 6 road wheels per side (large diameter, no return rollers)\n  - Drive sprocket at rear\n  - Idler at front\n  - Wide tracks for soft ground/water traction\n- Very low silhouette overall (~2.3m tall)\n\nColors: Dark military green (0x3d4a2a), darker tracks (0x2a2a2a), gun metal (0x3a3a3a), trim vane (0x4a5a3a)\nOrientation: Hull facing +Z, on tracks at Y=0\nScale: Real-world meters (~6.9m long, ~3.1m wide, ~2.3m tall)",
-  "animations": "Turret traverse: Y-axis rotation +/-30 degrees, 5s cycle"
-}

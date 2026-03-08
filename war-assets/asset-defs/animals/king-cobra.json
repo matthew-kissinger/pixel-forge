@@ -1,9 +1,0 @@
-{
-  "name": "King Cobra Snake",
-  "slug": "king-cobra",
-  "category": "animals",
-  "assetCategory": "prop",
-  "budget": 500,
-  "prompt": "King Cobra (Ophiophagus hannah). Largest venomous snake in Vietnam, up to 5m. Show in defensive hood-spread pose.\n\nPhysical structure:\n- Body coils: build from several cylinder/capsule segments arranged in S-curve on ground\n  - ~3m total visible body, ~0.06m diameter\n  - 3-4 segments creating gentle curves on ground\n- Raised head/neck: front portion raised ~0.5m off ground\n  - Neck section raised vertically, slight S-curve\n- Hood: distinctive spread cobra hood behind head\n  - Flattened oval shape, wider than body (~0.2m wide)\n  - Use flattened box or scaled cylinder\n- Head: triangular/elongated head\n  - Slightly wider than neck\n  - Small eyes on sides\n  - Snout pointed\n\nColors: Olive-brown body (0x5a5030), lighter belly (0x8a7a5a), darker hood markings (0x3a3020), dark eyes (0x111111)\nOrientation: Coiled on ground at Y=0, raised head facing +Z\nScale: Real-world meters (~3m visible body length, ~0.5m raised head height)",
-  "animations": "Hood sway: raised head/neck pivot sways Y-axis +/-10 degrees, 2s cycle\nBody breathing: subtle scale on raised section, 3s cycle"
-}

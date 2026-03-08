@@ -1,9 +1,0 @@
-{
-  "name": "Rice Paddy Dike Section",
-  "slug": "rice-dike",
-  "category": "structures",
-  "assetCategory": "prop",
-  "budget": 500,
-  "prompt": "Vietnamese rice paddy earthen dike/berm section. Low earthen wall between flooded rice paddies, used as cover by soldiers.\r\n\r\nPhysical structure:\r\n- Dike: elongated earthen mound, ~3m long, ~0.5m tall, ~0.8m wide at base\r\n  - Trapezoidal cross-section (wider at base, narrower at top)\r\n  - Slightly irregular surface (not perfectly smooth)\r\n  - Flat-ish top (~0.3m wide)\r\n  - Gentle slopes on both sides\r\n- Top: some grass/vegetation on top\r\n  - Small flat green patches\r\n- Sides: bare earth, muddy\r\n  - Some water marks/staining at base\r\n- Base: sits in shallow water (the paddy water level)\r\n\r\nColors: Muddy brown earth (0x6B5530), darker wet earth at base (0x4a3a20), green vegetation patches on top (0x5a7a3a), water stain (0x4a4a30)\r\nOrientation: Dike runs along X axis, height along Y\r\nScale: Real-world meters (~3m long, ~0.5m tall, ~0.8m wide base)",
-  "animations": "No animation - static terrain feature"
-}

@@ -1,9 +1,0 @@
-{
-  "name": "ZPU-4 Anti-Aircraft Gun",
-  "slug": "zpu4-aa",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 3000,
-  "prompt": "Vietnam War era Soviet ZPU-4 quad anti-aircraft gun. Primary NVA low-altitude air defense weapon.\n\nPhysical structure:\n- Mount: central pedestal/turntable mount on base\n  - Base: flat circular base with leveling jacks\n  - Turntable: rotates 360 degrees in azimuth\n- Gun cradle: holds 4 x 14.5mm KPV heavy machine gun barrels\n  - Barrels arranged in 2x2 square pattern\n  - Each barrel: long (~1.5m), thin, with flash hider\n  - Shared receiver housing connecting all 4 barrels\n  - Elevates on trunnions (can tilt up for anti-aircraft)\n- Ammunition: 4 drum magazines, one per barrel\n  - Mounted on top/sides of receiver\n  - Cylindrical drums\n- Sight: mechanical ring sight or optical sight on top\n- Seat: gunner's seat behind the cradle, simple metal chair\n- Wheels: two rubber-tired wheels on axle for towing (folded up in firing position)\n- Trail legs: two outrigger legs folded down for stability\n- Shoulder rests: control handles for traversing\n\nColors: Dark military green (0x3d4a2a), barrel metal (0x333338), rubber wheels (0x222222), brass ammo (0xb5a642)\nOrientation: Facing +Z, on ground, barrels slightly elevated\nScale: Real-world meters (~3m deployed width, ~1.5m tall)",
-  "animations": "Barrel elevation: cradle tilts up 45 degrees and back over 4 seconds\nTurret traverse: base rotates 30 degrees left/right over 6 seconds"
-}

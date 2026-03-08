@@ -1,9 +1,0 @@
-{
-  "name": "Vietnamese Village Hut (Damaged)",
-  "slug": "village-hut-damaged",
-  "category": "structures",
-  "assetCategory": "environment",
-  "budget": 2000,
-  "prompt": "Damaged/destroyed Vietnamese village hut. War-torn version of the stilted house - partially burned, collapsed.\r\n\r\nPhysical structure:\r\n- Stilts: 4-6 posts, 2 broken/angled (snapped)\r\n  - Remaining stilts charred/blackened\r\n- Floor: tilted/collapsed platform, partially intact\r\n  - One corner dropped where stilt broke\r\n  - Some planks missing (gaps)\r\n- Walls: mostly destroyed\r\n  - One wall partially standing, others reduced to bamboo frame fragments\r\n  - Scattered debris (small box shapes) on ground\r\n- Roof: partially collapsed thatch\r\n  - Half of roof fallen, resting on tilted floor\r\n  - Remaining thatch charred/darkened\r\n  - Exposed roof frame (bamboo poles visible)\r\n- Ground: scattered debris, ash/char marks\r\n\r\nColors: Charred wood (0x2a2015), ash (0x555050), remaining thatch (0x7a6830), darkened bamboo (0x5a4a30), debris (0x4a3a25)\r\nOrientation: Center at origin, damage visible from all angles\r\nScale: Same as intact hut (~4m x 3m footprint)",
-  "animations": "No animation - static destruction prop"
-}

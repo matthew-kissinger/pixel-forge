@@ -47,10 +47,13 @@ describe('RemoveBgNode', () => {
     zIndex: 0,
   };
 
+  const mockUpdateNodeData = vi.fn();
+
   const mockStore = {
     getInputsForNode: mockGetInputsForNode,
     setNodeOutput: mockSetNodeOutput,
     setNodeStatus: mockSetNodeStatus,
+    updateNodeData: mockUpdateNodeData,
     nodeStatus: {},
   };
 
@@ -64,8 +67,7 @@ describe('RemoveBgNode', () => {
     it('renders with default elements', () => {
       render(<RemoveBgNode {...defaultProps} />);
       expect(screen.getByTestId('eraser-icon')).toBeInTheDocument();
-      expect(screen.getByText('FAL BiRefNet')).toBeInTheDocument();
-      expect(screen.getByText('Removes background, outputs transparent PNG')).toBeInTheDocument();
+      expect(screen.getByText('FAL BiRefNet + Chroma Cleanup')).toBeInTheDocument();
     });
 
     it('shows Remove Background button', () => {
@@ -125,7 +127,7 @@ describe('RemoveBgNode', () => {
 
       expect(mockSetNodeStatus).toHaveBeenCalledWith('removebg-1', 'running');
       await waitFor(() => {
-        expect(removeBackground).toHaveBeenCalledWith(imageData);
+        expect(removeBackground).toHaveBeenCalledWith(imageData, undefined);
       });
     });
 

@@ -94,10 +94,10 @@ export async function generateImageSmart(
   });
 }
 
-export async function removeBackground(imageBase64: string): Promise<RemoveBgResponse> {
+export async function removeBackground(imageBase64: string, backgroundColor?: string): Promise<RemoveBgResponse> {
   return apiFetch<RemoveBgResponse>('/image/remove-bg', {
     method: 'POST',
-    body: JSON.stringify({ image: imageBase64 }),
+    body: JSON.stringify({ image: imageBase64, backgroundColor }),
   });
 }
 

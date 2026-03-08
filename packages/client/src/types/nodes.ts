@@ -175,6 +175,7 @@ export interface KilnGenNodeData extends BaseNodeDataFields {
 // Processing Nodes
 export interface RemoveBgNodeData extends BaseNodeDataFields {
   nodeType: 'removeBg';
+  backgroundColor?: 'red' | 'green' | 'blue' | 'magenta';
 }
 
 export interface ResizeNodeData extends BaseNodeDataFields {

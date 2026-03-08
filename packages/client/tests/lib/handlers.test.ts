@@ -834,7 +834,7 @@ describe('Processing Handlers', () => {
 
       await processingHandlers.handleRemoveBg(context);
 
-      expect(removeBackground).toHaveBeenCalledWith(imageData);
+      expect(removeBackground).toHaveBeenCalledWith(imageData, undefined);
       expect(context.setNodeOutput).toHaveBeenCalledWith('remove-1', {
         type: 'image',
         data: expect.any(String),

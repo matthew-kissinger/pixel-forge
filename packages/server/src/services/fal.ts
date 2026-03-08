@@ -1,5 +1,6 @@
 import * as fal from '@fal-ai/serverless-client';
 import { randomBytes } from 'crypto';
+import sharp from 'sharp';
 import { logger } from '@pixel-forge/shared/logger';
 import { ServiceUnavailableError, BadRequestError } from '../lib/errors';
 
@@ -177,7 +178,7 @@ export function getModelStatus(requestId: string): ModelStatusResult {
   return status;
 }
 
-export async function removeBackground(imageBase64: string): Promise<RemoveBgResult> {
+export async function removeBackground(imageBase64: string, backgroundColor?: string): Promise<RemoveBgResult> {
   // Input validation
   if (!imageBase64 || imageBase64.trim().length === 0) {
     throw new BadRequestError('Image data cannot be empty');
@@ -222,9 +223,11 @@ export async function removeBackground(imageBase64: string): Promise<RemoveBgRes
       }
 
       const buffer = await response.arrayBuffer();
-      const resultBase64 = Buffer.from(buffer).toString('base64');
-
       clearTimeout(timeoutId);
+
+      // Chroma cleanup: remove residual background-colored edge pixels that BiRefNet misses
+      const cleaned = await chromaCleanup(Buffer.from(buffer), backgroundColor);
+      const resultBase64 = cleaned.toString('base64');
 
       return {
         image: `data:image/png;base64,${resultBase64}`,
@@ -269,4 +272,64 @@ export async function removeBackground(imageBase64: string): Promise<RemoveBgRes
 
     throw new ServiceUnavailableError('Unknown error occurred during background removal');
   }
+}
+
+/**
+ * Remove residual background-colored pixels that BiRefNet misses at edges.
+ * Works by making semi-transparent pixels fully transparent if they match
+ * the expected background color channel signature.
+ */
+async function chromaCleanup(imageBuffer: Buffer, backgroundColor?: string): Promise<Buffer> {
+  const { data, info } = await sharp(imageBuffer)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const pixels = new Uint8Array(data.buffer);
+  const { width, height } = info;
+
+  for (let i = 0; i < width * height * 4; i += 4) {
+    const r = pixels[i]!;
+    const g = pixels[i + 1]!;
+    const b = pixels[i + 2]!;
+    const a = pixels[i + 3]!;
+
+    // Skip fully opaque or fully transparent pixels
+    if (a === 255 || a === 0) continue;
+
+    let isBackground = false;
+
+    switch (backgroundColor) {
+      case 'magenta':
+        // Magenta: high R, low G, high B
+        isBackground = r > 150 && g < 100 && b > 150;
+        break;
+      case 'red':
+        // Red: high R, low G, low B
+        isBackground = r > 150 && g < 80 && b < 80;
+        break;
+      case 'blue':
+        // Blue: low R, low G, high B
+        isBackground = r < 80 && g < 80 && b > 150;
+        break;
+      case 'green':
+        // Green: low R, high G, low B
+        isBackground = r < 100 && g > 180 && b < 100;
+        break;
+      default:
+        // Auto-detect: clean magenta (most common) and red
+        isBackground = (r > 150 && g < 100 && b > 150) || (r > 180 && g < 60 && b < 60);
+        break;
+    }
+
+    if (isBackground) {
+      pixels[i + 3] = 0; // Make transparent
+    }
+  }
+
+  return sharp(Buffer.from(pixels.buffer), {
+    raw: { width, height, channels: 4 },
+  })
+    .png()
+    .toBuffer();
 }

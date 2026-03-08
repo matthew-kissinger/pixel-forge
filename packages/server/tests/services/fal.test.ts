@@ -96,10 +96,15 @@ describe('fal service', () => {
 
   it('removeBackground returns base64 image data', async () => {
     subscribeImpl = async () => ({ image: { url: 'https://example.com/output.png' } });
+    // Minimal valid 1x1 RGBA PNG (67 bytes)
+    const minimalPng = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+      'base64'
+    );
     globalThis.fetch = (async () => ({
       ok: true,
       statusText: 'OK',
-      arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+      arrayBuffer: async () => minimalPng.buffer.slice(minimalPng.byteOffset, minimalPng.byteOffset + minimalPng.byteLength),
     })) as any;
 
     const fal = await importFal();

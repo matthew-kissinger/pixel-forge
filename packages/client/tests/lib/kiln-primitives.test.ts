@@ -281,7 +281,12 @@ describe('kiln/primitives', () => {
       }) as any;
 
       expect(mesh.position.set).toHaveBeenCalledWith(1, 2, 3);
-      expect(mesh.rotation.set).toHaveBeenCalledWith(0.1, 0.2, 0.3);
+      // createPart converts rotation values from degrees to radians
+      expect(mesh.rotation.set).toHaveBeenCalledWith(
+        THREE.MathUtils.degToRad(0.1),
+        THREE.MathUtils.degToRad(0.2),
+        THREE.MathUtils.degToRad(0.3),
+      );
       expect(mesh.scale.set).toHaveBeenCalledWith(2, 2, 2);
     });
 

@@ -71,6 +71,7 @@ const generateSchema = z.object({
 
 const removeBgSchema = z.object({
   image: z.string().min(1, 'Image data is required'),
+  backgroundColor: z.enum(['red', 'green', 'blue', 'magenta']).optional(),
 });
 
 const compressSchema = z.object({
@@ -122,7 +123,8 @@ imageRouter.post(
       const shouldRemoveBgFinal = shouldRemoveBg ?? preset?.autoRemoveBg ?? false;
       if (shouldRemoveBgFinal && result.image) {
         try {
-          const bgResult = await removeBackground(result.image!);
+          const bgColor = preset?.background;
+          const bgResult = await removeBackground(result.image!, bgColor);
           return c.json<GenerateImageResponse>({ image: bgResult.image });
         } catch (bgError) {
           logger.warn('Background removal failed, returning original:', bgError);
@@ -146,10 +148,10 @@ imageRouter.post(
   '/remove-bg',
   zValidator('json', removeBgSchema),
   async (c) => {
-    const { image } = c.req.valid('json');
+    const { image, backgroundColor } = c.req.valid('json');
 
     try {
-      const result = await removeBackground(image);
+      const result = await removeBackground(image, backgroundColor);
       return c.json<RemoveBgResponse>(result);
     } catch (error) {
       const rateLimitResponse = handleTooManyRequests(c, error);

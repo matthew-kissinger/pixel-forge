@@ -9,13 +9,14 @@ import type { NodeDataUnion } from '../../types/nodes';
 import { removeBackground } from '../api';
 
 export async function handleRemoveBg(context: NodeHandlerContext): Promise<void> {
-  const { inputs, setNodeOutput, node } = context;
+  const { nodeData, inputs, setNodeOutput, node } = context;
+  const data = nodeData as Extract<NodeDataUnion, { nodeType: 'removeBg' }>;
   const imageInput = inputs.find((i) => i.type === 'image');
   if (!imageInput) {
     throw new Error('Missing image input');
   }
 
-  const result = await removeBackground(imageInput.data);
+  const result = await removeBackground(imageInput.data, data.backgroundColor);
   setNodeOutput(node.id, {
     type: 'image',
     data: result.image,

@@ -39,13 +39,18 @@ POST /api/image/generate
 # Returns: { "image": "data:image/png;base64,..." }
 ```
 
-### Background Removal (FAL BiRefNet)
+### Background Removal (FAL BiRefNet + Chroma Cleanup)
 
 ```bash
 POST /api/image/remove-bg
-{ "image": "data:image/png;base64,..." }
+{
+  "image": "data:image/png;base64,...",
+  "backgroundColor": "magenta"  // optional: "magenta" | "blue" | "red" | "green"
+}
 # Returns: { "image": "data:image/png;base64,..." }
 ```
+
+The `backgroundColor` parameter enables targeted chroma cleanup after BiRefNet. Semi-transparent edge pixels matching the background color signature are made fully transparent. When omitted, auto-detects magenta and red residuals.
 
 ### 3D Model Generation (Kiln / Claude)
 

@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "license": "MIT",
+  "author": "Matthew Kissinger",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthew-kissinger/pixel-forge.git"
+  },
   "workspaces": ["packages/*"],
   "scripts": {
     "dev": "bun run --filter '*' dev",

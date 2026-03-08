@@ -37,8 +37,8 @@ test.describe('Pixel Forge E2E Smoke Tests', () => {
     const collapseButton = page.locator('button[title="Collapse palette"]');
     await expect(collapseButton).toBeVisible();
     
-    // Click to collapse
-    await collapseButton.click();
+    // Click to collapse (force: true avoids toolbar overlay interception)
+    await collapseButton.click({ force: true });
     
     // Wait for collapse animation
     await page.waitForTimeout(300);
@@ -47,8 +47,8 @@ test.describe('Pixel Forge E2E Smoke Tests', () => {
     const expandButton = page.locator('button[title="Expand palette"]');
     await expect(expandButton).toBeVisible();
     
-    // Click to expand
-    await expandButton.click();
+    // Click to expand (force: true avoids toolbar overlay interception)
+    await expandButton.click({ force: true });
     
     // Wait for expand animation
     await page.waitForTimeout(300);

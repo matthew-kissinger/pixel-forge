@@ -48,49 +48,49 @@ test.describe('Mobile Viewport Smoke Tests', () => {
       expect(overflow).toBe(true);
     });
 
-    test('canvas accepts touch tap interaction', async ({ page, browserName }) => {
+    test.describe('touch interactions', () => {
       test.use({ hasTouch: true });
 
-      await page.goto('/');
-      await page.waitForSelector('.react-flow', { timeout: 10000 });
+      test('canvas accepts touch tap interaction', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForSelector('.react-flow', { timeout: 10000 });
 
-      const canvas = page.locator('.react-flow');
-      const box = await canvas.boundingBox();
-      expect(box).not.toBeNull();
+        const canvas = page.locator('.react-flow');
+        const box = await canvas.boundingBox();
+        expect(box).not.toBeNull();
 
-      // Simulate a tap on the canvas center
-      await page.touchscreen.tap(
-        box!.x + box!.width / 2,
-        box!.y + box!.height / 2
-      );
+        // Simulate a tap on the canvas center
+        await page.touchscreen.tap(
+          box!.x + box!.width / 2,
+          box!.y + box!.height / 2
+        );
 
-      // Verify no crash — page is still responsive
-      await expect(page.locator('body')).toBeVisible();
-      await expect(canvas).toBeVisible();
-    });
+        // Verify no crash — page is still responsive
+        await expect(page.locator('body')).toBeVisible();
+        await expect(canvas).toBeVisible();
+      });
 
-    test('pinch-zoom simulation does not crash', async ({ page }) => {
-      test.use({ hasTouch: true });
+      test('pinch-zoom simulation does not crash', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForSelector('.react-flow', { timeout: 10000 });
 
-      await page.goto('/');
-      await page.waitForSelector('.react-flow', { timeout: 10000 });
+        const canvas = page.locator('.react-flow');
+        const box = await canvas.boundingBox();
+        expect(box).not.toBeNull();
 
-      const canvas = page.locator('.react-flow');
-      const box = await canvas.boundingBox();
-      expect(box).not.toBeNull();
+        const centerX = box!.x + box!.width / 2;
+        const centerY = box!.y + box!.height / 2;
 
-      const centerX = box!.x + box!.width / 2;
-      const centerY = box!.y + box!.height / 2;
+        // Simulate pinch-zoom using wheel event with ctrlKey (Playwright convention)
+        await page.mouse.move(centerX, centerY);
+        await page.mouse.wheel(0, -100);
+        await page.waitForTimeout(200);
+        await page.mouse.wheel(0, 100);
 
-      // Simulate pinch-zoom using wheel event with ctrlKey (Playwright convention)
-      await page.mouse.move(centerX, centerY);
-      await page.mouse.wheel(0, -100);
-      await page.waitForTimeout(200);
-      await page.mouse.wheel(0, 100);
-
-      // Page should still be responsive after zoom
-      await expect(page.locator('body')).toBeVisible();
-      await expect(canvas).toBeVisible();
+        // Page should still be responsive after zoom
+        await expect(page.locator('body')).toBeVisible();
+        await expect(canvas).toBeVisible();
+      });
     });
   });
 
@@ -140,23 +140,25 @@ test.describe('Mobile Viewport Smoke Tests', () => {
       expect(overflow).toBe(true);
     });
 
-    test('canvas accepts touch tap interaction', async ({ page }) => {
+    test.describe('touch interactions', () => {
       test.use({ hasTouch: true });
 
-      await page.goto('/');
-      await page.waitForSelector('.react-flow', { timeout: 10000 });
+      test('canvas accepts touch tap interaction', async ({ page }) => {
+        await page.goto('/');
+        await page.waitForSelector('.react-flow', { timeout: 10000 });
 
-      const canvas = page.locator('.react-flow');
-      const box = await canvas.boundingBox();
-      expect(box).not.toBeNull();
+        const canvas = page.locator('.react-flow');
+        const box = await canvas.boundingBox();
+        expect(box).not.toBeNull();
 
-      await page.touchscreen.tap(
-        box!.x + box!.width / 2,
-        box!.y + box!.height / 2
-      );
+        await page.touchscreen.tap(
+          box!.x + box!.width / 2,
+          box!.y + box!.height / 2
+        );
 
-      await expect(page.locator('body')).toBeVisible();
-      await expect(canvas).toBeVisible();
+        await expect(page.locator('body')).toBeVisible();
+        await expect(canvas).toBeVisible();
+      });
     });
   });
 

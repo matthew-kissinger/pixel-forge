@@ -33,11 +33,11 @@ test.describe('Pixel Forge E2E Smoke Tests', () => {
     const palette = page.locator('text=Node Palette');
     await expect(palette).toBeVisible();
 
-    // Verify node categories are present
-    await expect(page.locator('button:has-text("Input")')).toBeVisible();
-    await expect(page.locator('button:has-text("Generate")')).toBeVisible();
-    await expect(page.locator('button:has-text("Process")')).toBeVisible();
-    await expect(page.locator('button:has-text("Output")')).toBeVisible();
+    // Verify node categories are present (use exact match to avoid toolbar ambiguity)
+    await expect(page.getByRole('button', { name: /^Input \(\d+\)$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Generate \(\d+\)$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Process \(\d+\)$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Output \(\d+\)$/ })).toBeVisible();
   });
 
   test('can add a node by dragging from palette', async ({ page }) => {

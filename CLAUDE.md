@@ -86,7 +86,37 @@ packages/
 - Do NOT say "PS2-era" or "stylized" - too vague, Gemini interprets as 3D renders
 - Do NOT skip the chroma cleanup step - BiRefNet misses interior gaps
 - Do NOT run BiRefNet on colored icons (faction insignia) - destroys red/yellow/olive colors
+- Do NOT run BiRefNet on solid white silhouette icons - eats into the white fill
 - Do NOT describe which leg is forward for side-walk sprites - Gemini ignores text leg descriptions, use visual pose reference instead
+
+## Critical: UI Icon Pipeline
+
+UI icons use Gemini with a **style sheet reference** and **direct chroma key** (no BiRefNet).
+
+**Script:** `scripts/gen-ui-icons.ts` - 50 icons across 10 categories. Commands: sheet, seed, batch, run, redo, list.
+
+**Style sheet:** A single abstract shape (heraldic shield) on magenta that defines the visual language. Fed as reference image to every icon generation. NOT a grid of example icons.
+
+**Mono icons (46):** Solid white filled silhouettes, no outlines, no internal detail. Game applies color via CSS.
+- Background: magenta #FF00FF
+- Processing: direct magenta chroma key on raw image (NO BiRefNet)
+- Prompt suffix: `ICON_LIBRARY_STYLE` constant in script
+
+**Colored emblems (4):** Faction insignia with solid colors and 3px black outlines.
+- Background: blue #0000FF (no faction colors are blue)
+- Processing: direct blue chroma key on raw image (NO BiRefNet)
+
+**Reference image flow:**
+1. Style sheet -> fed as ref to seed icons
+2. Style sheet + seed raw -> fed as 2 refs to remaining icons in category
+
+**Output:** `war-assets/ui/icons/` - 50 final PNGs, copied to terror-in-the-jungle `public/assets/ui/icons/`
+
+**What NOT to do for icons:**
+- Do NOT use BiRefNet for icons - it aggressively eats into solid white fills and colored emblems
+- Do NOT use black outlines on mono icons - looks bad on transparent/dark backgrounds
+- Do NOT use Recraft V3 via FAL - tested, output quality not sufficient and no clean bg handling
+- Do NOT use green bg for colored emblems - overlaps with olive/dark green faction colors
 
 ## Critical: Tileable Terrain Texture Pipeline
 

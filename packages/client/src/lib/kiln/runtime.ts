@@ -495,6 +495,17 @@ export class KilnRuntime {
 
   /**
    * Export current asset as GLB.
+   *
+   * TODO(W2.1.7): Unify with `core.kiln.renderGLB()`.
+   * Right now the editor uses Three.js's `GLTFExporter` while headless core
+   * uses `@gltf-transform/core` via a manual bridge. Two GLB paths = two
+   * chances for drift. The reconciliation is to route editor exports
+   * through core's bridge (swapping `NodeIO` for `WebIO` when running in a
+   * browser). Deferred because the substrate rewire is already sizable and
+   * the W2.2 runtime.ts 8-way split will naturally carve out an `export`
+   * module that makes the swap a localised change. Spike bridge fidelity
+   * was perfect across positions/normals/UVs/materials/animations, so the
+   * unification is low-risk once W2.2 lands.
    */
   async exportGLB(): Promise<string | null> {
     if (!this.asset) return null;

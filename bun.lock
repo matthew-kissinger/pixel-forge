@@ -67,6 +67,15 @@
     "packages/core": {
       "name": "@pixel-forge/core",
       "version": "0.0.0",
+      "dependencies": {
+        "@anthropic-ai/claude-agent-sdk": "^0.2.50",
+        "@anthropic-ai/sdk": "^0.71.2",
+        "@gltf-transform/core": "^4.3.0",
+        "@pixel-forge/shared": "workspace:*",
+        "@types/three": "^0.182.0",
+        "three": "^0.182.0",
+        "zod": "^4.3.6",
+      },
       "devDependencies": {
         "@types/bun": "latest",
       },

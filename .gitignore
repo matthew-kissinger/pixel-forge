@@ -59,7 +59,8 @@ npm-debug.log*
 .turbo/
 
 # Temporary generation files
-tmp-*.json
+tmp/
+tmp-*
 NUL
 
 # Claude Code local settings

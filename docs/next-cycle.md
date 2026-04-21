@@ -198,18 +198,20 @@ Everything else parallelizes off the hub.
   - Editor MUST still build + tests still pass (additive only)
   - Accept: 3/3 GLB regeneration tests green, `bun run test` green across packages, `bun run build` green
 
-- [ ] **1.2 Skill polish** · deps: none · est: 1h · PARALLEL with 1.1
-  - Read each `.claude/skills/*/SKILL.md`
-  - Tighten `description` with trigger keywords
-  - Add `allowed-tools` where it reduces permission prompts
-  - Accept: all skills self-triggering for their intended use
+- [x] **1.2 Skill polish** · deps: none · est: 1h · **done**
+  - 6/6 skills edited (nano-banana-pro, pixel-art-professional, canvas-design, frontend-design, kiln-glb, kiln-tsl)
+  - Every `description` now opens with "Use this skill when..." + explicit trigger keywords
+  - `allowed-tools: Read, Write, Bash, Glob, Grep` added to 5 skills (kiln-tsl omits Bash — editor-only)
+  - Schema fix: `pixel-art-professional` name lowercased
+  - Report: [docs/skill-polish-report.md](skill-polish-report.md)
+  - Flagged for review: non-standard `license` field on 2 skills; blanket Bash grant on nano-banana-pro
 
-- [ ] **1.3 Canvas.ts split planning** · deps: none · est: 30min · PARALLEL
-  - Read `packages/client/src/lib/handlers/canvas.ts` (594 lines)
-  - Draft split: `canvas/{resize,rotate,filter,combine,crop,tile,pixelate}.ts`
-  - Document in `docs/canvas-split.md`
-  - No code changes in this task — planning only
-  - Accept: split plan documented, ready for W7.1
+- [x] **1.3 Canvas.ts split planning** · deps: none · est: 30min · **done**
+  - Plan at [docs/canvas-split.md](canvas-split.md)
+  - **Finding**: file contains 5 ops (Tile, ColorPalette, Filter, Combine, Rotate), NOT 7 as CLAUDE.md suggested — resize/crop/pixelate live in `processing.ts`. W7.1 scope reduced.
+  - 578 of 594 LoC accounted for; 3 shared utilities identified for extraction
+  - Risk: Low (Combine touches edges graph, mitigated by util extraction)
+  - Execution estimate confirmed at 3h
 
 ### Wave 2 — Core hub (fan-out)
 
@@ -244,21 +246,48 @@ Everything else parallelizes off the hub.
 
 ### Wave 3a — Providers (parallel with W3b, W4)
 
+> **Model audit (April 2026)** — see [docs/model-audit-2026-04.md](model-audit-2026-04.md) for full context.
+> Scope of each provider task was expanded based on findings below.
+
 - [ ] **3a.1 Gemini → core** · deps: 2.3 · est: 2h · parallel
-- [ ] **3a.2 FAL → core** · deps: 2.3 · est: 2h · parallel
-- [ ] **3a.3 Claude → core** · deps: 2.3 · est: 1.5h · parallel
+  - Bump `@google/genai` from `^1.38.0` → `^1.48.0`
+  - Model `gemini-3.1-flash-image-preview` still current; keep
+
+- [ ] **3a.2 FAL → core** · deps: 2.3 · est: 3h · parallel · **MAJOR UPGRADE**
+  - **`@fal-ai/serverless-client@^0.15.0` is deprecated** — migrate to `@fal-ai/client@1.9.1`
+  - Breaking change: `fal.subscribe()` now returns `{ data, requestId }` — every call site needs `.data` destructure: `result.model_url` → `result.data.model_url`, `result.image?.url` → `result.data.image?.url`
+  - Audit all scripts that use FAL directly (textures, BiRefNet) for the same breaking change
+
+- [ ] **3a.3 Claude → core** · deps: 2.3 · est: 2h · parallel
+  - Bump `@anthropic-ai/sdk` from `^0.71.2` → `^0.90.0`
+  - Model bumps in `services/claude.ts` (2 sites currently on `claude-opus-4-6`) → `claude-opus-4-7`
+  - Also update `packages/server/scripts/test-claude.ts` (currently `claude-sonnet-4-5-20250929` → `claude-sonnet-4-6`)
+
 - [ ] **3a.4 OpenAI provider** · deps: 2.3, 2.5 · est: 3h
-  - `@openai/openai-node` v6+
-  - `gpt-image-1.5` as default
-  - Implement `generate` + `editWithRefs` (up to 16 refs)
-  - OPENAI_API_KEY from env loader
+  - Use `openai@^6.1.0` (context7 confirmed)
+  - Model: **`gpt-image-1.5`** at `quality: 'high'` (~$0.08/image, price-parity with Gemini)
+  - **Do NOT use `gpt-image-2`** — the newer model lacks `background: "transparent"` which breaks our chroma-keyed sprite pipeline
+  - Implement `generate` + `editWithRefs` (up to 16 reference images)
+  - Use `base64` response mode (not URL)
+  - `OPENAI_API_KEY` already wired in `packages/server/.env.local` + global `~/.config/mk-agent/env`
+
 - [ ] **3a.5 Image facade + auto-routing** · deps: 3a.1-4, 2.5 · est: 2h
   - `imageGen.generate({ prompt, provider: 'auto'|'gemini'|'openai'|'fal', refs?, background? })`
   - Auto route: refs > 4 → openai; real transparency → openai; else gemini
+
 - [ ] **3a.6 Capability routing tests** · deps: 3a.5 · est: 1.5h
   - 5 sprites via openai, chroma-clean, visual compare
   - 1 historically-hard sprite via openai succeeds
   - Auto-routing correctly picks openai when refs: 16
+
+### ⚠️ Blocker flag — ANTHROPIC_API_KEY missing
+
+`packages/server/.env.local` is missing `ANTHROPIC_API_KEY`. This affects:
+- W1.1 spike falls back to render-only validation (no live LLM calls)
+- Any Kiln generation (both editor and headless) fails locally until resolved
+- W3a.3 Claude provider moves can't be verified without it
+
+**User action needed**: provide `ANTHROPIC_API_KEY` or confirm it lives in a different shell env that the server picks up.
 
 ### Wave 3b — Kiln introspection (parallel)
 

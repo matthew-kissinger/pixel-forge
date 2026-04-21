@@ -1,6 +1,7 @@
 ---
 name: frontend-design
-description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
+description: Use this skill when building distinctive, production-grade frontend interfaces with high design quality. Trigger on keywords "web component", "landing page", "dashboard", "React component", "HTML page", "CSS layout", "UI design", "style this", "beautify", "website", "web app", "marketing page", "hero section", "artifact", or when the user asks to build or restyle any web UI (not a static poster/PDF — use canvas-design for that). Generates creative, polished code and UI design that avoids generic AI aesthetics.
+allowed-tools: Read, Write, Bash, Glob, Grep
 license: Complete terms in LICENSE.txt
 ---
 

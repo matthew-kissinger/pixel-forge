@@ -1,6 +1,7 @@
 ---
 name: kiln-tsl
-description: Generate real-time VFX using Three.js TSL (Three Shading Language). Creates shader-based effects for in-editor preview. Not exportable to GLB.
+description: Use this skill when generating real-time VFX or shader effects using Three.js TSL (Three Shading Language) for in-editor preview. Trigger on keywords "TSL", "Three Shading Language", "shader", "shader effect", "VFX", "node material", "fresnel", "glow", "dissolve", "hologram", "energy effect", or when the user asks for GPU shader-driven visual effects in the Kiln editor. Not exportable to GLB — skip this skill if the user needs a static 3D model (use kiln-glb instead).
+allowed-tools: Read, Write, Glob, Grep
 ---
 
 # Kiln TSL - Real-Time VFX

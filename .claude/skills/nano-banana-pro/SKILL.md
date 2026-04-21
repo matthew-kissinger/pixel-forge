@@ -1,6 +1,7 @@
 ---
 name: nano-banana-pro
-description: Configure and use Google Gemini's Nano Banana Pro (Gemini 3 Pro Image) for consistent game asset generation. Includes API settings, style templates, and best practices for batch asset creation.
+description: Use this skill when configuring or invoking Google Gemini's Nano Banana Pro (Gemini 3 Pro Image / `gemini-3.1-flash-image-preview`) for game asset image generation. Trigger on keywords "Gemini", "nano-banana", "nano banana pro", "Gemini 3 Pro Image", "gemini-3.1-flash-image", "sprite generation", "batch asset generation", "reference image", "seed control", "image gen API", or when the user asks to generate 2D game sprites, icons, characters, or props with consistent style, solid-color backgrounds for chroma keying, or batch style-locked outputs via the Gemini API.
+allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
 # Nano Banana Pro - Game Asset Generation

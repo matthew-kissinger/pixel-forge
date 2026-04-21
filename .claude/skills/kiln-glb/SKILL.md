@@ -1,6 +1,7 @@
 ---
 name: kiln-glb
-description: Generate exportable 3D game assets (GLB) from text descriptions using Three.js primitives. Creates props, characters, vehicles, buildings.
+description: Use this skill when generating exportable 3D game assets (GLB files) from text descriptions using Three.js primitives. Trigger on keywords "generate 3D", "make GLB", "3D model", "3D asset", "Three.js primitives", "kiln", or when the user asks to create a prop, character, vehicle, building, weapon, or environment piece as an engine-compatible 3D model for Unity, Unreal, or Godot. Also trigger when running `scripts/export-glb.ts`, writing code that uses `createRoot`/`createPivot`/`createPart`, or producing animated pivot-based scene graphs.
+allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
 # Kiln GLB - Exportable 3D Assets

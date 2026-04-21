@@ -1,6 +1,7 @@
 ---
 name: canvas-design
-description: Create beautiful visual art in .png and .pdf documents using design philosophy. You should use this skill when the user asks to create a poster, piece of art, design, or other static piece. Create original visual designs, never copying existing artists' work to avoid copyright violations.
+description: Use this skill when creating beautiful visual art as .png or .pdf documents driven by a written design philosophy. Trigger on keywords "poster", "art piece", "design", "visual art", "infographic", "coffee table", "editorial spread", "magazine layout", "museum-quality", "art print", "album cover", "book cover", "PDF design", or when the user asks for a static, design-forward visual piece (not a web UI — use frontend-design for that). Creates original visual designs and never copies existing artists' work.
+allowed-tools: Read, Write, Bash, Glob, Grep
 license: Complete terms in LICENSE.txt
 ---
 

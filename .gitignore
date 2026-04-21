@@ -63,5 +63,6 @@ tmp/
 tmp-*
 NUL
 
-# Claude Code local settings
+# Claude Code local settings + agent worktrees
 .claude/settings.local.json
+.claude/worktrees/

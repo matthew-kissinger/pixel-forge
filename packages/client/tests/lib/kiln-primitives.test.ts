@@ -214,7 +214,7 @@ import {
   spinAnimation,
   torusGeo,
   validateAsset,
-} from '../../src/lib/kiln/primitives';
+} from '@pixel-forge/core/kiln/primitives';
 
 function makeGeometry(options: { indexCount?: number; positionCount?: number } = {}) {
   return {

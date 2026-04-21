@@ -4,10 +4,17 @@
  * POST /api/kiln/generate  - Generate 3D asset code from prompt
  * POST /api/kiln/compact   - Compact bloated code
  * POST /api/kiln/refactor  - Refactor existing code
+ *
+ * All code-generation work happens in @pixel-forge/core/kiln. This route
+ * module is now just the HTTP adapter: validate input, delegate, shape
+ * the response.
  */
 
 import { Hono } from 'hono';
 import { z } from 'zod';
+// Routed through the server's thin service wrapper so existing test-mocks
+// (`mock.module('../src/services/claude', ...)`) keep intercepting calls.
+// The wrapper itself is a re-export of `@pixel-forge/core/kiln`.
 import {
   generateKilnCode,
   compactCode,
@@ -16,6 +23,7 @@ import {
   type RefactorRequest,
 } from '../services/claude';
 import { BadRequestError } from '../lib/errors';
+import { logger } from '@pixel-forge/shared/logger';
 import type { GenerateKilnCodeResponse } from '@pixel-forge/shared';
 
 export const kilnRouter = new Hono();
@@ -56,9 +64,18 @@ kilnRouter.post('/generate', async (c) => {
     referenceImageUrl: parsed.data.referenceImageUrl,
   };
 
+  const assetName = request.prompt
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'asset';
+  logger.info('[Kiln] Generating:', assetName);
+  logger.debug('[Kiln] Mode:', request.mode, '| Category:', request.category);
+
   const result = await generateKilnCode(request);
 
   if (!result.success) {
+    logger.error('[Kiln] Generation failed:', result.error);
     return c.json<GenerateKilnCodeResponse>({ success: false, error: result.error }, 500);
   }
 

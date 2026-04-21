@@ -6,7 +6,10 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./kiln": "./src/kiln/index.ts"
+    "./kiln": "./src/kiln/index.ts",
+    "./kiln/primitives": "./src/kiln/primitives.ts",
+    "./kiln/prompt": "./src/kiln/prompt.ts",
+    "./kiln/validation": "./src/kiln/validation.ts"
   },
   "scripts": {
     "test": "bun test",

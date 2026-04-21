@@ -18,11 +18,15 @@ mock.module('@pixel-forge/shared/logger', () => ({
   },
 }));
 
+// The implementation now lives in @pixel-forge/core/kiln (the server's
+// services/claude.ts is just a re-export). Test the core module directly
+// so api.test.ts's `mock.module('../src/services/claude', ...)` stub can't
+// leak into this suite via the shared server path.
 let moduleCounter = 0;
-let claude: typeof import('../../src/services/claude');
+let claude: typeof import('@pixel-forge/core/kiln');
 const importClaude = async () => {
   moduleCounter += 1;
-  return await import(`../../src/services/claude?test=${moduleCounter}`);
+  return await import(`@pixel-forge/core/kiln?test=${moduleCounter}`);
 };
 
 describe('Claude Service', () => {

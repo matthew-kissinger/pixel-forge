@@ -11,7 +11,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { AssetModule, KilnOutput } from './types';
-import * as primitives from './primitives';
+// GLB primitives are now canonical in @pixel-forge/core. Client imports them
+// via the dedicated subpath so we don't pull the Claude Agent SDK (which
+// lives behind `./kiln` → `generate.ts`) into the browser bundle.
+import * as primitives from '@pixel-forge/core/kiln/primitives';
 import { logger } from '@pixel-forge/shared/logger';
 import type { RenderMode } from './prompt';
 import type { WebGPURenderer as WebGPURendererType } from 'three/webgpu';
@@ -492,6 +495,17 @@ export class KilnRuntime {
 
   /**
    * Export current asset as GLB.
+   *
+   * TODO(W2.1.7): Unify with `core.kiln.renderGLB()`.
+   * Right now the editor uses Three.js's `GLTFExporter` while headless core
+   * uses `@gltf-transform/core` via a manual bridge. Two GLB paths = two
+   * chances for drift. The reconciliation is to route editor exports
+   * through core's bridge (swapping `NodeIO` for `WebIO` when running in a
+   * browser). Deferred because the substrate rewire is already sizable and
+   * the W2.2 runtime.ts 8-way split will naturally carve out an `export`
+   * module that makes the swap a localised change. Spike bridge fidelity
+   * was perfect across positions/normals/UVs/materials/animations, so the
+   * unification is low-risk once W2.2 lands.
    */
   async exportGLB(): Promise<string | null> {
     if (!this.asset) return null;

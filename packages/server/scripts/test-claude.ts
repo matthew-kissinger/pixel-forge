@@ -82,13 +82,13 @@ Output ONLY TypeScript code, no markdown.`;
   console.log('=== USER PROMPT ===');
   console.log(userPrompt + '\n');
 
-  console.log('=== CALLING CLAUDE (claude-sonnet-4-5-20250929) ===\n');
+  console.log('=== CALLING CLAUDE (claude-sonnet-4-6) ===\n');
 
   try {
     const startTime = Date.now();
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: GLB_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userPrompt }],

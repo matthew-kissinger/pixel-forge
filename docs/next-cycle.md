@@ -253,10 +253,12 @@ Everything else parallelizes off the hub.
   - Bump `@google/genai` from `^1.38.0` → `^1.48.0`
   - Model `gemini-3.1-flash-image-preview` still current; keep
 
-- [ ] **3a.2 FAL → core** · deps: 2.3 · est: 3h · parallel · **MAJOR UPGRADE**
-  - **`@fal-ai/serverless-client@^0.15.0` is deprecated** — migrate to `@fal-ai/client@1.9.1`
+- [ ] **3a.2 FAL → core** · deps: 2.3 · est: 4h · parallel · **MAJOR UPGRADE + BUG FIX**
+  - **`@fal-ai/serverless-client@^0.15.0` is deprecated** — migrate to `@fal-ai/client@1.9.5`
   - Breaking change: `fal.subscribe()` now returns `{ data, requestId }` — every call site needs `.data` destructure: `result.model_url` → `result.data.model_url`, `result.image?.url` → `result.data.image?.url`
-  - Audit all scripts that use FAL directly (textures, BiRefNet) for the same breaking change
+  - **Bug fix (urgent)**: `services/texture.ts` calls `fal-ai/flux-lora` (FLUX **1** endpoint!) despite CLAUDE.md documenting FLUX 2. Real regression. Switch to `fal-ai/flux-2/lora`.
+  - Optional: expose BiRefNet variant selector (Light 2K / Heavy / Dynamic) — zero cost, cleaner edges on 1024px sprites
+  - Audit all scripts that use FAL directly for the same breaking change
 
 - [ ] **3a.3 Claude → core** · deps: 2.3 · est: 2h · parallel
   - Bump `@anthropic-ai/sdk` from `^0.71.2` → `^0.90.0`
@@ -265,11 +267,15 @@ Everything else parallelizes off the hub.
 
 - [ ] **3a.4 OpenAI provider** · deps: 2.3, 2.5 · est: 3h
   - Use `openai@^6.1.0` (context7 confirmed)
-  - Model: **`gpt-image-1.5`** at `quality: 'high'` (~$0.08/image, price-parity with Gemini)
-  - **Do NOT use `gpt-image-2`** — the newer model lacks `background: "transparent"` which breaks our chroma-keyed sprite pipeline
+  - **Dual-model strategy** — validated by live test, see [docs/gpt-image-2-investigation.md](gpt-image-2-investigation.md):
+    - **`gpt-image-2` when `refs.length > 0`** (decisively wins at multi-ref faction/pose workflows; extracts pith helmet, cap stars, faction colors correctly from refs where 1.5 ignores them). ~$0.15/image, ~100s latency.
+    - **`gpt-image-1.5` for text-only prompts** (crisper black outlines for 32-bit style, 3.5x faster, 2x cheaper). ~$0.08/image, ~30s latency.
+  - Missing `background: "transparent"` on gpt-image-2 is **irrelevant** — our pipeline generates on solid magenta and strips via BiRefNet + chroma cleanup. Confirmed gpt-image-2 respects `"flat solid #FF00FF"` at 90.0% coverage (parity with 1.5's 89.6%).
+  - Never send `background: "transparent"` (400 error on 2); never send `input_fidelity` (2 always high)
   - Implement `generate` + `editWithRefs` (up to 16 reference images)
   - Use `base64` response mode (not URL)
-  - `OPENAI_API_KEY` already wired in `packages/server/.env.local` + global `~/.config/mk-agent/env`
+  - Timeout: 180s (2 is slow); fallback to 1.5 on 5xx/timeout
+  - `OPENAI_API_KEY` already wired in both env locations
 
 - [ ] **3a.5 Image facade + auto-routing** · deps: 3a.1-4, 2.5 · est: 2h
   - `imageGen.generate({ prompt, provider: 'auto'|'gemini'|'openai'|'fal', refs?, background? })`

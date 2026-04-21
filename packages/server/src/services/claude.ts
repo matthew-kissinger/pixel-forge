@@ -199,7 +199,7 @@ Keep working code - only modify what's necessary for the refactor.`;
     const q = query({
       prompt,
       options: {
-        model: 'claude-opus-4-6',
+        model: 'claude-opus-4-7',
         systemPrompt,
         maxTurns: 1,
         outputFormat: {
@@ -259,7 +259,7 @@ async function runStructuredQuery(
       prompt: userPrompt,
       options: {
         abortController,
-        model: 'claude-opus-4-6',
+        model: 'claude-opus-4-7',
         systemPrompt,
         maxTurns: 3,
         outputFormat: {

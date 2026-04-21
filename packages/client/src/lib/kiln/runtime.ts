@@ -11,7 +11,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import type { AssetModule, KilnOutput } from './types';
-import * as primitives from './primitives';
+// GLB primitives are now canonical in @pixel-forge/core. Client imports them
+// via the dedicated subpath so we don't pull the Claude Agent SDK (which
+// lives behind `./kiln` → `generate.ts`) into the browser bundle.
+import * as primitives from '@pixel-forge/core/kiln/primitives';
 import { logger } from '@pixel-forge/shared/logger';
 import type { RenderMode } from './prompt';
 import type { WebGPURenderer as WebGPURendererType } from 'three/webgpu';

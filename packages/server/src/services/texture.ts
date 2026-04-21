@@ -83,7 +83,7 @@ export async function generateTexture(options: TextureOptions): Promise<TextureR
 
   try {
     const result = await Promise.race([
-      fal.subscribe('fal-ai/flux-lora', {
+      fal.subscribe('fal-ai/flux-2/lora', {
         input: {
           prompt,
           loras: [{ path: SEAMLESS_LORA_URL, scale: loraScale }],

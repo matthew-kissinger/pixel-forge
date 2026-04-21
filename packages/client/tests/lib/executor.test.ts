@@ -16,13 +16,6 @@ describe('Workflow Executor', () => {
   const mockSetNodeOutput = vi.fn();
   const mockSetBatchProgress = vi.fn();
   const mockGetInputsForNode = vi.fn().mockReturnValue([]);
-  const advanceTimers = async (ms: number) => {
-    vi.advanceTimersByTime(ms);
-    // Multiple ticks to allow all promises to resolve
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
-  };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -380,47 +373,38 @@ describe('Workflow Executor', () => {
   });
 
   describe('Timeout', () => {
-    it.skip('should fail a node that exceeds timeout', async () => {
-      // This test is skipped because vi.runAllTimersAsync is not available in Bun's Vitest shim,
-      // and accurately simulating AbortController's microtask flushing with fake timers is problematic.
-      // The `withTimeout` functionality is still covered by actual runtime behavior.
-      vi.useFakeTimers();
+    it('should fail a node that exceeds timeout', async () => {
+      // Use the `timeoutOverrideMs` ExecutionContext hook so we can exercise
+      // the timeout branch with a real short timer. This avoids fake-timer
+      // incompatibility between Bun's vitest shim and AbortController.
+      const neverResolve = vi.fn().mockImplementation(() => new Promise(() => {}));
+      (handlers as any).batchGen = vi.fn().mockResolvedValue(neverResolve);
 
+      const nodes: Node[] = [
+        { id: 'A', type: 'batchGen', position: { x: 0, y: 0 }, data: { nodeType: 'batchGen', label: 'A' } },
+      ];
 
-      try {
-        // Handler loader resolves to a handler function that never completes
-        const neverResolve = vi.fn().mockImplementation(() => new Promise(() => {}));
-        (handlers as any).batchGen = vi.fn().mockResolvedValue(neverResolve);
+      vi.spyOn(useWorkflowStore, 'getState').mockReturnValue({
+        nodeStatus: {},
+        nodeOutputs: {},
+        setNodeStatus: mockSetNodeStatus,
+        setNodeError: mockSetNodeError,
+        addExecutionRecord: mockAddExecutionRecord,
+        setNodeOutput: mockSetNodeOutput,
+        setBatchProgress: mockSetBatchProgress,
+        getInputsForNode: mockGetInputsForNode,
+      } as any);
 
-        const nodes: Node[] = [
-          { id: 'A', type: 'batchGen', position: { x: 0, y: 0 }, data: { nodeType: 'batchGen', label: 'A' } },
-        ];
+      const result = await executeWorkflow(
+        nodes,
+        [],
+        useWorkflowStore.getState() as any,
+        { getCancelled: () => false, demoMode: false, timeoutOverrideMs: 50 }
+      );
 
-        vi.spyOn(useWorkflowStore, 'getState').mockReturnValue({
-          nodeStatus: {},
-          nodeOutputs: {},
-          setNodeStatus: mockSetNodeStatus,
-          setNodeError: mockSetNodeError,
-          addExecutionRecord: mockAddExecutionRecord,
-          setNodeOutput: mockSetNodeOutput,
-          setBatchProgress: mockSetBatchProgress,
-          getInputsForNode: mockGetInputsForNode,
-        } as any);
-
-        const promise = executeWorkflow(nodes, [], useWorkflowStore.getState() as any);
-
-        // Run all timers to completion - this will trigger the setTimeout in withTimeout
-        // Run timers until the timeout is triggered
-        await advanceTimers(130000);
-
-        const result = await promise;
-        expect(result.success).toBe(false);
-        expect(result.errors[0].error).toContain('timed out');
-        expect(mockSetNodeStatus).toHaveBeenCalledWith('A', 'error');
-      } finally {
-        vi.useRealTimers();
-      }
-
+      expect(result.success).toBe(false);
+      expect(result.errors[0].error).toContain('timed out');
+      expect(mockSetNodeStatus).toHaveBeenCalledWith('A', 'error');
     });
   });
 

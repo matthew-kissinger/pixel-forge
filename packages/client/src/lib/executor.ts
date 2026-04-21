@@ -229,8 +229,9 @@ async function executeNode(
     ctx,
   };
 
-  // Determine timeout and label
-  const timeoutMs = NODE_TIMEOUTS[nodeType] || DEFAULT_TIMEOUT;
+  // Determine timeout and label. `timeoutOverrideMs` lets tests exercise the
+  // timeout branch with a real short timer (see ExecutionContext docs).
+  const timeoutMs = ctx.timeoutOverrideMs ?? (NODE_TIMEOUTS[nodeType] || DEFAULT_TIMEOUT);
   const label = getNodeDefinition(nodeType)?.label || nodeType;
 
   // Execute handler with timeout

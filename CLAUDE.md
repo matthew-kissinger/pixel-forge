@@ -12,7 +12,7 @@ bun run typecheck     # tsc --noEmit (client + server)
 bun run lint          # ESLint (client + server)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # 1907 pass, 0 fail, 1 skip, 86 files
+cd packages/client && bunx vitest run   # 1931 pass, 0 fail, 0 skip, 88 files
 cd packages/server && bun test          # 118 pass, 7 files
 bun run test:e2e                        # Playwright smoke + mobile viewport + workflow tests
 ```
@@ -157,7 +157,6 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 
 ## Known Issues
 
-- 1 skipped test: executor timeout - bun's vitest incompatible with `vi.useFakeTimers()` + async promises
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size) - lazy loaded, only affects 3D workflows
 - 38 stale `mycel/task-*` remote branches could be deleted
 

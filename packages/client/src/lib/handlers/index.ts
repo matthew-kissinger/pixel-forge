@@ -14,6 +14,13 @@ export interface ExecutionContext {
   onProgress?: (current: number, total: number) => void;
   demoMode?: boolean;
   signal?: AbortSignal;
+  /**
+   * Test-only: overrides the per-node timeout in ms. Exists so the timeout
+   * branch can be exercised with a tiny real timer instead of faking timers
+   * (Bun's vitest shim doesn't reliably support `vi.useFakeTimers()` with
+   * AbortController microtask flushing).
+   */
+  timeoutOverrideMs?: number;
 }
 
 export interface NodeHandlerContext {

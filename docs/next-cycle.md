@@ -256,7 +256,7 @@ Everything else parallelizes off the hub.
 - [ ] **3a.2 FAL → core** · deps: 2.3 · est: 4h · parallel · **MAJOR UPGRADE + BUG FIX**
   - **`@fal-ai/serverless-client@^0.15.0` is deprecated** — migrate to `@fal-ai/client@1.9.5`
   - Breaking change: `fal.subscribe()` now returns `{ data, requestId }` — every call site needs `.data` destructure: `result.model_url` → `result.data.model_url`, `result.image?.url` → `result.data.image?.url`
-  - **Bug fix (urgent)**: `services/texture.ts` calls `fal-ai/flux-lora` (FLUX **1** endpoint!) despite CLAUDE.md documenting FLUX 2. Real regression. Switch to `fal-ai/flux-2/lora`.
+  - ~~**Bug fix (urgent)**: `services/texture.ts` calls `fal-ai/flux-lora` (FLUX **1** endpoint!) despite CLAUDE.md documenting FLUX 2. Real regression. Switch to `fal-ai/flux-2/lora`.~~ **Fixed in commit `e7b2a8d`** (pulled forward while waiting for spike).
   - Optional: expose BiRefNet variant selector (Light 2K / Heavy / Dynamic) — zero cost, cleaner edges on 1024px sprites
   - Audit all scripts that use FAL directly for the same breaking change
 
@@ -352,7 +352,10 @@ Everything else parallelizes off the hub.
 ### Wave 7 — Polish (slot anywhere after W2)
 
 - [ ] **7.1 Split canvas.ts by operation** · deps: 1.3 · est: 3h · parallel
-- [ ] **7.2 Fix skipped executor test** · deps: none · est: 2h · parallel
+- [x] **7.2 Fix skipped executor test** · deps: none · est: 2h · **done** (landed early while waiting on W1.1 spike)
+  - Option B lightweight: added `timeoutOverrideMs` on `ExecutionContext`; `executeNode` reads it over `NODE_TIMEOUTS`
+  - Rewrote test with real timers + 50ms override (the old fake-timer path had a hidden bug anyway)
+  - 1931 pass / 0 skip · CLAUDE.md stale count bumped (was claiming 1907)
 - [ ] **7.3 Kiln test coverage to 60%+** · deps: W2 · est: 4h · parallel
 
 ---

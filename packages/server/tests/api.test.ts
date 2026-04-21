@@ -37,14 +37,25 @@ mock.module('../src/services/fal', () => ({
   },
 }));
 
-mock.module('../src/services/claude', () => ({
-  generateKilnCode: async () => ({
-    success: true,
-    code: 'mock code',
-    usage: { inputTokens: 10, outputTokens: 20 },
-  }),
-  compactCode: async () => ({ success: true, code: 'compact code' }),
-  refactorCode: async () => ({ success: true, code: 'refactored code' }),
+// Kiln routes now delegate to @pixel-forge/core/kiln. Rather than mocking
+// the whole core module (which would prevent tests that exercise the
+// actual code generator from ever hitting it), mock the SDK query at the
+// edge. The core then runs through unchanged, just with a fake LLM.
+mock.module('@anthropic-ai/claude-agent-sdk', () => ({
+  query: (_args: unknown) =>
+    (async function* () {
+      // Emit a structured_output success with valid-enough code to pass
+      // the core's post-generation validator (`const meta`, `function
+      // build`, no imports/exports/`value:` keyframes).
+      yield {
+        type: 'result',
+        subtype: 'success',
+        structured_output: {
+          code: 'const meta = {}; function build() { return {}; }',
+        },
+        session_id: 'api-test',
+      };
+    })(),
 }));
 
 const baseUrl = 'http://localhost:3000';

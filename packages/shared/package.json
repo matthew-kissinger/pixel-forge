@@ -9,8 +9,6 @@
     "./api-types": "./api-types.ts",
     "./presets": "./presets.ts",
     "./logger": "./logger.ts",
-    "./prompt-snippets": "./prompt-snippets.ts",
-    "./kiln-prompts": "./kiln-prompts.ts",
-    "./kiln-validation": "./kiln-validation.ts"
+    "./prompt-snippets": "./prompt-snippets.ts"
   }
 }

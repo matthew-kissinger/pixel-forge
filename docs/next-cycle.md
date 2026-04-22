@@ -225,10 +225,12 @@ Everything else parallelizes off the hub.
   - Net: ~1.9k lines of duplication collapsed into one canonical copy
   - **bun:test quirk**: `mock.module` resolves per-importer. In a hoisted-deps monorepo, a single mock call from the server package won't propagate into core. Fix: register a second mock against the absolute resolved path. Worth propagating to project CLAUDE.md.
 
-- [ ] **2.2 runtime.ts 8-way split** · deps: 2.1 · est: 3-4h
-  - Extract per audit: config/init, renderer lifecycle, sandbox, TSL, camera, export, animation, cleanup
-  - Keep in `packages/client/src/lib/kiln/runtime/` subdir
-  - Accept: no file >200 lines in runtime/, existing editor tests pass
+- [x] **2.2 runtime.ts 8-way split** · deps: 2.1 · est: 3-4h · **done** (merge `4c3fc65`)
+  - Split 780-line runtime.ts into 12 files under `runtime/` subdir, all < 200 LoC (largest: tsl-effects at 193)
+  - State-sharing via `RuntimeState` interface in `state.ts`; sub-modules export functions taking state as first arg
+  - **W2.1.7 unified** (Path A): `renderSceneToGLB(root, opts)` added to `core/kiln/render.ts`; editor's exportGLB calls it directly (no re-execution). `GLTFExporter` deleted.
+  - `WebIO` swapped in for `NodeIO` — works in both browser and Node since `writeBinary` is pure bytes-out
+  - Post-merge: 1931 client / 114 server / 157 core tests all green
 
 - [x] **2.3 Provider/Pipeline interfaces** · deps: 2.1 · est: 2h · **done** (commit `fbf931e`)
   - `schemas/{image,kiln,index}.ts` — zod schemas for image + kiln input/output, inferred TS types
@@ -246,28 +248,28 @@ Everything else parallelizes off the hub.
   - Full matrix for gemini/openai/fal/anthropic with gpt-image-2 dual-model routing (refs > 0 → gpt-image-2; text-only → gpt-image-1.5 or gemini)
   - Static data, queryable, agent-facing
 
-### Wave 3a — Providers (parallel with W3b, W4)
+### Wave 3a — Providers ✅ COMPLETE (commits 634cf7d → 205d593)
 
 > **Model audit (April 2026)** — see [docs/model-audit-2026-04.md](model-audit-2026-04.md) for full context.
 > Scope of each provider task was expanded based on findings below.
 
-- [ ] **3a.1 Gemini → core** · deps: 2.3 · est: 2h · parallel
+- [x] **3a.1 Gemini → core** · deps: 2.3 · est: 2h · parallel
   - Bump `@google/genai` from `^1.38.0` → `^1.48.0`
   - Model `gemini-3.1-flash-image-preview` still current; keep
 
-- [ ] **3a.2 FAL → core** · deps: 2.3 · est: 4h · parallel · **MAJOR UPGRADE + BUG FIX**
+- [x] **3a.2 FAL → core** · deps: 2.3 · est: 4h · parallel · **MAJOR UPGRADE + BUG FIX**
   - **`@fal-ai/serverless-client@^0.15.0` is deprecated** — migrate to `@fal-ai/client@1.9.5`
   - Breaking change: `fal.subscribe()` now returns `{ data, requestId }` — every call site needs `.data` destructure: `result.model_url` → `result.data.model_url`, `result.image?.url` → `result.data.image?.url`
   - ~~**Bug fix (urgent)**: `services/texture.ts` calls `fal-ai/flux-lora` (FLUX **1** endpoint!) despite CLAUDE.md documenting FLUX 2. Real regression. Switch to `fal-ai/flux-2/lora`.~~ **Fixed in commit `e7b2a8d`** (pulled forward while waiting for spike).
   - Optional: expose BiRefNet variant selector (Light 2K / Heavy / Dynamic) — zero cost, cleaner edges on 1024px sprites
   - Audit all scripts that use FAL directly for the same breaking change
 
-- [ ] **3a.3 Claude → core** · deps: 2.3 · est: 2h · parallel
+- [x] **3a.3 Claude → core** · deps: 2.3 · est: 2h · parallel
   - Bump `@anthropic-ai/sdk` from `^0.71.2` → `^0.90.0`
   - Model bumps in `services/claude.ts` (2 sites currently on `claude-opus-4-6`) → `claude-opus-4-7`
   - Also update `packages/server/scripts/test-claude.ts` (currently `claude-sonnet-4-5-20250929` → `claude-sonnet-4-6`)
 
-- [ ] **3a.4 OpenAI provider** · deps: 2.3, 2.5 · est: 3h
+- [x] **3a.4 OpenAI provider** · deps: 2.3, 2.5 · est: 3h
   - Use `openai@^6.1.0` (context7 confirmed)
   - **Dual-model strategy** — validated by live test, see [docs/gpt-image-2-investigation.md](gpt-image-2-investigation.md):
     - **`gpt-image-2` when `refs.length > 0`** (decisively wins at multi-ref faction/pose workflows; extracts pith helmet, cap stars, faction colors correctly from refs where 1.5 ignores them). ~$0.15/image, ~100s latency.
@@ -279,11 +281,11 @@ Everything else parallelizes off the hub.
   - Timeout: 180s (2 is slow); fallback to 1.5 on 5xx/timeout
   - `OPENAI_API_KEY` already wired in both env locations
 
-- [ ] **3a.5 Image facade + auto-routing** · deps: 3a.1-4, 2.5 · est: 2h
+- [x] **3a.5 Image facade + auto-routing** · deps: 3a.1-4, 2.5 · est: 2h
   - `imageGen.generate({ prompt, provider: 'auto'|'gemini'|'openai'|'fal', refs?, background? })`
   - Auto route: refs > 4 → openai; real transparency → openai; else gemini
 
-- [ ] **3a.6 Capability routing tests** · deps: 3a.5 · est: 1.5h
+- [x] **3a.6 Capability routing tests** · deps: 3a.5 · est: 1.5h
   - 5 sprites via openai, chroma-clean, visual compare
   - 1 historically-hard sprite via openai succeeds
   - Auto-routing correctly picks openai when refs: 16
@@ -297,30 +299,29 @@ Everything else parallelizes off the hub.
 
 **User action needed**: provide `ANTHROPIC_API_KEY` or confirm it lives in a different shell env that the server picks up.
 
-### Wave 3b — Kiln introspection (parallel)
+### Wave 3b — Kiln introspection ✅ COMPLETE (commits 176cdd0 → 7acd0c8)
 
-- [ ] **3b.1 kiln.inspect(code)** · deps: 2.1 · est: 2h · parallel
+- [x] **3b.1 kiln.inspect(code)** · deps: 2.1 · est: 2h · parallel
   - Returns `{ triangles, bounds, namedParts[], animationTracks[], primitives[] }`
   - Agents call this after render to debug
-- [ ] **3b.2 kiln.listPrimitives()** · deps: 2.1 · est: 1.5h · parallel
+- [x] **3b.2 kiln.listPrimitives()** · deps: 2.1 · est: 1.5h · parallel
   - Self-describing catalog: `{ [name]: { args, returns, example } }`
   - Sourced from JSDoc on primitive definitions (single source of truth)
-- [ ] **3b.3 Hardened validation** · deps: 2.1, 2.4 · est: 3h
+- [x] **3b.3 Hardened validation** · deps: 2.1, 2.4 · est: 3h
   - Replace regex-based with TypeScript compiler API or esprima
   - Catch: joint-name mismatches in animations, tri-count hard cap, recursive structures
   - Errors emit via errors.ts with fix hints
-- [ ] **3b.4 kiln.refactor(instruction, code)** · deps: 3a.3 · est: 2h
+- [x] **3b.4 kiln.refactor(instruction, code)** · deps: 3a.3 · est: 2h
   - Uses Claude provider, structured output
   - Returns new code + diff summary
 
-### Wave 4 — Pipelines (parallel with W3)
+### Wave 4 — Pipelines ✅ 4.1-4.6 LARGELY DONE (commits 83a2e73 → 83f7c3e · 4.7/4.8 script archive + recipe rewrite remain)
 
-- [ ] **4.1 sprite.ts** · deps: 2.3, 3a.1 · est: 2.5h · parallel
-- [ ] **4.2 icon.ts** · deps: 2.3, 3a.1 · est: 2.5h · parallel
-- [ ] **4.3 texture.ts** · deps: 2.3, 3a.2 · est: 2.5h · parallel
-- [ ] **4.4 soldier-set.ts** · deps: 2.3, 3a.1 · est: 3h · parallel (T-pose + 9-pose)
-- [ ] **4.5 glb.ts** · deps: 2.3, 3a.3 · est: 2h · parallel (wraps kiln.generate)
-- [ ] **4.6 batch.ts** · deps: 4.1-4.5 · est: 2h (resumable wrapper for any pipeline)
+- [x] **4.1-4.6 pipeline implementations** · **done** (commits `36d8de8`, `f9a7ec2`, `bc0ad9a`, `141405d`, `3cb0660`, `83f7c3e`)
+  - sprite / icon / texture / soldier-set / glb / batch — all in `packages/core/src/image/pipelines/`
+  - Shared utilities: `image/chroma.ts` (4 chroma variants + `chromaCleanFor` router), `image/texture-processing.ts` (pixelate, upscale, quantize, seamless-wrap-aware black cleanup)
+  - +85 tests against fake providers (doubled the target of 40)
+  - **sharp quirk**: `Buffer`/`ArrayBuffer` pooled — pooled buffer views reach adjacent memory. Both utility modules clone via `pixels.set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength))` first. Documented in report.
 - [ ] **4.7 Archive 24 scripts** · deps: 0.3 list · est: 1h
   - Move to `scripts/_archive/`
   - ARCHIVE.md documents each

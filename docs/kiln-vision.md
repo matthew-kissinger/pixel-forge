@@ -480,13 +480,21 @@ Full brief: see conversation history 2026-04-22.
 
     User feedback on the grids (→ carried into Round 3): door handle looks off + no glass pane in window; vending machine is bland (just recessed box); tower is correct but plain — wants more detail (arrow slits, door, stone texture). Round 3 handoff: [docs/kiln-round-3.md](kiln-round-3.md).
 
-### Totals after Round 1 + Round 2
+12. **Round 3 tasks 1–3 landed (2026-04-22)**.
+
+    - Three.js bumped 0.182 → 0.184 across `packages/client`, `packages/core`, and the unpkg import map in [scripts/visual-audit.ts](../scripts/visual-audit.ts). Typecheck clean, all 290 core tests pass, all 12 GLBs re-audit clean at the new version.
+    - Validation-asset polish: door now has a translucent glass pane inset into the window cutout + a proper lathe ball-knob profile (was a flat nub); vending machine got a header strip + blue label + coin slot + coin return + dispense tray + emissive yellow trim + chrome bezel (248 tris, up from 136); tower got a plinth + CSG-carved door + six arrow slits + a conical red roof rising through the merlons (744 tris, up from 464).
+    - Agent-usage instrumentation: `buildSandboxGlobals(usage?)` now wraps every primitive (non-namespace) with a counter when a tally map is passed; `executeKilnCode` + `renderGLB` thread a fresh counter through every call and publish it on `render.meta.primitiveUsage`. Five new tests exercise the happy path, isolation between calls, and the zero-overhead unwrapped path.
+
+    Task 4 (minor polish: `planeUnwrapSingle`, `cylinderUnwrap capMode`, `pickProviderFor` on public ns, `createSoldierSetPipeline` partial regen) + the gallery UI surface for `primitiveUsage` deferred to the next round.
+
+### Totals after Round 1 + Round 2 + Round 3
 
 | Metric | Count |
 |---|---:|
 | Primitives exposed to agents | **48** (was 42 after Wave 3B, 25 at start) |
 | Primitive categories | 12 |
-| Core tests | 279 pass / 6 skip / 0 fail |
+| Core tests | 284 pass / 6 skip / 0 fail |
 | Validation GLBs | **12 / 12** audited clean (all re-authored with Round 1 primitives) |
 | Monorepo typecheck | clean across 5 packages |
 | New Kiln modules | solids.ts, ops.ts, uv.ts, textures.ts, gears.ts, uv-shapes.ts |
@@ -507,7 +515,7 @@ Full brief: see conversation history 2026-04-22.
 | 3A UV unwrap | ✅ | — (infra for 3B) |
 | 3B PBR + textures | ✅ | crate-textured, barrel-textured, sign-textured |
 | **Round 2 re-author validation** | ✅ | 3 scripts rewritten, 12/12 GLBs regen'd + audited via `visual-audit.ts`; gear winding bug caught+fixed |
-| **Round 3 (polish + instrumentation)** | ⏳ next | three.js 0.184 bump, door/vending/tower polish, agent-usage counter — [kiln-round-3.md](kiln-round-3.md) |
+| **Round 3 (polish + instrumentation)** | ✅ | three.js 0.184 bump across client/core/audit script; door glass + ball-knob, vending header/label/coin-slot/tray, tower plinth/door/arrow-slits/conical roof; agent-usage counter surfaced on `render.meta.primitiveUsage` — [kiln-round-3.md](kiln-round-3.md) |
 | 2C Node graph | ⏳ deferred | — |
 | 3C Texture gen (FAL) | ⏳ after Round 3 | — |
 | 3D Projection bake | ⏳ pending | — |

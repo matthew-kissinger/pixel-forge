@@ -55,12 +55,21 @@ async function gear() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Vending machine: body with 6 button recesses + front window + glass pane
-//    Cutter depth = 0.24u @ center z = 0.3 → 0.12u recess into the body front.
+// 2. Vending machine: body carved with button grid, product window, coin
+//    slot, coin return, and dispense tray. Header cap + emissive trim + a
+//    blue pay-strip label sit on top of the carved body for extra read.
 // ---------------------------------------------------------------------------
 async function vendingMachine() {
   const root = createRoot('VendingMachine');
   const redPaint = gameMaterial(0xaa2222, { roughness: 0.7 });
+  const darkTrim = gameMaterial(0x1a1a1a, { roughness: 0.9 });
+  const chrome = gameMaterial(0xc8c8c8, { metalness: 0.85, roughness: 0.25 });
+  const labelBlue = gameMaterial(0x1a4a8a, { roughness: 0.5 });
+  const yellowTrim = gameMaterial(0xffcc33, {
+    emissive: 0xffaa00,
+    emissiveIntensity: 1.2,
+    roughness: 0.4,
+  });
   const glassGlow = gameMaterial(0x00ff88, {
     emissive: 0x00ff66,
     emissiveIntensity: 1.6,
@@ -70,25 +79,71 @@ async function vendingMachine() {
   const body = new THREE.Mesh(boxGeo(1, 2, 0.6), redPaint);
 
   const cutters: THREE.Mesh[] = [];
-  // 3x2 grid of button recesses — 0.12u deep.
+  // 3x2 button recesses — 0.12u deep. Shifted down to make room for the
+  // taller product window above.
   for (let row = 0; row < 2; row++) {
     for (let col = 0; col < 3; col++) {
-      const c = new THREE.Mesh(boxGeo(0.2, 0.2, 0.24), gameMaterial(0x000000));
-      c.position.set(-0.3 + col * 0.3, -0.3 + row * 0.3, 0.3);
+      const c = new THREE.Mesh(boxGeo(0.18, 0.18, 0.24), darkTrim);
+      c.position.set(-0.3 + col * 0.3, -0.45 + row * 0.28, 0.3);
       cutters.push(c);
     }
   }
-  // Front window slot — same 0.12u recess depth.
-  const windowCutter = new THREE.Mesh(boxGeo(0.7, 0.5, 0.24), gameMaterial(0x000000));
-  windowCutter.position.set(0, 0.5, 0.3);
+
+  // Product window.
+  const windowCutter = new THREE.Mesh(boxGeo(0.7, 0.55, 0.24), darkTrim);
+  windowCutter.position.set(0, 0.45, 0.3);
   cutters.push(windowCutter);
+
+  // Coin slot (narrow vertical) — right of the button grid.
+  const coinSlot = new THREE.Mesh(boxGeo(0.04, 0.12, 0.24), darkTrim);
+  coinSlot.position.set(0.32, 0.05, 0.3);
+  cutters.push(coinSlot);
+
+  // Coin return (small rectangular tray) below buttons on the right.
+  const coinReturn = new THREE.Mesh(boxGeo(0.18, 0.06, 0.24), darkTrim);
+  coinReturn.position.set(0.28, -0.78, 0.3);
+  cutters.push(coinReturn);
+
+  // Dispense tray — wide shallow opening at the bottom.
+  const tray = new THREE.Mesh(boxGeo(0.6, 0.16, 0.28), darkTrim);
+  tray.position.set(-0.1, -0.88, 0.3);
+  cutters.push(tray);
 
   const carved = await boolDiff('Body', body, ...cutters, { smooth: false });
   root.add(carved);
 
-  // Emissive glass pane recessed into the window pocket.
-  createPart('GlassPane', boxGeo(0.65, 0.45, 0.02), glassGlow, {
-    position: [0, 0.5, 0.24],
+  // Emissive glass pane recessed into the product window.
+  createPart('GlassPane', boxGeo(0.66, 0.51, 0.02), glassGlow, {
+    position: [0, 0.45, 0.24],
+    parent: root,
+  });
+
+  // Header cap: raised black box across the top for brand strip contrast.
+  createPart('Header', boxGeo(1.02, 0.12, 0.62), darkTrim, {
+    position: [0, 1.04, 0],
+    parent: root,
+  });
+
+  // Blue "VEND" label strip across the header front.
+  createPart('Label', boxGeo(0.6, 0.08, 0.01), labelBlue, {
+    position: [0, 1.04, 0.31],
+    parent: root,
+  });
+
+  // Emissive yellow trim: thin strip running below the header and another
+  // framing the dispense tray.
+  createPart('TopTrim', boxGeo(0.92, 0.03, 0.02), yellowTrim, {
+    position: [0, 0.97, 0.31],
+    parent: root,
+  });
+  createPart('TrayTrim', boxGeo(0.62, 0.02, 0.02), yellowTrim, {
+    position: [-0.1, -0.79, 0.31],
+    parent: root,
+  });
+
+  // Chrome coin-return bezel that hints at a metal tray lip.
+  createPart('CoinBezel', boxGeo(0.2, 0.02, 0.02), chrome, {
+    position: [0.28, -0.74, 0.31],
     parent: root,
   });
 

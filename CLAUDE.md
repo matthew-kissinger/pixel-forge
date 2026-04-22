@@ -6,7 +6,7 @@ Node-based AI game asset generator. Substrate library `@pixel-forge/core` + four
 >
 > **Recent refactor**: see [docs/next-cycle.md](docs/next-cycle.md) for the 2026-04 cycle that landed `@pixel-forge/core` + CLI + MCP.
 >
-> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 48 primitives, 12 validation GLBs all audited clean, PBR + UV + CSG all wired. Round 1 primitive fixes ✅ and Round 2 validation-script rewrites ✅ — all landed 2026-04-22. Offline 6-view grid audit via `bun run audit:glb`, single-page review via `bun run audit:review`. Round 3 (three.js 0.184 bump, validation-asset polish, agent-usage instrumentation) scoped in [docs/kiln-round-3.md](docs/kiln-round-3.md).
+> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 48 primitives, 12 validation GLBs all audited clean, PBR + UV + CSG all wired. Round 1 ✅, Round 2 ✅, Round 3 ✅ (three.js 0.184 bump, door/vending/tower polish, agent-usage instrumentation surfaced as `render.meta.primitiveUsage`) — all landed 2026-04-22. Offline 6-view grid audit via `bun run audit:glb`, single-page review via `bun run audit:review`. Remaining minor polish tracked in [docs/kiln-round-3.md](docs/kiln-round-3.md) §4.
 
 ## Commands
 
@@ -20,7 +20,7 @@ bun run lint          # ESLint (all packages)
 # Tests (run per-package, NOT from root)
 cd packages/client && bunx vitest run                                # 1938 pass, 0 fail
 cd packages/server && bun test                                       # 114 pass, 0 fail
-cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 279 pass, 6 skip
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 284 pass, 6 skip
 cd packages/cli && bun test                                          # 16 pass
 cd packages/mcp && bun test                                          # 7 pass
 bun run test:e2e                                                     # Playwright smoke + mobile + workflow
@@ -165,12 +165,10 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 
 ## Current Gaps
 
-All Round 3 items live in [docs/kiln-round-3.md](docs/kiln-round-3.md). Quick list:
+Round 3 landed (2026-04-22). Remaining follow-ups in [docs/kiln-round-3.md](docs/kiln-round-3.md) §4:
 
-- **Three.js 0.182 → 0.184** minor bump. `examples/three-js/` clone is already at 0.184 for reference.
-- **Validation asset polish** (user feedback from Round 2 audit): door needs handle re-tune + visible glass pane; vending machine is bland; tower could be more detailed (arrow slits, door, stone texture).
-- **Agent-usage instrumentation** — wrap sandbox globals with a call counter that surfaces in `render.meta` so we know which primitives agents actually use.
-- **Minor polish**: `planeUnwrapSingle` (single-face unwrap for signs), `cylinderUnwrap({ capMode })`, `pickProviderFor` on public namespace, `createSoldierSetPipeline` partial regen.
+- **Minor polish candidates**: `planeUnwrapSingle` (single-face unwrap for signs), `cylinderUnwrap({ capMode })`, `pickProviderFor` on public namespace, `createSoldierSetPipeline` partial regen.
+- **Surface `primitiveUsage` in gallery** — counter now exists on `render.meta.primitiveUsage`; gallery metadata panel not yet reading it.
 - **No live integration tests** against real Gemini/FAL/Claude/OpenAI APIs (live tests gated behind `KILN_SPIKE_LIVE=1` and `IMAGE_PROVIDERS_LIVE=1` — run them manually).
 - **Dep upgrade pending**: 5 patch + 12 minor + 15 major bumps available. See [docs/dep-upgrade-audit.md](docs/dep-upgrade-audit.md). Biggest forced coupling: `@vitejs/plugin-react@6` peer-requires `vite@8`.
 

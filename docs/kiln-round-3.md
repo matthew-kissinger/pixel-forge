@@ -1,18 +1,19 @@
 # Kiln Round 3 — Handoff
 
-**Status:** ⏳ Next. Round 1 ✅ + Round 2 ✅ shipped 2026-04-22. This doc captures everything a fresh agent session needs to pick up Round 3 without reading the full Round 1/2 backlog.
+**Status:** ✅ Tasks 1–3 landed 2026-04-22. Round 1 ✅ + Round 2 ✅ + Round 3 ✅. Task 4 (minor polish candidates) deferred — tracked below. This doc captures everything a fresh agent session needs to pick up Round 3 follow-ups.
 
 **Read first:** [docs/kiln-vision.md](kiln-vision.md) (cycle-level vision + DAG + full progress log) and [docs/kiln-round-1.md](kiln-round-1.md) (what landed in Rounds 1 and 2; validation assets + visual-audit tool).
 
 ---
 
-## Where we are (as of commit after Round 2)
+## Where we are (as of Round 3 close)
 
 - **48 primitives** in 12 categories. Agents generate code via `claude-opus-4-7` (default in [generate.ts:83](../packages/core/src/kiln/generate.ts:83)).
 - **12 / 12 validation GLBs** pass the 6-view grid audit. Script: `bun run audit:glb`, output: `war-assets/validation/_grids/<name>-grid.png`.
 - **Review page**: `bun run audit:review` builds + opens `war-assets/validation/_grids/review.html` — one page with all 12 grids and a TOC.
-- **Core tests:** 279 pass / 6 skip / 0 fail. Monorepo typecheck clean.
-- **Three.js**: **still on 0.182** in packages/client (latest is 0.184 — clone already exists at `examples/three-js/` for reference).
+- **Core tests:** 284 pass / 6 skip / 0 fail. Monorepo typecheck clean.
+- **Three.js**: **0.184** across packages/client, packages/core, and the unpkg import map in [scripts/visual-audit.ts](../scripts/visual-audit.ts).
+- **Primitive usage counter**: `buildSandboxGlobals(usage?)` now wraps every primitive when a tally map is passed. `executeKilnCode` + `renderGLB` populate it into `render.meta.primitiveUsage`.
 
 ### Key files / modules
 
@@ -46,7 +47,7 @@ bun run audit:review
 
 ## Round 3 — tasks
 
-### 1 · Three.js 0.182 → 0.184 bump ⭐
+### 1 · Three.js 0.182 → 0.184 bump ⭐ ✅
 
 **Why now:** clean boundary after Round 2. Minor bump (no breaking changes expected). The `examples/three-js/` clone is already at 0.184 so docs/changelog/examples are available. Changelog may fix small primitive quirks — not blocking, but worth landing before further primitive work.
 
@@ -73,7 +74,7 @@ If any primitive looks different post-bump, diff against the pre-bump grids in g
 "three/addons/": "https://unpkg.com/three@0.184.0/examples/jsm/"
 ```
 
-### 2 · Validation-asset polish ⭐
+### 2 · Validation-asset polish ⭐ ✅
 
 User feedback from Round 2 audit (2026-04-22):
 
@@ -88,7 +89,7 @@ User feedback from Round 2 audit (2026-04-22):
 
 Regen each touched GLB, re-audit via `bun run audit:glb <name>.glb`, and look at the review page.
 
-### 3 · Agent-usage instrumentation
+### 3 · Agent-usage instrumentation ✅
 
 **Why:** we have no data on which of the 48 primitives agents actually use. Without that, adding/removing/renaming primitives is a guess. The goal is to drive Round 4+ prioritization from real usage, not vibes.
 
@@ -119,7 +120,9 @@ Then in render.ts, pull `sandbox.__usage` after the agent code runs and stuff it
 
 **Validation:** add a test that runs a known build() and asserts `result.meta.primitiveUsage.boxGeo === N`.
 
-### 4 · Minor polish candidates (pick if time allows)
+**Landed as:** `buildSandboxGlobals(usage?)` wraps every non-namespace primitive. `executeKilnCode` and `renderGLB` thread a fresh counter through each call and expose it on `meta.primitiveUsage`. Coverage in [primitives.test.ts](../packages/core/src/kiln/__tests__/primitives.test.ts:470) + [render-edges.test.ts](../packages/core/src/kiln/__tests__/render-edges.test.ts) (`primitive usage tracking` describe block). Gallery-side surfacing deferred — meta already ships, only the UI panel needs to render it.
+
+### 4 · Minor polish candidates (deferred — pick up next round)
 
 - **`planeUnwrapSingle(geo, face)`** — current `planeUnwrap` projects xy across all verts, so box/quad back face reads mirrored (physically correct, but often unwanted for signs). Add a variant that only UV-maps one face and collapses the rest to u=v=0 (or full-black).
 - **`cylinderUnwrap({ capMode: 'side' | 'solid' | 'custom' })`** — current preserves built-in UVs, so cylinder cap samples side-texture bands. Add `capMode: 'solid'` that collapses cap UVs to a single colour, and `capMode: 'custom'` that accepts a per-cap texture tile.

@@ -71,8 +71,8 @@ const RENDER_PAGE = `<!DOCTYPE html>
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.182.0/examples/jsm/"
+    "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.184.0/examples/jsm/"
   }
 }
 </script>

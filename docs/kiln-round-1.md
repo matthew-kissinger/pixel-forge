@@ -1,15 +1,15 @@
-# Kiln Round 1 — Primitive Fixes Handoff
+# Kiln Round 1 + Round 2 — Primitive Fixes Handoff
 
-**Status:** Round 1 primitives **✅ landed** 2026-04-22. All five fixes shipped with tests; 302 core tests pass / 0 fail. Validation-script rewrites (Round 2) still pending — see bottom of doc.
+**Status:** Round 1 primitives **✅ landed** 2026-04-22. All five fixes shipped with tests; 279 core tests pass / 6 skip / 0 fail. Round 2 validation scripts **✅ landed** 2026-04-22 — all 12 validation GLBs regenerated and audited via the new [visual-audit.ts](../scripts/visual-audit.ts) offline grid renderer. One winding bug was caught by the audit (gear had inverted normals on all four faces — invisible from certain angles under strict back-face culling) and fixed.
 
-**Read first:** [docs/kiln-vision.md](kiln-vision.md) for the cycle-level vision, DAG, validation asset suite, and full progress log. This doc focuses on the *Round 1 tasks* and the follow-up work still to do.
+**Read first:** [docs/kiln-vision.md](kiln-vision.md) for the cycle-level vision, DAG, validation asset suite, and full progress log. This doc focuses on the *Round 1/2 tasks*.
 
 ---
 
 ## Context snapshot (post Round 1)
 
 - **48 primitives** across 12 categories in [packages/core/src/kiln/list-primitives.ts](../packages/core/src/kiln/list-primitives.ts) (was 42)
-- **Tests:** 302 pass / 6 skip / 0 fail (core), 114 pass (server). All packages typecheck clean.
+- **Tests:** 279 pass / 6 skip / 0 fail (core), 114 pass (server). All packages typecheck clean.
 - **New Kiln modules:** [gears.ts](../packages/core/src/kiln/gears.ts), [uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts); `mergeVertices` + CSG `{ smooth }` option added in-place.
 - **Validation artifacts:** 12 GLBs in `war-assets/validation/` (gitignored). Regen with `bun scripts/validate-wave2a.ts && bun scripts/validate-wave2b.ts && bun scripts/validate-wave3.ts`.
 - **Inspector:** `GET /gallery/view/:category/:name` on `packages/server`. 7 camera presets (keys 1–7), wireframe (W), studio/void/checker scene (B/N/M), cycle-all-views (C), metadata panel.
@@ -217,15 +217,35 @@ Implementation found five spots where the doc assumptions didn't match the codeb
 4. **CSG variadic `...parts` + `{ smooth }` opts.** Rather than changing signatures, we detect an options object on the last arg: `boolUnion('X', a, b, { smooth: true })`. `boolUnion/Diff/Intersect` default to flat (hard edges); `hull` defaults to smooth (organic). Override either direction with `{ smooth: ... }`.
 5. **Blade bevel**: the full-diamond mode pinches the cross-section to `z = 0` at the centerline ridge; verified by test. Flat mode (`edgeBevel: 0`) keeps a pure prism.
 
-## Round 2 — validation script rewrites ⏳ NEXT
+## Round 2 — validation script rewrites ✅ LANDED
 
-Primitives are ready. Now rewrite the three validation scripts:
+All three validation scripts rewritten and regenerated 2026-04-22:
 
-- [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts): gear uses `gearGeo`; vending-machine deepen cutters to 0.12u + add emissive glass pane mesh on window; add `{ smooth: false }` to CSG calls for hard mechanical edges.
-- [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts): sword uses `bladeGeo`; rock-smooth calls `mergeVertices(..., { positionOnly: true })` before jittering; tower restructured — stacked stone courses with visible mortar lines OR a cylindrical keep with battlements.
-- [scripts/validate-wave3.ts](../scripts/validate-wave3.ts): crate → `boxUnwrap`; barrel → `cylinderUnwrap`; sign → `planeUnwrap` (all sync; drop the `await autoUnwrap(...)` calls).
+- [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts): ✅ gear uses `gearGeo({ teeth: 12, ... })`; vending-machine has 0.12u-deep cutters + emissive green glass pane on window; CSG calls take `{ smooth: false }`.
+- [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts): ✅ sword uses `bladeGeo({ length: 1.5, baseWidth: 0.08, tipLength: 0.3, edgeBevel: 0.6 })`; rock-smooth `mergeVertices(..., { positionOnly: true })` before jittering; tower is now a cylindrical stone keep with three course rings + 12 battlement merlons.
+- [scripts/validate-wave3.ts](../scripts/validate-wave3.ts): ✅ crate → `boxUnwrap`, barrel → `cylinderUnwrap`, sign → `planeUnwrap` (all sync; `autoUnwrap` + `await` calls dropped).
 
-Regen all 12 GLBs, open `http://localhost:3000/gallery/view/validation/<name>.glb` for each, cycle through views (press `C`), toggle wireframe (`W`), and confirm none of the Round 1 issues persist.
+All 12 validation GLBs regenerated and audited offline via the new `visual-audit.ts` script (see next section). One winding bug found+fixed along the way — the initial `gearGeo` had inverted triangle winding on all four faces (top cap, bottom cap, outer wall, inner bore) which made the gear invisible from certain angles under a strict back-face-culled renderer. `<model-viewer>` hid the bug by rendering double-sided. Grid audit caught it; [gears.ts:123-171](../packages/core/src/kiln/gears.ts:123) fixed.
+
+## Visual-audit tool ✅ new 2026-04-22
+
+Offline QA renderer to catch back-face-culling / winding issues that the `<model-viewer>`-based inspector masks. Uses Playwright-driven headless Three.js with `FrontSide` materials so inverted-winding triangles are invisible (= immediately obvious in the grid).
+
+```bash
+bun run audit:glb                      # all GLBs in war-assets/validation/
+bun run audit:glb gear.glb sword.glb   # specific files
+```
+
+Writes `war-assets/validation/_grids/<name>-grid.png` — six cells (Front / Right / Back / Left / Top / 3-4) per asset. Runs fully self-contained (no dev-server needed); pulls three.js 0.182 from unpkg for headless rendering. Note the script runs under `tsx` (node), not bun — Bun's spawning doesn't play well with Playwright's CDP pipe on Windows.
+
+## Round 3 — possible follow-ups
+
+Nothing currently blocking. Candidates for next cycle if needed:
+
+- **three.js 0.182 → 0.184** minor bump. Changelog may fix a couple of primitive behaviors we've been working around; refresh [examples/](../examples/) three.js clone alongside the bump so docs + examples stay in sync.
+- **Sign-texture orientation** — `planeUnwrap` + BoxGeometry produces correct text on the front, mirrored text on the back (physically correct for a flat sign). If agents want a sign that reads correctly on both faces, add a `planeUnwrapSingle(geo, face)` variant that only UV-maps one face.
+- **Cylinder cap UVs** — `cylinderUnwrap` preserves Three's built-in cap UVs, which sample the side-texture bands. Fine for most textures; if we want dedicated cap textures, extend `cylinderUnwrap` to accept `{ capMode: 'solid' | 'side' | 'custom' }`.
+- **Agent usage instrumentation** — wrap sandbox globals with a counter that surfaces in `render.meta` so we know which primitives agents actually use. Drives future primitive prioritization.
 
 ## Testing discipline
 
@@ -257,10 +277,11 @@ Add at least one unit test per new primitive in `packages/core/src/kiln/__tests_
 | [packages/core/src/kiln/\_\_tests\_\_/gears.test.ts](../packages/core/src/kiln/__tests__/gears.test.ts) | ✅ new | gearGeo + bladeGeo shape invariants |
 | [packages/core/src/kiln/\_\_tests\_\_/uv-shapes.test.ts](../packages/core/src/kiln/__tests__/uv-shapes.test.ts) | ✅ new | UV preservation across boxUnwrap/cylinderUnwrap/planeUnwrap |
 | [packages/core/src/kiln/\_\_tests\_\_/solids.test.ts](../packages/core/src/kiln/__tests__/solids.test.ts) | ✅ | 4 new cases for flat vs smooth shading |
-| [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts) | ⏳ Round 2 | gear + vending rewrites |
-| [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts) | ⏳ Round 2 | sword + tower + rock-smooth rewrites |
-| [scripts/validate-wave3.ts](../scripts/validate-wave3.ts) | ⏳ Round 2 | swap autoUnwrap for shape-aware |
-| [docs/kiln-vision.md](kiln-vision.md) | ✅ | Round 1 completion logged |
+| [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts) | ✅ Round 2 | gear uses `gearGeo`; vending deepened + emissive glass |
+| [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts) | ✅ Round 2 | sword uses `bladeGeo`; rock-smooth welded; tower = keep |
+| [scripts/validate-wave3.ts](../scripts/validate-wave3.ts) | ✅ Round 2 | shape-aware unwraps replace `autoUnwrap` |
+| [scripts/visual-audit.ts](../scripts/visual-audit.ts) | ✅ Round 2 new | offline 6-view grid renderer (catches winding bugs) |
+| [docs/kiln-vision.md](kiln-vision.md) | ✅ | Round 1 + 2 completion logged |
 
 ## Useful commands
 

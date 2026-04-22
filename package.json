@@ -19,9 +19,12 @@
     "typecheck": "bun run --filter '*' typecheck",
     "test": "bun run --filter '*' test",
     "test:e2e": "playwright test",
-    "check:bundle-size": "bun run scripts/check-bundle-size.ts"
+    "check:bundle-size": "bun run scripts/check-bundle-size.ts",
+    "audit:glb": "tsx scripts/visual-audit.ts"
   },
   "devDependencies": {
+    "playwright": "^1.59.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "dependencies": {

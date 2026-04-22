@@ -182,12 +182,16 @@ bun run typecheck         # TypeScript (tsc --noEmit)
 bun run lint              # ESLint
 
 # Tests
-cd packages/core   && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 302 pass
+cd packages/core   && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 279 pass + 6 skip
 cd packages/server && bun test           # 114 pass
 cd packages/client && bunx vitest run    # ~1900 pass
 cd packages/cli    && bun test           # 16 pass
 cd packages/mcp    && bun test           # 7 pass
 bun run test:e2e                         # Playwright smoke + mobile + workflow
+
+# QA
+bun run audit:glb                        # 6-view grid PNG per validation GLB
+bun run audit:glb gear.glb sword.glb     # subset
 ```
 
 ## CLI Asset Generation

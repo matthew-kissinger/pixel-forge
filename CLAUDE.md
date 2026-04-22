@@ -6,7 +6,7 @@ Node-based AI game asset generator. Substrate library `@pixel-forge/core` + four
 >
 > **Recent refactor**: see [docs/next-cycle.md](docs/next-cycle.md) for the 2026-04 cycle that landed `@pixel-forge/core` + CLI + MCP.
 >
-> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 48 primitives, 12 validation GLBs, PBR + UV + CSG all wired. Round 1 primitive fixes ✅ landed (parametric `gearGeo`/`bladeGeo`, shape-aware UV unwraps, CSG flat-shading option, `mergeVertices`). Round 2 validation-script rewrites next — see [docs/kiln-round-1.md](docs/kiln-round-1.md).
+> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 48 primitives, 12 validation GLBs all audited clean, PBR + UV + CSG all wired. Round 1 primitive fixes ✅ and Round 2 validation-script rewrites ✅ — all landed 2026-04-22. Offline 6-view grid audit via `bun run audit:glb`. See [docs/kiln-round-1.md](docs/kiln-round-1.md).
 
 ## Commands
 
@@ -20,10 +20,12 @@ bun run lint          # ESLint (all packages)
 # Tests (run per-package, NOT from root)
 cd packages/client && bunx vitest run                                # 1938 pass, 0 fail
 cd packages/server && bun test                                       # 114 pass, 0 fail
-cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 302 pass, 6 skip
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 279 pass, 6 skip
 cd packages/cli && bun test                                          # 16 pass
 cd packages/mcp && bun test                                          # 7 pass
 bun run test:e2e                                                     # Playwright smoke + mobile + workflow
+bun run audit:glb                                                    # 6-view grid PNGs for all validation GLBs
+bun run audit:glb gear.glb sword.glb                                 # subset
 ```
 
 ## Stack
@@ -156,16 +158,17 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 - Do NOT include yellow/orange in Vietnam jungle biomes
 - Do NOT describe focal points or framing - textures must be uniform density
 
-**Gallery:** Textures have 3x3/5x5/8x8 tile preview buttons at http://localhost:3000/gallery. GLBs have an **Inspect** button that opens `/gallery/view/:path` — a fullscreen inspector with 7 camera presets (1-7), working wireframe (W), studio/void/checker scene modes (B/N/M), exposure +/-, auto-rotate (R), and live metadata (tris / materials / meshes / world-space bbox). Use this when visually auditing Kiln output.
+**Gallery:** Textures have 3x3/5x5/8x8 tile preview buttons at http://localhost:3000/gallery. GLBs have an **Inspect** button that opens `/gallery/view/:path` — a fullscreen inspector with 7 camera presets (1-7), working wireframe (W), studio/void/checker scene modes (B/N/M), exposure +/-, auto-rotate (R), and live metadata (tris / materials / meshes / world-space bbox). Use this when visually auditing Kiln output *interactively*.
+
+**Offline audit:** `bun run audit:glb` renders a 3×2 grid PNG (Front / Right / Back / Left / Top / 3-4) for each GLB in `war-assets/validation/` to `war-assets/validation/_grids/`. Headless Three.js with strict back-face culling — catches winding bugs the `<model-viewer>`-based inspector hides. Use this whenever you touch primitive geometry; the inspector renders double-sided, which masks inverted normals. Script: [scripts/visual-audit.ts](scripts/visual-audit.ts).
 
 ## Current Gaps
 
-- **Round 2 validation rewrites pending**: 7 of 12 validation GLBs still use pre-Round-1 primitives. See [docs/kiln-round-1.md](docs/kiln-round-1.md) "Round 2" section.
+- **Three.js 0.182 → 0.184** minor bump pending. Alongside the bump, refresh the gitignored `examples/three.js/` clone (latest docs/examples/changelog) so the primitive research stays current.
 - **No live integration tests** against real Gemini/FAL/Claude/OpenAI APIs (live tests gated behind `KILN_SPIKE_LIVE=1` and `IMAGE_PROVIDERS_LIVE=1` — run them manually)
 - **`createSoldierSetPipeline` partial regen**: pipeline always regenerates the T-pose. Needs discriminated `tPose: Buffer | { prompt, refs? }` input for resumable runs.
 - **`pickProviderFor`** isn't on the public namespace — CLI mirrors the routing logic in `cli/src/routing.ts`. Surface on the `image` namespace next touch.
-- **Three.js is at 0.182**, latest is 0.184. Minor bump is safe; deferred until after Round 2.
-- **Agent signal missing**: no instrumentation of which Kiln primitives generated code actually uses. Post-Round-2 improvement — wrap sandbox globals with a usage counter that surfaces in `render.meta`.
+- **Agent signal missing**: no instrumentation of which Kiln primitives generated code actually uses. Wrap sandbox globals with a usage counter that surfaces in `render.meta`.
 - **Dep upgrade pending**: 5 patch + 12 minor + 15 major bumps available. See [docs/dep-upgrade-audit.md](docs/dep-upgrade-audit.md). Biggest forced coupling: `@vitejs/plugin-react@6` peer-requires `vite@8`.
 
 ## Known Issues

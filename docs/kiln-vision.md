@@ -472,20 +472,23 @@ Full brief: see conversation history 2026-04-22.
     4. `bladeGeo({ length, baseWidth, thickness, tipLength, edgeBevel })` — 5-pt tapered profile extruded; `edgeBevel > 0` pinches cross-section toward a diamond ridge.
     5. `boxUnwrap` / `cylinderUnwrap` / `planeUnwrap` in [uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts) — preserve Three.js's built-in directional UVs instead of letting xatlas rotate them. Sync, no WASM. Key realization from tracing `CylinderGeometry.js`: the default UVs already wrap u-around / v-up, which is correct for barrels/bands.
 
-    Catalog: **42 → 48 primitives** across **10 → 12 categories**. Core tests: 252 → 302 pass / 0 fail. Monorepo typecheck clean. Three.js 0.182 (latest 0.184 — minor bump deferred).
+    Catalog: **42 → 48 primitives** across **10 → 12 categories**. Core tests: 279 pass / 6 skip / 0 fail (ops / gears / uv-shapes / solids coverage added). Monorepo typecheck clean. Three.js 0.182 (latest 0.184 — minor bump deferred).
 
 - **2026-04-22**: **Security housekeeping** (alongside Round 1). Leaked Gemini key in `SESSION_CONTEXT.md` purged across all 342 commits via `git filter-repo --replace-text`; remote force-pushed; key rotated upstream. Added [scripts/secret-scan.sh](../scripts/secret-scan.sh) (Gemini / Anthropic / OpenAI / FAL / GitHub / Slack / AWS patterns) for pre-commit use, and [scripts/pull-keys.ts](../scripts/pull-keys.ts) which reads the central `~/.config/mk-agent/env` and fans it out to `.env.local` files — single source of truth for API keys going forward. `.gitignore` now blocks `SESSION_*.md`, `NOTES.md`, `SCRATCH.md`, `HANDOFF.md` scratch-doc class.
 
-### Totals after Round 1
+- **2026-04-22**: **Round 2 validation rewrites complete** — all 3 scripts rewritten to use the Round 1 primitives ([validate-wave2a.ts](../scripts/validate-wave2a.ts): `gearGeo` + deeper vending cutters + emissive glass pane; [validate-wave2b.ts](../scripts/validate-wave2b.ts): `bladeGeo` sword + welded rock-smooth + cylindrical-keep tower; [validate-wave3.ts](../scripts/validate-wave3.ts): `boxUnwrap`/`cylinderUnwrap`/`planeUnwrap`). All 12 validation GLBs regenerated. Added [scripts/visual-audit.ts](../scripts/visual-audit.ts) — offline 6-angle grid renderer using Playwright + headless Three.js with `FrontSide` materials, saves labelled 3×2 PNGs to `war-assets/validation/_grids/`. Runs without the dev server so QA works from Claude Code without the desktop preview open. Package script: `bun run audit:glb [name.glb ...]`. Grid audit immediately caught a winding bug in `gearGeo` (all 4 faces had inverted normals → invisible under back-face culling; `<model-viewer>` had hidden it via double-sided rendering). Fix: winding flipped in [gears.ts:123-171](../packages/core/src/kiln/gears.ts). Observations from the audit: gear = clean 12-tooth flat-shaded crown, sword = proper tapered blade w/ bevel, tower = hollow stone keep w/ courses + merlons, rock-smooth = single connected blob (was 3 shards), crate = horizontal planks align across all 6 faces, barrel = bands wrap horizontally, all asset visible from all angles.
+
+### Totals after Round 1 + Round 2
 
 | Metric | Count |
 |---|---:|
 | Primitives exposed to agents | **48** (was 42 after Wave 3B, 25 at start) |
 | Primitive categories | 12 |
-| Core tests | 302 pass / 6 skip / 0 fail (was 252) |
-| Validation GLBs | 12 / 12 (7 still need Round 2 re-author) |
+| Core tests | 279 pass / 6 skip / 0 fail |
+| Validation GLBs | **12 / 12** audited clean (all re-authored with Round 1 primitives) |
 | Monorepo typecheck | clean across 5 packages |
 | New Kiln modules | solids.ts, ops.ts, uv.ts, textures.ts, gears.ts, uv-shapes.ts |
+| New tooling | visual-audit.ts (offline 6-view grid renderer) |
 
 ### Progress summary (updated)
 
@@ -588,7 +591,7 @@ Once the Round 1 primitives land, rewrite the broken validation scripts:
 | 3B PBR + textures | ✅ | crate-textured, barrel-textured, sign-textured |
 | Visual audit + Inspector v2 | ✅ | 5 of 12 assets pass, 7 flagged |
 | **Round 1 primitive fixes** | ✅ | 6 new primitives (`mergeVertices`, `gearGeo`, `bladeGeo`, `boxUnwrap`, `cylinderUnwrap`, `planeUnwrap`) + CSG smooth option |
-| Round 2 re-author validation | ⏳ next | gear / sword / tower / vending / rock-smooth / crate / barrel / sign |
+| **Round 2 re-author validation** | ✅ | 3 scripts rewritten, 12/12 GLBs regen'd + audited via `visual-audit.ts`; gear winding bug caught+fixed |
 | 2C Node graph | ⏳ deferred | — |
 | 3C Texture gen (FAL) | ⏳ pending | — |
 | 3D Projection bake | ⏳ pending | — |

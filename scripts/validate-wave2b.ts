@@ -1,7 +1,15 @@
 /**
- * Wave 2B validation: exercise arrays / mirror / subdivide / curves end-to-end.
+ * Wave 2B validation: exercise arrays / mirror / subdivide / curves / blade
+ * end-to-end. Writes GLBs to war-assets/validation/ for visual inspection.
  *
- * Writes GLBs to war-assets/validation/ for visual inspection.
+ * Round 2 rewrites:
+ *   - sword → `bladeGeo` (was boxGeo(0.08, 1.5, 0.01) — a flat ruler).
+ *   - rock-smooth → `mergeVertices(..., { positionOnly: true })` BEFORE
+ *     jittering so the box's shared corners move as one and subdivide
+ *     into a single connected blob, not 3 disconnected shards.
+ *   - tower → cylindrical keep (hollow CSG) with 3 course rings and
+ *     12 battlement merlons, instead of the radial-brick ring that
+ *     left diamond-shaped mortar gaps.
  */
 
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -20,11 +28,13 @@ import {
   arrayRadial,
   mirror,
   subdivide,
+  mergeVertices,
   curveToMesh,
   lathe,
   bezierCurve,
 } from '../packages/core/src/kiln/ops';
 import { boolDiff } from '../packages/core/src/kiln/solids';
+import { bladeGeo } from '../packages/core/src/kiln/gears';
 import { renderSceneToGLB } from '../packages/core/src/kiln/render';
 
 const OUT_DIR = 'war-assets/validation';
@@ -46,14 +56,12 @@ async function fence() {
   const root = createRoot('Fence');
   const wood = gameMaterial(0x8b6f3d, { roughness: 0.9 });
 
-  // Posts (cone-topped): 10 posts, 0.5 apart
   const post0 = createPart('Post0', cylinderGeo(0.05, 0.05, 1.2, 6), wood, {
     position: [0, 0.6, 0],
     parent: root,
   });
   arrayLinear('Post', post0, 10, [0.5, 0, 0], root);
 
-  // Two horizontal rails
   const railTop = createPart('RailTop', boxGeo(4.6, 0.08, 0.06), wood, {
     position: [2.25, 0.95, 0],
     parent: root,
@@ -93,12 +101,7 @@ async function pipe() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Sword — extrude blade (curveToMesh with flat cross-section) +
-//            handle (lathe) + guard (boxGeo, mirrored)
-//
-// We don't have a real bevel primitive yet, so the blade is built from a
-// thin curveToMesh sweep of a small-radius tube, which approximates a
-// beveled edge for a stylized low-poly sword.
+// 3. Sword — parametric blade + lathed handle + box guard + sphere pommel.
 // ---------------------------------------------------------------------------
 async function sword() {
   const root = createRoot('Sword');
@@ -106,20 +109,21 @@ async function sword() {
   const leather = gameMaterial(0x5a3a20, { roughness: 0.9 });
   const gold = gameMaterial(0xd4af37, { metalness: 0.9, roughness: 0.35 });
 
-  // Blade: elongated box
-  const blade = createPart('Blade', boxGeo(0.08, 1.5, 0.01), steel, {
-    position: [0, 0.75, 0],
-    parent: root,
-  });
-  void blade;
+  // Blade: origin at base (y=0), tip at y=length. Mount guard at y=0.
+  createPart(
+    'Blade',
+    bladeGeo({ length: 1.5, baseWidth: 0.08, thickness: 0.015, tipLength: 0.3, edgeBevel: 0.6 }),
+    steel,
+    { position: [0, 0, 0], parent: root }
+  );
 
-  // Guard: small wide box, mirror unused but illustrates the op
+  // Guard sits at the blade base.
   createPart('Guard', boxGeo(0.4, 0.05, 0.06), gold, {
     position: [0, 0, 0],
     parent: root,
   });
 
-  // Handle: lathed profile, wrapped
+  // Handle: lathed profile wrapped below the guard.
   const handleGeo = lathe(
     [
       [0.03, -0.05],
@@ -134,7 +138,7 @@ async function sword() {
   handle.position.set(0, 0, 0);
   root.add(handle);
 
-  // Pommel: sphere
+  // Pommel cap.
   createPart('Pommel', sphereGeo(0.06, 12, 8), gold, {
     position: [0, -0.4, 0],
     parent: root,
@@ -144,53 +148,56 @@ async function sword() {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Brick tower — arrayRadial bricks around a cylinder
+// 4. Tower — cylindrical stone keep with battlements + visible courses.
 // ---------------------------------------------------------------------------
 async function tower() {
   const root = createRoot('Tower');
-  const brick = lambertMaterial(0x8b4444);
+  const stone = lambertMaterial(0x8a7a6a);
+  const darkStone = lambertMaterial(0x5a4a3a);
 
-  // Build a ring of bricks at each height level using arrayRadial.
-  const brickGeo = boxGeo(0.3, 0.25, 0.15);
-  const levels = 8;
-  for (let level = 0; level < levels; level++) {
-    const y = 0.125 + level * 0.25;
-    const offset = level % 2 === 0 ? 0 : Math.PI / 16; // stagger joints
+  // Hollow keep via boolDiff (inner cylinder slightly taller so it fully
+  // pierces the outer). Flat CSG for hard architectural edges.
+  const outer = new THREE.Mesh(cylinderGeo(1, 1, 3, 16), stone);
+  const inner = new THREE.Mesh(cylinderGeo(0.85, 0.85, 3.2, 16), stone);
+  const keep = await boolDiff('Keep', outer, inner, { smooth: false });
+  keep.position.y = 1.5;
+  root.add(keep);
 
-    const first = createPart(`BrickL${level}_0`, brickGeo, brick, {
-      position: [1, y, 0],
-      rotation: [0, (offset * 180) / Math.PI, 0],
+  // Three horizontal course bands — thin protruding rings break the vertical
+  // cylinder up with visible joint lines (stand-in for mortar courses).
+  for (let i = 1; i <= 3; i++) {
+    const y = i * 0.75;
+    createPart(`Course${i}`, cylinderGeo(1.04, 1.04, 0.06, 16), darkStone, {
+      position: [0, y, 0],
       parent: root,
     });
-    arrayRadial(`BrickL${level}_`, first, 16, 'y', root);
   }
 
-  // Cap
-  createPart('Cap', cylinderGeo(1.1, 1.1, 0.1, 16), brick, {
-    position: [0, 2.05, 0],
+  // Battlements: 12 merlons around the top rim.
+  const merlon0 = createPart('Merlon0', boxGeo(0.2, 0.4, 0.3), stone, {
+    position: [1, 3.2, 0],
     parent: root,
   });
+  arrayRadial('Merlon', merlon0, 12, 'y', root);
 
   await writeGlb(`${OUT_DIR}/tower.glb`, root);
 }
 
 // ---------------------------------------------------------------------------
-// 5. Door with handle — boolDiff (for latch plate) + lathe handle + mirror
+// 5. Door with handle — boolDiff (for window) + lathe handle + mirror
 // ---------------------------------------------------------------------------
 async function doorWithHandle() {
   const root = createRoot('Door');
   const oak = gameMaterial(0x6a4a2a, { roughness: 0.85 });
   const brass = gameMaterial(0xb08d3a, { metalness: 0.7, roughness: 0.4 });
 
-  // Door body with a rectangular viewing window cut out
   const body = new THREE.Mesh(boxGeo(1.2, 2.2, 0.1), oak);
   const windowCutter = new THREE.Mesh(boxGeo(0.6, 0.5, 0.2), oak);
   windowCutter.position.set(0, 0.7, 0);
 
-  const door = await boolDiff('Door', body, windowCutter);
+  const door = await boolDiff('Door', body, windowCutter, { smooth: false });
   root.add(door);
 
-  // Door handle: lathe knob on both sides (mirror)
   const knobGeo = lathe(
     [
       [0, 0],
@@ -214,14 +221,17 @@ async function doorWithHandle() {
 }
 
 // ---------------------------------------------------------------------------
-// 6. Smooth rock — subdivide a deformed box
+// 6. Smooth rock — weld corners, jitter the welded verts, subdivide.
 // ---------------------------------------------------------------------------
 async function smoothRock() {
   const root = createRoot('Rock');
   const stone = lambertMaterial(0x776655);
 
-  // Start with a box, deform vertices slightly, subdivide to smooth it.
-  const base = boxGeo(1.2, 0.8, 1);
+  // Three.js BoxGeometry has 24 verts (6 faces × 4) because each face needs
+  // its own normals / UVs. Welding with positionOnly collapses the 8
+  // shared cube corners into one each — essential so jittering and Loop
+  // subdivision treat the box as a single connected surface.
+  const base = mergeVertices(boxGeo(1.2, 0.8, 1), { positionOnly: true });
   const pos = base.getAttribute('position') as THREE.BufferAttribute;
   for (let i = 0; i < pos.count; i++) {
     pos.setXYZ(
@@ -233,7 +243,7 @@ async function smoothRock() {
   }
   pos.needsUpdate = true;
 
-  const smoothed = subdivide(base, 2);
+  const smoothed = subdivide(base, 2, { weld: false });
   const rock = new THREE.Mesh(smoothed, stone);
   rock.name = 'Mesh_Rock';
   root.add(rock);

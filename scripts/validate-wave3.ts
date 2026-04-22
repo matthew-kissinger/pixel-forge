@@ -1,9 +1,17 @@
 /**
  * Wave 3A + 3B validation: end-to-end textured asset pipeline.
  *
- * Pipeline: procedural-texture (via sharp) → loadTexture → autoUnwrap →
+ * Pipeline: procedural-texture (via sharp) → loadTexture → shape-aware UV →
  * pbrMaterial → GLB. No FAL/Gemini calls — that's Wave 3C. This script
  * proves the UV + PBR + texture-bridge plumbing works with any PNG.
+ *
+ * Round 2 rewrite:
+ *   - crate  → `boxUnwrap`      (was autoUnwrap — xatlas packed box faces
+ *                                 with arbitrary rotation, planks flipped)
+ *   - barrel → `cylinderUnwrap` (bands now run horizontally, not diagonal)
+ *   - sign   → `planeUnwrap`    ("KILN" text reads left-to-right front)
+ *   All three are synchronous (no WASM), so the `await` on the unwrap is
+ *   dropped.
  */
 
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -14,7 +22,11 @@ import {
   boxGeo,
   cylinderGeo,
 } from '../packages/core/src/kiln/primitives';
-import { autoUnwrap } from '../packages/core/src/kiln/uv';
+import {
+  boxUnwrap,
+  cylinderUnwrap,
+  planeUnwrap,
+} from '../packages/core/src/kiln/uv-shapes';
 import { loadTexture, pbrMaterial } from '../packages/core/src/kiln/textures';
 import { renderSceneToGLB } from '../packages/core/src/kiln/render';
 
@@ -76,7 +88,7 @@ async function writeGlb(path: string, root: THREE.Object3D) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. Textured crate — procedural wood, PBR, auto-UV
+// 1. Textured crate — boxUnwrap preserves per-face orientation-correct UVs.
 // ---------------------------------------------------------------------------
 async function crate() {
   const root = createRoot('Crate');
@@ -86,7 +98,7 @@ async function crate() {
   wood.wrapT = THREE.RepeatWrapping;
 
   const mat = pbrMaterial({ albedo: wood, roughness: 0.88, metalness: 0 });
-  const geo = await autoUnwrap(boxGeo(1, 1, 1), { resolution: 1024 });
+  const geo = boxUnwrap(boxGeo(1, 1, 1));
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'Mesh_Crate';
   root.add(mesh);
@@ -95,7 +107,7 @@ async function crate() {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Textured barrel — lathe-like via cylinder with metal bands texture
+// 2. Textured barrel — cylinderUnwrap keeps bands wrapping horizontally.
 // ---------------------------------------------------------------------------
 async function barrel() {
   const root = createRoot('Barrel');
@@ -103,7 +115,7 @@ async function barrel() {
   const bands = await loadTexture(bandsPng);
 
   const mat = pbrMaterial({ albedo: bands, roughness: 0.7, metalness: 0.2 });
-  const geo = await autoUnwrap(cylinderGeo(0.5, 0.5, 1.2, 24));
+  const geo = cylinderUnwrap(cylinderGeo(0.5, 0.5, 1.2, 24));
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'Mesh_Barrel';
   mesh.position.y = 0.6;
@@ -113,7 +125,7 @@ async function barrel() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. Textured sign — thin box with "KILN" label
+// 3. Textured sign — planeUnwrap maps xy-bbox to [0,1], "KILN" reads front.
 // ---------------------------------------------------------------------------
 async function sign() {
   const root = createRoot('Sign');
@@ -121,7 +133,7 @@ async function sign() {
   const signTex = await loadTexture(signPng);
 
   const mat = pbrMaterial({ albedo: signTex, roughness: 0.95, metalness: 0 });
-  const geo = await autoUnwrap(boxGeo(1, 0.6, 0.05));
+  const geo = planeUnwrap(boxGeo(1, 0.6, 0.05));
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'Mesh_Sign';
   root.add(mesh);

@@ -1,12 +1,12 @@
 /**
- * Provider contracts.
+ * Provider contracts + implementations.
  *
  *   import { providers } from '@pixel-forge/core';
- *   const gemini: providers.ImageProvider = ...;
+ *   const gemini: providers.ImageProvider = providers.createGeminiProvider();
  *
- * W3 wires up real implementations (`gemini.ts`, `openai.ts`, `fal.ts`,
- * `claude.ts`). W2 lands only the contracts so downstream waves can code
- * against them in parallel.
+ * Interfaces land first (W2.3); W3a fills in the implementations (gemini,
+ * fal, openai, anthropic adapter). Each factory is side-effect free at
+ * import time — API key probing happens only when the factory is called.
  */
 
 export type {
@@ -16,3 +16,25 @@ export type {
   CodeGenProvider,
   AnyProvider,
 } from './types';
+
+export {
+  createGeminiProvider,
+  type GeminiProviderOptions,
+} from './gemini';
+
+export {
+  createFalTextureProvider,
+  createFalBgRemovalProvider,
+  type FalTextureProviderOptions,
+  type FalBgRemovalProviderOptions,
+} from './fal';
+
+export {
+  createAnthropicProvider,
+  type AnthropicProviderOptions,
+} from './anthropic';
+
+export {
+  createOpenAIProvider,
+  type OpenAIProviderOptions,
+} from './openai';

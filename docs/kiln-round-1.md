@@ -9,7 +9,7 @@
 ## Context snapshot (post Round 1)
 
 - **48 primitives** across 12 categories in [packages/core/src/kiln/list-primitives.ts](../packages/core/src/kiln/list-primitives.ts) (was 42)
-- **Tests:** 279 pass / 6 skip / 0 fail (core), 114 pass (server). All packages typecheck clean.
+- **Tests:** 284 pass / 6 skip / 0 fail (core), 114 pass (server). All packages typecheck clean. (Round 3 added 5 tests for the primitive-usage counter.)
 - **New Kiln modules:** [gears.ts](../packages/core/src/kiln/gears.ts), [uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts); `mergeVertices` + CSG `{ smooth }` option added in-place.
 - **Validation artifacts:** 12 GLBs in `war-assets/validation/` (gitignored). Regen with `bun scripts/validate-wave2a.ts && bun scripts/validate-wave2b.ts && bun scripts/validate-wave3.ts`.
 - **Inspector:** `GET /gallery/view/:category/:name` on `packages/server`. 7 camera presets (keys 1–7), wireframe (W), studio/void/checker scene (B/N/M), cycle-all-views (C), metadata panel.
@@ -236,11 +236,11 @@ bun run audit:glb                      # all GLBs in war-assets/validation/
 bun run audit:glb gear.glb sword.glb   # specific files
 ```
 
-Writes `war-assets/validation/_grids/<name>-grid.png` — six cells (Front / Right / Back / Left / Top / 3-4) per asset. Runs fully self-contained (no dev-server needed); pulls three.js 0.182 from unpkg for headless rendering. Note the script runs under `tsx` (node), not bun — Bun's spawning doesn't play well with Playwright's CDP pipe on Windows.
+Writes `war-assets/validation/_grids/<name>-grid.png` — six cells (Front / Right / Back / Left / Top / 3-4) per asset. Runs fully self-contained (no dev-server needed); pulls three.js 0.184 from unpkg for headless rendering. Note the script runs under `tsx` (node), not bun — Bun's spawning doesn't play well with Playwright's CDP pipe on Windows.
 
-## Round 3 — scoped
+## Round 3 — ✅ landed
 
-All follow-up work moved to its own handoff doc: **[docs/kiln-round-3.md](kiln-round-3.md)** — three.js 0.184 bump + examples refresh, validation-asset polish (door / vending / tower per user feedback), agent-usage instrumentation, and a handful of smaller primitive-API polish items.
+Tasks 1–3 shipped 2026-04-22: three.js 0.184 bump across client/core/audit script, validation-asset polish (door glass pane + ball-knob; vending header/label/coin-slot/tray/trim; tower plinth/door/arrow-slits/conical-roof), and agent-usage instrumentation (`render.meta.primitiveUsage`). Remaining minor polish (Task 4) tracked in [docs/kiln-round-3.md](kiln-round-3.md) §4.
 
 ## Testing discipline
 

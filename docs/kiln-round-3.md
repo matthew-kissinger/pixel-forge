@@ -60,7 +60,7 @@ bun run audit:review
 ```bash
 bun install
 bun run typecheck                                    # must stay clean
-cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 279 pass / 6 skip
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 284 pass / 6 skip
 bun scripts/validate-wave2a.ts && bun scripts/validate-wave2b.ts && bun scripts/validate-wave3.ts
 bun run audit:glb                                    # visually verify no regressions
 ```
@@ -144,7 +144,7 @@ Between each task:
 
 ```bash
 bun run typecheck                                              # must stay clean
-cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # gate 279 pass / 6 skip
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # gate 284 pass / 6 skip
 cd packages/server && bun test                                 # gate 114 pass
 ```
 
@@ -186,7 +186,7 @@ bun run typecheck
 bun run lint
 
 # Tests
-cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test   # 279/285
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test   # 284/290
 cd packages/server && bun test                                          # 114
 cd packages/cli && bun test                                             # 16
 cd packages/mcp && bun test                                             # 7

@@ -1,8 +1,9 @@
 <p align="center">
   <h1 align="center">Pixel Forge</h1>
   <p align="center">
-    Node-based AI game asset generator.<br/>
-    Visual pipelines for 2D sprites, tileable textures, and 3D models.
+    <b>One substrate. Four transports. Zero Blender.</b><br/>
+    AI-powered game asset pipelines you drive from the browser, your shell,
+    your editor's agent, or an HTTP call.
   </p>
 </p>
 
@@ -12,299 +13,345 @@
   <a href="https://github.com/matthew-kissinger/pixel-forge/actions"><img src="https://img.shields.io/github/actions/workflow/status/matthew-kissinger/pixel-forge/ci.yml?style=flat-square&label=CI" alt="CI"></a>
   <img src="https://img.shields.io/badge/React_19-React_Flow_12-61DAFB?style=flat-square&logo=react" alt="React">
   <img src="https://img.shields.io/badge/runtime-Bun-f9f1e1?style=flat-square&logo=bun" alt="Bun">
-  <img src="https://img.shields.io/badge/AI-Gemini_%7C_FAL_%7C_Claude-8E75B2?style=flat-square" alt="AI Services">
+  <img src="https://img.shields.io/badge/3D-Three.js_0.184-000000?style=flat-square&logo=three.js" alt="Three.js">
+  <img src="https://img.shields.io/badge/AI-Gemini_%7C_FAL_%7C_Claude_%7C_OpenAI-8E75B2?style=flat-square" alt="AI Services">
 </p>
 
 ---
 
-## Overview
+## What is it?
 
-Pixel Forge is a visual node editor for generating game-ready assets with AI. Drag, connect, and execute pipelines that produce sprites, textures, and 3D models - all from text prompts.
+Pixel Forge turns **text prompts** into **game-ready assets** — 2D sprites with clean transparency, seamless pixel-art textures, and 3D GLB models — through pipelines you can drive four different ways:
 
-### Node Editor
+- **[Visual node editor](#1--visual-editor)** — drag nodes, wire them up, hit run
+- **[`pixelforge` CLI](#2--cli-pixelforge)** — one command, one asset, scriptable
+- **[MCP server](#3--mcp-server)** — drop the tools into Claude Code / Cursor / any MCP client and let an agent drive
+- **[HTTP API](#4--http-api)** — Hono server for your own frontends or bots
 
-Build asset pipelines by connecting nodes. Each node handles one step - generation, processing, or export.
+All four wrap **one library**: [`@pixel-forge/core`](packages/core/). No duplication, no drift.
 
-![Node Editor - Asset Pipeline](docs/screenshots/editor-pipeline.png)
+> **Why this is different:** the 3D path is LLM-authored, not image-to-mesh. Claude writes small TypeScript programs against a library of **48 Three.js primitives** (CSG booleans, shape-aware UV unwraps, parametric gears + blades, PBR, instancing) and they render straight to GLB via `@gltf-transform/core`. No Blender, no photogrammetry, no hallucinated meshes. See [docs/kiln-vision.md](docs/kiln-vision.md).
 
-### Asset Gallery
+<!-- SCREENSHOT-REFRESH: the screenshots below are from the pre-Round-3 build.
+     Plan to regenerate the full set (editor, gallery, soldiers, vegetation,
+     vehicles, textures, Kiln validation grid) once the user approves the
+     shot list. See docs/screenshot-refresh.md. -->
 
-Browse, compare, and review generated assets. Raw vs clean comparison for sprites, tiled preview for textures, interactive 3D viewer for GLB models.
+### Gallery
 
-![Asset Gallery - Weapons](docs/screenshots/gallery-weapons.png)
+| | |
+|---|---|
+| **Visual editor** — node-based asset pipelines | ![Node Editor](docs/screenshots/editor-pipeline.png) |
+| **Asset gallery** — compare, inspect, export | ![Asset Gallery](docs/screenshots/gallery-weapons.png) |
+| **2D sprites** — faction soldiers, 32-bit pixel art | ![Soldiers](docs/screenshots/gallery-soldiers.png) |
+| **3D GLBs** — LLM-authored via Kiln primitives | ![Vehicles](docs/screenshots/gallery-vehicles.png) |
+| **Tileable terrain** — FLUX 2 + Seamless LoRA | ![Textures](docs/screenshots/gallery-textures.png) |
 
-### Generated Assets
-
-All assets below were generated entirely by AI through Pixel Forge pipelines.
-
-<table>
-<tr>
-<td width="50%">
-
-**2D Sprites** - Pixel art characters with automatic background removal
-
-![Soldier Sprites](docs/screenshots/gallery-soldiers.png)
-</td>
-<td width="50%">
-
-**Vegetation** - Billboard sprites with magenta chroma key cleanup
-
-![Vegetation Sprites](docs/screenshots/gallery-vegetation.png)
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-**3D Vehicles** - GLB models built from Three.js primitives via Claude
-
-![Aircraft Models](docs/screenshots/gallery-vehicles.png)
-</td>
-<td width="50%">
-
-**Ground Vehicles** - Tanks, APCs, jeeps, trucks
-
-![Ground Vehicles](docs/screenshots/gallery-ground-vehicles.png)
-</td>
-</tr>
-<tr>
-<td colspan="2">
-
-**Tileable Textures** - Seamless pixel-art terrain tiles via FLUX 2 + LoRA
-
-![Terrain Textures](docs/screenshots/gallery-textures.png)
-</td>
-</tr>
-</table>
+> 📸 **These screenshots are due for a refresh** — current pipelines produce better results than what's shown. Tracking in [docs/screenshot-refresh.md](docs/screenshot-refresh.md). Contributions welcome.
 
 ---
 
-### Pipelines
+## What's in the box
 
-| Pipeline | AI Service | Input | Output |
-|----------|-----------|-------|--------|
-| **2D Sprites** | Gemini 3.1 Flash Image | Text prompt + style preset | Transparent PNG sprites |
-| **Tileable Textures** | FLUX 2 + Seamless LoRA (FAL) | Terrain description | Seamless pixel-art tiles |
-| **3D Models** | Claude (Anthropic) | Object description | GLB models via Three.js primitives |
-| **Background Removal** | BiRefNet (FAL) | Any image | Clean transparency |
+| | |
+|---|---:|
+| Kiln primitives (CSG, UV, gears, PBR, instancing, …) | **48** in 12 categories |
+| Validation GLBs (all audited clean under strict back-face culling) | **12 / 12** |
+| Node types in the visual editor | **30** (28 lazy-loaded) |
+| Test coverage — core · server · client · cli · mcp | **~2,100 expect()** calls |
+| Supported AI providers | Gemini, FAL, Claude, OpenAI |
+| Packages in the monorepo | 5 (core, client, server, cli, mcp) + shared |
 
-### Background Color Selection
+---
 
-Clean transparency requires choosing a background color that contrasts with the asset's dominant colors. This prevents color bleed at edges after BiRefNet removal.
+## The four transports
 
-| Asset Type | Background | Why |
-|-----------|-----------|-----|
-| Vegetation, soldiers, terrain | Magenta `#FF00FF` | Maximum contrast with greens, browns, skin tones |
-| Icons, UI elements (white/grey) | Blue `#0000FF` | Better BiRefNet separation for light subjects |
-| Fire, explosions (red/orange) | Blue `#0000FF` | Avoids red channel bleed |
-| Colored emblems/insignia | Green `#00FF00` | Skip BiRefNet entirely, use green chroma key |
-
-All sprite presets use magenta by default. Never use red (`#FF0000`) for sprites - it bleeds into greens, browns, and skin tones.
-
-### Key Features
-
-- **30 node types** - image gen, bg removal, 3D gen, canvas ops, batch processing, analysis, export
-- **48 Kiln primitives** - Three.js-primitive-based 3D generation (CSG, UV unwrap, PBR textures, parametric gears & blades, shape-aware unwraps). LLM-authored JS renders to GLB headlessly via `@gltf-transform/core` — no Blender required. See [`docs/kiln-vision.md`](docs/kiln-vision.md).
-- **Parallel execution** - topological sort with wave-based parallelism
-- **Resilient** - per-node timeouts, retry with backoff, error boundaries on every node
-- **Fast** - lazy-loaded nodes, ~103KB gzip main bundle, Three.js loaded on demand
-- **Recoverable** - undo/redo snapshots, auto-save to localStorage, recovery banner
-- **CLI + UI + MCP** - visual editor, `pixelforge` CLI, or stdio MCP server — all wrap the same `@pixel-forge/core` substrate
-- **Agent-friendly** - documented API for AI agent workflows (see [`AGENTS.md`](AGENTS.md)); secret-scan pre-commit hook at [`scripts/secret-scan.sh`](scripts/secret-scan.sh)
-
-## Quick Start
+### 1 · Visual editor
 
 ```bash
-# Prerequisites: Bun (https://bun.sh), Node 22+
+bun install
+bun run dev:server    # :3000 — API
+bun run dev:client    # :5173 — editor
+```
+
+Open `http://localhost:5173` to build pipelines; `http://localhost:3000/gallery` to browse output. Every node has a retry button, per-node timeouts, and an error boundary. Undo/redo and auto-save to localStorage are on by default.
+
+### 2 · CLI (`pixelforge`)
+
+```bash
+cd packages/cli && bun link
+
+pixelforge gen sprite  --prompt "m16 rifle, side view" --bg magenta --out m16.png
+pixelforge gen texture --description "jungle moss" --size 512 --out moss.png
+pixelforge gen glb     --prompt "guard tower" --category structure --out tower.glb
+
+pixelforge inspect glb ./tower.glb
+pixelforge kiln list-primitives
+pixelforge providers list
+```
+
+Every command accepts `--json` for machine-readable stdout. Errors print `code` + `fixHint` from the core's `PixelForgeError` taxonomy and exit non-zero. Full surface: [packages/cli/README.md](packages/cli/README.md).
+
+### 3 · MCP server
+
+Drop it into any MCP client (Claude Code, Cursor, Zed, your own) and an agent can generate assets without you pasting curl commands:
+
+```bash
+claude mcp add pixelforge --stdio bun packages/mcp/src/index.ts
+```
+
+Tools auto-discovered by the client:
+
+- `pixelforge_gen_{sprite, icon, texture, glb, soldier_set}`
+- `pixelforge_kiln_{inspect, validate, refactor, list_primitives}`
+- `pixelforge_providers_capabilities`
+
+Binary outputs default to a tmp file path (lets the agent reason about the asset without blowing up context); pass `inline: true` for base64 or `outPath: "..."` for an explicit destination. Full surface: [packages/mcp/README.md](packages/mcp/README.md).
+
+### 4 · HTTP API
+
+```bash
+bun run dev:server      # Hono on :3000
+curl -sX POST localhost:3000/api/kiln/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"prompt":"guard tower","category":"structure"}'
+```
+
+Routes mirror the CLI surface. Validation via Zod, responses typed, same error taxonomy. See [packages/server/README.md](packages/server/README.md).
+
+---
+
+## Pipelines at a glance
+
+| Pipeline | AI service | Input | Output |
+|---|---|---|---|
+| **2D sprites** | Gemini 3.1 Flash Image | Prompt + style preset | Transparent PNG |
+| **Background cleanup** | FAL BiRefNet + chroma key | Any image | Clean transparency |
+| **Tileable textures** | FAL FLUX 2 + Seamless LoRA | Terrain description | Seamless pixel-art tile |
+| **3D models (Kiln)** | Anthropic Claude → Three.js → GLB | Object description | GLB via primitives, no Blender |
+| **Image → 3D** | FAL Meshy (optional) | Reference image | Textured GLB |
+
+**Battle-tested domain knowledge** ships in the repo — [docs/asset-reference.md](docs/asset-reference.md) + the CLAUDE.md pipelines document things like *"never use `#FF0000` background, it bleeds into greens and skin tones"*, *"don't run BiRefNet on colored emblems — use direct green chroma key"*, *"side-walk sprites need a visual pose reference, Gemini ignores 'leg forward' in text"*. This is the kind of thing you usually rediscover painfully; we wrote it down.
+
+---
+
+## Kiln — the LLM-to-GLB path
+
+Most AI-to-3D tools give you a black box (image → mesh). Kiln gives you a **primitive library** and lets Claude compose it:
+
+```ts
+// What the LLM writes
+const meta = { name: 'GuardTower', category: 'structure' };
+
+async function build() {
+  const root = createRoot('Tower');
+  const stone = lambertMaterial(0x8a7a6a);
+
+  // Hollow keep + arrow slits, all in one CSG pass.
+  const outer = new THREE.Mesh(cylinderGeo(1, 1, 3, 16), stone);
+  const hollow = new THREE.Mesh(cylinderGeo(0.85, 0.85, 3.2, 16), stone);
+  const door = new THREE.Mesh(boxGeo(0.45, 0.9, 0.4), stone);
+  door.position.set(0, -1.05, 0.9);
+
+  const keep = await boolDiff('Keep', outer, hollow, door, { smooth: false });
+  keep.position.y = 1.7;
+  root.add(keep);
+
+  // Battlements + conical roof
+  const merlon0 = createPart('Merlon0', boxGeo(0.2, 0.4, 0.3), stone,
+    { position: [1, 3.4, 0], parent: root });
+  arrayRadial('Merlon', merlon0, 12, 'y', root);
+  createPart('Roof', coneGeo(0.9, 1.1, 16), lambertMaterial(0x6b3a2a),
+    { position: [0, 4.15, 0], parent: root });
+
+  return root;
+}
+```
+
+What you get for free:
+
+- **Headless GLB export** via `@gltf-transform/core` (no browser APIs)
+- **CSG booleans** (manifold-3d WASM) with `{ smooth }` control
+- **Shape-aware UV unwraps** that preserve directional UVs for box / cylinder / plane
+- **Parametric primitives** — `gearGeo({ teeth, rootRadius, tipRadius, boreRadius, height })`, `bladeGeo({ length, baseWidth, thickness, tipLength, edgeBevel })`
+- **Offline 6-view grid audit** (`bun run audit:glb`) that renders every GLB under **strict back-face culling** — catches winding bugs that `<model-viewer>` hides because it renders double-sided
+- **Primitive usage counter** — every generation ships `render.meta.primitiveUsage` so you can see which helpers your agents actually reach for
+
+Full cycle history: [docs/kiln-vision.md](docs/kiln-vision.md). Round-specific handoffs: [kiln-round-1.md](docs/kiln-round-1.md) · [kiln-round-3.md](docs/kiln-round-3.md).
+
+---
+
+## Quick start
+
+```bash
+# Prereqs: Bun (https://bun.sh), Node 22+
 bun install
 
-# Configure API keys (copy template, paste your keys):
+# Copy API-key template and paste your keys
 cp .env.example .env.local
 cp .env.example packages/server/.env.local
 
-# Start
-bun run dev:server    # API server on :3000
-bun run dev:client    # Editor UI on :5173
+# Run
+bun run dev:server    # :3000 API
+bun run dev:client    # :5173 editor
 ```
 
-Open http://localhost:5173 for the visual editor, or http://localhost:3000/gallery to browse generated assets.
+### API keys
 
-## API Keys
+| Service | Required | Powers | Get a key |
+|---|:---:|---|---|
+| Google Gemini | ✅ | 2D sprite generation | [Google AI Studio](https://aistudio.google.com/apikey) |
+| FAL AI | ✅ | Bg removal, textures, 3D | [FAL dashboard](https://fal.ai/dashboard/keys) |
+| Anthropic | optional | Kiln 3D composition | [Anthropic console](https://console.anthropic.com/settings/keys) |
+| OpenAI | optional | gpt-image fallback | [OpenAI platform](https://platform.openai.com/api-keys) |
 
-Bun auto-loads `.env.local` from the repo root and from `packages/server/`. Put your keys in both (or use the central-store workflow below).
+Bun auto-loads `.env.local` from the repo root and `packages/server/`. Multi-project users can point at a shared `~/.config/mk-agent/env` and fan it out with `bun scripts/pull-keys.ts`.
 
-| Service | Required | What It Powers | Get a Key |
-|---------|:--------:|----------------|-----------|
-| Google Gemini | Yes | 2D sprite generation | [Google AI Studio](https://aistudio.google.com/apikey) |
-| FAL AI | Yes | Background removal, texture gen, 3D gen | [FAL Dashboard](https://fal.ai/dashboard/keys) |
-| Anthropic | Optional | 3D primitive composition (Kiln) | [Anthropic Console](https://console.anthropic.com/settings/keys) |
-| OpenAI | Optional | gpt-image-1.5 / gpt-image-2 fallback | [OpenAI Platform](https://platform.openai.com/api-keys) |
-
-### Central key store (optional workflow)
-
-If you run multiple projects and don't want keys duplicated across repos, keep a single file at `~/.config/mk-agent/env` and fan it out on demand:
+**Before committing:** run `bash scripts/secret-scan.sh` or install it as a pre-commit hook:
 
 ```bash
-# Keys live once in ~/.config/mk-agent/env — KEY=value, one per line.
-bun scripts/pull-keys.ts
-# Writes .env.local and packages/server/.env.local from the central file.
+cp scripts/secret-scan.sh .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 ```
 
-**Before committing:** run `bash scripts/secret-scan.sh` (or install it as a pre-commit hook: `cp scripts/secret-scan.sh .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`). Scans staged changes for Gemini / Anthropic / OpenAI / FAL / GitHub / Slack / AWS key patterns and blocks commits that contain them.
+Scans staged changes for Gemini / Anthropic / OpenAI / FAL / GitHub / Slack / AWS key patterns.
 
-## Project Structure
+---
+
+## Project layout
 
 ```
 pixel-forge/
   packages/
-    core/         # @pixel-forge/core - headless substrate (kiln, image, providers)
-    client/       # React 19 + React Flow 12 + Zustand + Tailwind CSS
-    server/       # Hono API server with Zod validation
-    shared/       # Cross-adapter types
-    cli/          # `pixelforge` CLI (citty over core)
-    mcp/          # MCP stdio server (over core)
-  scripts/        # Recipe scripts over @pixel-forge/core (+ Python)
-  docs/           # Prompt templates, workflows, asset specs, wave reports
-  e2e/            # Playwright end-to-end tests
-  .claude/        # AI agent skill definitions
+    core/     # @pixel-forge/core — headless substrate (kiln/, image/, providers/)
+    client/   # React 19 + React Flow 12 + Zustand + Tailwind
+    server/   # Hono API + Zod validation
+    cli/      # citty CLI → core
+    mcp/      # stdio MCP server → core
+    shared/   # cross-adapter types only
+  scripts/    # Recipe scripts + visual-audit.ts + secret-scan.sh
+  docs/       # Prompt templates, cycle logs, wave reports
+  e2e/        # Playwright smoke + mobile + workflow
+  .claude/    # Skill definitions for Claude agents
 ```
 
 ## Commands
 
 ```bash
 # Development
-bun run dev:client        # Vite dev server (:5173)
-bun run dev:server        # Hono API server (:3000)
-bun run dev               # Both concurrently
+bun run dev:client      # editor   :5173
+bun run dev:server      # API      :3000
+bun run dev             # both, concurrently
 
 # Quality
-bun run build             # Production build
-bun run typecheck         # TypeScript (tsc --noEmit)
-bun run lint              # ESLint
+bun run typecheck       # tsc --noEmit across packages
+bun run lint            # ESLint across packages
+bun run build           # production build
 
-# Tests
-cd packages/core   && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 284 pass + 6 skip
-cd packages/server && bun test           # 114 pass
-cd packages/client && bunx vitest run    # ~1900 pass
-cd packages/cli    && bun test           # 16 pass
-cd packages/mcp    && bun test           # 7 pass
-bun run test:e2e                         # Playwright smoke + mobile + workflow
+# Tests (run per-package, not from root)
+cd packages/core   && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test   # 284 pass + 6 skip
+cd packages/server && bun test                                            # 114 pass
+cd packages/client && bunx vitest run                                     # ~1900 pass
+cd packages/cli    && bun test                                            # 16 pass
+cd packages/mcp    && bun test                                            # 7 pass
+bun run test:e2e                                                          # Playwright
 
-# QA
-bun run audit:glb                        # 6-view grid PNG per validation GLB
-bun run audit:glb gear.glb sword.glb     # subset
+# QA for Kiln output
+bun run audit:glb                             # 6-view grid PNG per validation GLB
+bun run audit:glb gear.glb sword.glb          # subset
+bun run audit:review                          # open single-page HTML review
 ```
 
-## CLI Asset Generation
-
-Generate assets without the UI using CLI scripts:
-
-```bash
-# Single sprite
-bun scripts/generate.ts image \
-  --prompt "tropical fern, 32-bit pixel art sprite, bright saturated colors..." \
-  --out vegetation/fern.png \
-  --remove-bg \
-  --aspect 1:1
-
-# Batch generation from manifest
-bun scripts/generate.ts batch --manifest scripts/batches/batch1-vegetation.json
-```
-
-See [`AGENTS.md`](AGENTS.md) for the full API reference, batch manifest format, and style system docs.
-
-## Agent Adapters: `pixelforge` CLI + MCP server
-
-Two thin wrappers over `@pixel-forge/core` for agentic workflows.
-
-### CLI (`pixelforge`, citty)
-
-```bash
-cd packages/cli && bun link    # puts `pixelforge` on PATH
-# Or invoke directly without linking:
-bun packages/cli/src/index.ts <command> [...args]
-
-# Worked example: a single sprite end-to-end
-pixelforge gen sprite \
-  --prompt "m16 rifle, side view" \
-  --bg magenta \
-  --out ./out/m16.png
-
-# More commands
-pixelforge gen icon         --prompt "ammo crate" --variant mono --out ./icon.png
-pixelforge gen texture      --description "jungle floor moss" --size 512 --out ./tile.png
-pixelforge gen glb          --prompt "guard tower"  --category structure --out ./tower.glb
-pixelforge inspect glb      ./tower.glb
-pixelforge providers list
-pixelforge kiln list-primitives
-pixelforge kiln validate    ./code.ts
-```
-
-Every command supports `--json` for machine-readable stdout. Errors print
-`code` + `fixHint` from the core's `PixelForgeError` taxonomy and exit
-non-zero. See [`packages/cli/README.md`](packages/cli/README.md) for the
-full surface.
-
-### MCP server (stdio)
-
-```bash
-# Install once:
-claude mcp add pixelforge --stdio bun packages/mcp/src/index.ts
-
-# Then from Claude Code (or any MCP client), tools are auto-discovered:
-#   pixelforge_gen_sprite      { prompt: "m16 rifle", bg: "magenta" }
-#   pixelforge_kiln_inspect    { code: "..." }
-#   pixelforge_providers_capabilities { }
-```
-
-Tools: `pixelforge_gen_{sprite,icon,texture,glb,soldier_set}`,
-`pixelforge_kiln_{inspect,validate,refactor,list_primitives}`,
-`pixelforge_providers_capabilities`. Binary outputs (PNG/GLB) default to
-writing a tmp file and returning the path; pass `inline: true` to receive
-base64 instead, or `outPath: "..."` for an explicit destination. See
-[`packages/mcp/README.md`](packages/mcp/README.md) for details.
+---
 
 ## Architecture
 
-The editor uses a **dataflow execution model**:
-
 ```
-[Input Nodes] --> [Processing Nodes] --> [Output Nodes]
-     |                   |                    |
-  Prompts,          Transform,            Export,
-  Images,           Analyze,              Gallery,
-  Presets            Compose               Sheets
+┌──── visual editor ────┐ ┌── pixelforge CLI ──┐ ┌── MCP server ──┐ ┌── HTTP API ──┐
+│    React Flow DAG     │ │      citty         │ │      stdio     │ │     Hono     │
+└────────────┬──────────┘ └──────────┬─────────┘ └────────┬───────┘ └───────┬──────┘
+             │                       │                    │                 │
+             └───────────────────────┴──────────┬─────────┴─────────────────┘
+                                                │
+                                    ┌───────────▼──────────┐
+                                    │  @pixel-forge/core   │
+                                    │   kiln / image /     │
+                                    │    providers /       │
+                                    │      pipelines       │
+                                    └───────────┬──────────┘
+                                                │
+                        ┌───────────────────────┼──────────────────────┐
+                        │                       │                      │
+                   Gemini / OpenAI           FAL (BiRefNet,        Anthropic Claude
+                    (2D sprites)         FLUX 2, Meshy, LoRA)      (Kiln primitives)
 ```
 
-1. **Nodes** define operations (generate, remove bg, resize, compose, export)
-2. **Edges** connect node outputs to inputs, forming a DAG
-3. **Executor** performs topological sort and runs independent nodes in parallel waves
-4. **Handlers** (9 modules) dispatch each node type with per-type timeouts (30s-120s)
+Editor runs a **dataflow execution model**: nodes define ops, edges form a DAG, the executor topo-sorts and runs independent nodes in parallel waves. 28 complex node components are lazy-loaded; Three.js (~380 KB gzip) only loads when a 3D node is used. Main bundle is **~103 KB gzip**.
 
-All 28 complex node components are **lazy-loaded** via `createLazyNode` with `NodeErrorBoundary` wrappers. Three.js (~380KB gzip) is only loaded when 3D nodes are used.
+Agent adapters (CLI, MCP, HTTP) are thin — they translate `(args) → core function` and don't re-implement generation. Add a new pipeline in core, all four transports inherit it.
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 19, Vite 7, React Flow 12, Zustand, Tailwind CSS |
-| **Backend** | Hono, Bun |
-| **AI** | Google Gemini, FAL AI (BiRefNet, FLUX 2, Meshy), Claude |
-| **3D** | Three.js, @gltf-transform/core |
-| **Testing** | Vitest, Playwright |
-| **CI** | GitHub Actions |
+## Roadmap
+
+- **In progress (Round 3 landed 2026-04-22):** three.js 0.184, validation-asset polish (door / vending / tower), agent-usage counter on `render.meta.primitiveUsage` — see [docs/kiln-round-3.md](docs/kiln-round-3.md)
+- **Next (Round 4):** `planeUnwrapSingle`, `cylinderUnwrap({ capMode })`, gallery UI surface for `primitiveUsage`, `pickProviderFor` on public namespace
+- **Later:** Wave 3C (FAL-generated textures for validation assets), Wave 3D (projection bake), Wave 4 (image-to-3D integration), Wave 2.5b gallery rearchitect
+
+Fresh screenshots + a demo video are on the list too — see [docs/screenshot-refresh.md](docs/screenshot-refresh.md).
+
+---
 
 ## Contributing
 
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make changes and add tests
-4. Run the test suite:
-   ```bash
-   cd packages/client && bunx vitest run
-   cd packages/server && bun test
-   ```
-5. Submit a pull request
+We welcome PRs, issues, and ideas. A few low-friction ways to help:
+
+- **New primitive** in `packages/core/src/kiln/` — add a unit test alongside, run `bun run audit:glb` on a validation GLB that uses it. See the [winding-bug lesson](docs/kiln-round-3.md#winding-bug-lesson-for-any-new-primitive) before shipping geometry.
+- **New pipeline** — add it in `@pixel-forge/core`, the CLI / MCP / API surface inherits it automatically.
+- **Screenshots + demos** — we're rebuilding the gallery. See [docs/screenshot-refresh.md](docs/screenshot-refresh.md) for the shot list.
+- **Bugs / rough edges** — open an issue; include `bun run typecheck` + per-package test output so we can reproduce.
+
+### Local development loop
+
+```bash
+# 1. Fork + branch
+git checkout -b feature/my-thing
+
+# 2. Write code + tests
+#    - new primitives live alongside their test in packages/core/src/kiln/__tests__/
+#    - touched validation GLB? regen + re-audit:
+bun scripts/validate-wave2a.ts && bun run audit:glb
+
+# 3. Gate must stay green:
+bun run typecheck
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test
+
+# 4. Open a PR
+```
+
+**House rules:**
+
+- No emojis in code or docs unless explicitly themed.
+- Hyphens over em dashes. Measure, don't assume.
+- LLM-touched pipelines ship with a recipe test that exercises the full flow at least once.
+- Don't bypass the secret-scan hook.
+
+More in [AGENTS.md](AGENTS.md) (the canonical agent-facing reference — architecture, public API, and pipeline contracts).
+
+---
+
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| **Frontend** | React 19 · Vite 7 · React Flow 12 · Zustand · Tailwind CSS |
+| **Backend** | Hono · Bun |
+| **3D** | Three.js 0.184 · @gltf-transform/core · manifold-3d (CSG) · xatlas (UV) |
+| **AI** | Gemini 3.1 Flash Image · FAL (BiRefNet, FLUX 2, Meshy) · Claude Opus 4.7 · OpenAI |
+| **Testing** | Vitest · bun:test · Playwright |
+| **CI** | GitHub Actions |
+
+---
 
 ## License
 
-[MIT](LICENSE) - Matthew Kissinger
+[MIT](LICENSE) — Matthew Kissinger. Use it, fork it, ship things with it.

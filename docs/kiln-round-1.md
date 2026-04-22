@@ -238,14 +238,9 @@ bun run audit:glb gear.glb sword.glb   # specific files
 
 Writes `war-assets/validation/_grids/<name>-grid.png` — six cells (Front / Right / Back / Left / Top / 3-4) per asset. Runs fully self-contained (no dev-server needed); pulls three.js 0.182 from unpkg for headless rendering. Note the script runs under `tsx` (node), not bun — Bun's spawning doesn't play well with Playwright's CDP pipe on Windows.
 
-## Round 3 — possible follow-ups
+## Round 3 — scoped
 
-Nothing currently blocking. Candidates for next cycle if needed:
-
-- **three.js 0.182 → 0.184** minor bump. Changelog may fix a couple of primitive behaviors we've been working around; refresh [examples/](../examples/) three.js clone alongside the bump so docs + examples stay in sync.
-- **Sign-texture orientation** — `planeUnwrap` + BoxGeometry produces correct text on the front, mirrored text on the back (physically correct for a flat sign). If agents want a sign that reads correctly on both faces, add a `planeUnwrapSingle(geo, face)` variant that only UV-maps one face.
-- **Cylinder cap UVs** — `cylinderUnwrap` preserves Three's built-in cap UVs, which sample the side-texture bands. Fine for most textures; if we want dedicated cap textures, extend `cylinderUnwrap` to accept `{ capMode: 'solid' | 'side' | 'custom' }`.
-- **Agent usage instrumentation** — wrap sandbox globals with a counter that surfaces in `render.meta` so we know which primitives agents actually use. Drives future primitive prioritization.
+All follow-up work moved to its own handoff doc: **[docs/kiln-round-3.md](kiln-round-3.md)** — three.js 0.184 bump + examples refresh, validation-asset polish (door / vending / tower per user feedback), agent-usage instrumentation, and a handful of smaller primitive-API polish items.
 
 ## Testing discipline
 

@@ -186,6 +186,41 @@ bun scripts/generate.ts batch --manifest scripts/batches/batch1-vegetation.json
 
 See [`AGENTS.md`](AGENTS.md) for the full API reference, batch manifest format, and style system docs.
 
+## Agent Adapters: `pixelforge` CLI + MCP server
+
+Two thin wrappers over `@pixel-forge/core` for agentic workflows.
+
+**CLI** (citty):
+
+```bash
+cd packages/cli && bun link    # puts `pixelforge` on PATH
+pixelforge gen sprite       --prompt "..." --bg magenta --out ./sprite.png
+pixelforge gen glb          --prompt "..." --category vehicle --out ./model.glb
+pixelforge providers list
+pixelforge kiln list-primitives
+pixelforge kiln validate    ./code.ts
+# Or invoke directly without linking:
+bun packages/cli/src/index.ts <command> [...args]
+```
+
+Every command supports `--json` for machine-readable stdout. Errors print
+`.fixHint` from the core's `PixelForgeError` taxonomy.
+
+**MCP server** (stdio):
+
+```bash
+claude mcp add pixelforge --stdio bun packages/mcp/src/index.ts
+```
+
+Tools: `pixelforge_gen_{sprite,icon,texture,glb,soldier_set}`,
+`pixelforge_kiln_{inspect,validate,refactor,list_primitives}`,
+`pixelforge_providers_capabilities`. Binary outputs (PNG/GLB) default to
+writing a tmp file and returning the path; pass `inline: true` to receive
+base64 instead.
+
+See [packages/cli/README.md](packages/cli/README.md) and
+[packages/mcp/README.md](packages/mcp/README.md) for details.
+
 ## Architecture
 
 The editor uses a **dataflow execution model**:

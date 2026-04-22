@@ -9,7 +9,8 @@
     "./kiln": "./src/kiln/index.ts",
     "./kiln/primitives": "./src/kiln/primitives.ts",
     "./kiln/prompt": "./src/kiln/prompt.ts",
-    "./kiln/validation": "./src/kiln/validation.ts"
+    "./kiln/validation": "./src/kiln/validation.ts",
+    "./kiln/render": "./src/kiln/render.ts"
   },
   "scripts": {
     "test": "bun test",

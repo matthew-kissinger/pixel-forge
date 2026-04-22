@@ -66,3 +66,5 @@ NUL
 # Claude Code local settings + agent worktrees
 .claude/settings.local.json
 .claude/worktrees/
+.claude/launch.json
+.claude/scheduled_tasks.lock

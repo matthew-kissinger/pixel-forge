@@ -5,6 +5,8 @@ Node-based AI game asset generator. Substrate library `@pixel-forge/core` + four
 > **Cross-agent brief**: see [AGENTS.md](AGENTS.md) for the canonical agent-facing reference (architecture, public API, pipelines). This file holds Claude Code-specific extras: hooks, skills, project-specific gotchas.
 >
 > **Recent refactor**: see [docs/next-cycle.md](docs/next-cycle.md) for the 2026-04 cycle that landed `@pixel-forge/core` + CLI + MCP.
+>
+> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 42 primitives, 12 validation GLBs, PBR + UV + CSG all wired. First visual audit flagged 7/12 assets; Round 1 primitive fixes next.
 
 ## Commands
 
@@ -154,7 +156,7 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 - Do NOT include yellow/orange in Vietnam jungle biomes
 - Do NOT describe focal points or framing - textures must be uniform density
 
-**Gallery:** Textures have 3x3/5x5/8x8 tile preview buttons at http://localhost:3000/gallery
+**Gallery:** Textures have 3x3/5x5/8x8 tile preview buttons at http://localhost:3000/gallery. GLBs have an **Inspect** button that opens `/gallery/view/:path` — a fullscreen inspector with 7 camera presets (1-7), working wireframe (W), studio/void/checker scene modes (B/N/M), exposure +/-, auto-rotate (R), and live metadata (tris / materials / meshes / world-space bbox). Use this when visually auditing Kiln output.
 
 ## Current Gaps
 

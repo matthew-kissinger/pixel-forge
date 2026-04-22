@@ -1,13 +1,31 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// Mocks must be declared before importing the module under test
+// Mocks must be declared before importing the module under test.
+// `queryImpl` is reassigned per-test via `beforeEach` + in-test overrides.
 let queryImpl = async function* (_args: any): AsyncGenerator<any> {
   yield { type: 'result', subtype: 'success', result: '', session_id: 'test-session' };
 };
 
-mock.module('@anthropic-ai/claude-agent-sdk', () => ({
+const sdkStub = () => ({
   query: (args: any) => queryImpl(args),
-}));
+});
+
+// `@anthropic-ai/claude-agent-sdk` resolves to TWO different physical files
+// depending on importer:
+//   - from this test file (server package): packages/server/node_modules/...
+//   - from @pixel-forge/core/kiln (core package): <repo>/node_modules/...
+// bun:test's `mock.module` keys off resolved specifiers, so we have to
+// register the stub against both resolutions or the core package will
+// receive the real SDK (which spawns a nested Claude Code process and
+// hangs the 5s test timeout).
+mock.module('@anthropic-ai/claude-agent-sdk', sdkStub);
+const hoistedSdkPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../../node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs'
+);
+mock.module(hoistedSdkPath, sdkStub);
 
 mock.module('@pixel-forge/shared/logger', () => ({
   logger: {
@@ -18,25 +36,18 @@ mock.module('@pixel-forge/shared/logger', () => ({
   },
 }));
 
-// The implementation now lives in @pixel-forge/core/kiln (the server's
-// services/claude.ts is just a re-export). Test the core module directly
-// so api.test.ts's `mock.module('../src/services/claude', ...)` stub can't
-// leak into this suite via the shared server path.
-let moduleCounter = 0;
-let claude: typeof import('@pixel-forge/core/kiln');
-const importClaude = async () => {
-  moduleCounter += 1;
-  return await import(`@pixel-forge/core/kiln?test=${moduleCounter}`);
-};
+// Implementation lives in @pixel-forge/core/kiln (server services/claude.ts
+// is just a re-export). Static import so the mock.module stubs above
+// apply — a cache-busting dynamic import would bypass bun's module cache
+// and hit the real SDK.
+import * as claude from '@pixel-forge/core/kiln';
 
 describe('Claude Service', () => {
-  beforeEach(async () => {
-    // Reset query implementation
+  beforeEach(() => {
+    // Reset query implementation to a neutral default before each test.
     queryImpl = async function* (_args: any): AsyncGenerator<any> {
       yield { type: 'result', subtype: 'success', result: '', session_id: 'test-session' };
     };
-
-    claude = await importClaude();
   });
 
   describe('generateKilnCode', () => {

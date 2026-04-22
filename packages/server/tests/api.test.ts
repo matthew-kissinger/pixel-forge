@@ -1,4 +1,6 @@
 import { expect, test, describe, beforeAll, afterAll, mock } from 'bun:test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import app from '../src/index';
 
 // Mock the AI services to avoid real API calls in tests
@@ -41,7 +43,14 @@ mock.module('../src/services/fal', () => ({
 // the whole core module (which would prevent tests that exercise the
 // actual code generator from ever hitting it), mock the SDK query at the
 // edge. The core then runs through unchanged, just with a fake LLM.
-mock.module('@anthropic-ai/claude-agent-sdk', () => ({
+//
+// The specifier resolves to two different physical files depending on
+// importer (server has a local node_modules entry, core resolves to the
+// hoisted root), so register the stub against both resolutions. Without
+// the hoisted-path mock, core's `import { query } from ...` lands on
+// the real SDK and spawns a nested Claude Code process that hangs the
+// 5s test timeout.
+const sdkQueryStub = () => ({
   query: (_args: unknown) =>
     (async function* () {
       // Emit a structured_output success with valid-enough code to pass
@@ -56,7 +65,13 @@ mock.module('@anthropic-ai/claude-agent-sdk', () => ({
         session_id: 'api-test',
       };
     })(),
-}));
+});
+mock.module('@anthropic-ai/claude-agent-sdk', sdkQueryStub);
+const hoistedSdkPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../../node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs'
+);
+mock.module(hoistedSdkPath, sdkQueryStub);
 
 const baseUrl = 'http://localhost:3000';
 const samplePngBase64 =

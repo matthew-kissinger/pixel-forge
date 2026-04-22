@@ -41,14 +41,35 @@ These scripts were replaced by improved versions. Archived for version history r
 
 ## Archival Status
 
-**Total scripts for archival:** 20 (16 one-shot + 4 superseded)
+**Total scripts archived:** 20 (16 one-shot + 4 superseded). Executed in W4.7
+on `refactor/scripts-distill` — see git log for the full history.
 
-**In this directory upon W4.7 execution:**
-- All 20 scripts will be moved here from `scripts/` root
-- No other files; manifest (this file) documents each
+**Move method:** `git mv` for tracked scripts (preserves rename history); plain
+`git add` for the three previously-untracked one-shot/patch scripts
+(`gen-fixes-v2.py`, `patch-fixes.py`, `patch-fixes2.py`).
+
+**Companion W4.7 categorization** of the 5 scripts that were untracked when the
+audit ran:
+
+| Script                | Decision      | Notes |
+|-----------------------|---------------|-------|
+| `gen-animals-v2.py`   | live, staged  | Re-emits the 6 animals with named-part hierarchy. Header says "Regenerate ... for procedural animation" — ongoing utility, not a fix. |
+| `gen-vc-mounted.ts`   | live, staged  | Generates the VC mounted-soldier sprite using the dual-ref pattern; mirrors the live `gen-*-soldiers.ts` set. |
+| `gen-fixes-v2.py`     | archived      | Header: "Regenerate broken models: towers (cross braces), M60 (bipod), bunkers (doors)" — explicit one-shot fix batch. |
+| `patch-fixes.py`      | archived      | Header: "Patch generated JSON code and re-export GLBs" — patches one-shot iteration. |
+| `patch-fixes2.py`     | archived      | Header: "Patch round 2: fix guard tower ladder tilt, redo comms tower without wires" — second one-shot iteration. |
 
 **Future reference:**
 - Use this manifest to understand why each script was archived
-- If reversion needed, restore from git history (branch: main, prior to W4.7 commit)
+- If reversion needed, restore from git history (`refactor/scripts-distill`,
+  prior to the W4.7 commit)
 - Do not re-run archived one-shot scripts; use live canonical versions instead
+
+---
+
+## Untracked one-shot fixes archived in W4.7
+
+- `gen-fixes-v2.py` — Python regen for towers/M60/bunkers after structural fixes. Status: applied; assets stable.
+- `patch-fixes.py` — Patches generated JSON code (towers, M60 bipod, NVA bunker, ammo-bunker, perimeter-berm) then re-exports GLBs. Status: one-shot.
+- `patch-fixes2.py` — Round-2 patches for guard-tower ladder tilt + comms-tower wires. Status: one-shot.
 

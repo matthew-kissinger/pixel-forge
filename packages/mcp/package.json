@@ -1,0 +1,26 @@
+{
+  "name": "@pixel-forge/mcp",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "bin": {
+    "pixelforge-mcp": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@pixel-forge/core": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

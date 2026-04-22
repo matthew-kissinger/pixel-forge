@@ -1,6 +1,10 @@
 # Pixel Forge
 
-Node-based AI game asset generator. Visual pipeline: Generate (Gemini) -> Transform -> Optimize -> Export.
+Node-based AI game asset generator. Substrate library `@pixel-forge/core` + four transports: React Flow editor (browser), CLI (citty), MCP server (stdio), HTTP API (Hono).
+
+> **Cross-agent brief**: see [AGENTS.md](AGENTS.md) for the canonical agent-facing reference (architecture, public API, pipelines). This file holds Claude Code-specific extras: hooks, skills, project-specific gotchas.
+>
+> **Recent refactor**: see [docs/next-cycle.md](docs/next-cycle.md) for the 2026-04 cycle that landed `@pixel-forge/core` + CLI + MCP.
 
 ## Commands
 
@@ -8,13 +12,16 @@ Node-based AI game asset generator. Visual pipeline: Generate (Gemini) -> Transf
 bun run dev:client    # Vite dev server on :5173
 bun run dev:server    # Hono API server on :3000
 bun run build         # Production build
-bun run typecheck     # tsc --noEmit (client + server)
-bun run lint          # ESLint (client + server)
+bun run typecheck     # tsc --noEmit (all packages)
+bun run lint          # ESLint (all packages)
 
 # Tests (run per-package, NOT from root)
-cd packages/client && bunx vitest run   # 1931 pass, 0 fail, 0 skip, 88 files
-cd packages/server && bun test          # 118 pass, 7 files
-bun run test:e2e                        # Playwright smoke + mobile viewport + workflow tests
+cd packages/client && bunx vitest run                                # 1938 pass, 0 fail
+cd packages/server && bun test                                       # 114 pass, 0 fail
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 225 pass, 6 skip
+cd packages/cli && bun test                                          # 16 pass
+cd packages/mcp && bun test                                          # 7 pass
+bun run test:e2e                                                     # Playwright smoke + mobile + workflow
 ```
 
 ## Stack
@@ -27,9 +34,12 @@ React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
 
 ```
 packages/
-  client/   # React Flow editor: 30 node components (lazy-loaded), 9 panels, Zustand store, executor engine
-  server/   # Hono API: routes with Zod validation, services with timeouts, retry client-side only
-  shared/   # Types, presets, prompt builders, API type contracts
+  core/     # @pixel-forge/core — substrate: kiln/ image/ providers/ schemas/ pipelines/. THE library agents consume.
+  client/   # React Flow editor: 30 node components (lazy-loaded), runtime/ split, Zustand store, executor engine
+  server/   # Hono API: thin routes over core/, services delegate to core/providers
+  cli/      # @pixel-forge/cli — citty adapter. `bunx pixelforge gen sprite|icon|texture|glb|soldier-set ...`
+  mcp/      # @pixel-forge/mcp — @modelcontextprotocol/sdk stdio adapter. Tools mirror CLI commands.
+  shared/   # Shrunk — only cross-adapter types remain (kiln-* moved to core)
 ```
 
 ## Architecture
@@ -148,12 +158,11 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 
 ## Current Gaps
 
-- **kiln/runtime.ts** (783 lines) - zero tests, WebGPU/Three.js renderer
-- **Untested handlers**: analysis.ts (216 lines), batch.ts (112 lines), imageGen.ts (115 lines), model3d.ts (105 lines) - handler tests for input/processing/canvas/output exist
-- **Untested node sub-components**: kiln/* (347 lines), quality/* (210 lines), export-sheet/* (85 lines)
-- **Untested shared package**: presets.ts, api-types.ts, logger.ts (314 lines total)
-- **No integration tests** against real Gemini/FAL/Claude APIs
-- **0 unpushed commits** on main (synced with origin/main)
+- **No live integration tests** against real Gemini/FAL/Claude/OpenAI APIs (live tests gated behind `KILN_SPIKE_LIVE=1` and `IMAGE_PROVIDERS_LIVE=1` — run them manually)
+- **`generate.ts` lines 343-359 + 411-427** in core/kiln are duplicate error-dispatch branches — extract one helper to lift remaining coverage and reduce LoC
+- **`createSoldierSetPipeline` partial regen**: pipeline always regenerates the T-pose. Needs discriminated `tPose: Buffer | { prompt, refs? }` input for resumable runs.
+- **`pickProviderFor`** isn't on the public namespace — CLI mirrors the routing logic in `cli/src/routing.ts`. Surface on the `image` namespace next touch.
+- **Dep upgrade pending**: 5 patch + 12 minor + 15 major bumps available. See [docs/dep-upgrade-audit.md](docs/dep-upgrade-audit.md). Biggest forced coupling: `@vitejs/plugin-react@6` peer-requires `vite@8`.
 
 ## Known Issues
 
@@ -170,7 +179,7 @@ Presets in `packages/shared/presets.ts`. See `docs/asset-reference.md` for detai
 
 ## Skills
 
-Local skills in `.claude/skills/`: nano-banana-pro, pixel-art-professional, canvas-design, frontend-design, kiln-glb, kiln-tsl
+Local skills in `.claude/skills/`: **pixel-forge** (umbrella — generating assets via core/CLI/MCP), nano-banana-pro (Gemini-specific), pixel-art-professional (post-processing techniques), canvas-design, frontend-design, kiln-glb, kiln-tsl
 
 ## Development Approach
 

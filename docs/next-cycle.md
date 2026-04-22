@@ -351,11 +351,11 @@ Everything else parallelizes off the hub.
 
 ### Wave 6 — Docs finale
 
-- [ ] **6.1 AGENTS.md final** · deps: W5 · est: 1h
-- [ ] **6.2 README CLI/MCP sections** · deps: W5 · est: 1h
-- [ ] **6.3 pixel-forge skill** · deps: W5 · est: 30min
+- [x] **6.1 AGENTS.md final** · deps: W5 · est: 1h
+- [x] **6.2 README CLI/MCP sections** · deps: W5 · est: 1h
+- [x] **6.3 pixel-forge skill** · deps: W5 · est: 30min
   - `.claude/skills/pixel-forge/SKILL.md`
-- [ ] **6.4 CLAUDE.md slim** · deps: 6.1 · est: 30min
+- [x] **6.4 CLAUDE.md slim** · deps: 6.1 · est: 30min
 
 ### Wave 7 — Polish (slot anywhere after W2)
 
@@ -368,7 +368,11 @@ Everything else parallelizes off the hub.
   - Option B lightweight: added `timeoutOverrideMs` on `ExecutionContext`; `executeNode` reads it over `NODE_TIMEOUTS`
   - Rewrote test with real timers + 50ms override (the old fake-timer path had a hidden bug anyway)
   - 1931 pass / 0 skip · CLAUDE.md stale count bumped (was claiming 1907)
-- [ ] **7.3 Kiln test coverage to 60%+** · deps: W2 · est: 4h · parallel
+- [x] **7.3 Kiln test coverage to 60%+** · deps: W2 · est: 4h · **done** (commit `87c993c`)
+  - Overall core line coverage: 81.93% → **86.84%**
+  - Per-file results: index 28→97%, primitives 43→100%, prompt 71→100%, render 88→99%, generate 70→74%, inspect 94%, validation 89%, list-primitives 100%
+  - +68 tests across 4 new files (primitives, top-level-generate, prompt, render-edges)
+  - Production smell captured: generate.ts has duplicate error-dispatch branches (3-message-type pattern at lines 343-359 + 411-427) — extract one helper to lift remaining coverage and reduce LoC
 
 ---
 

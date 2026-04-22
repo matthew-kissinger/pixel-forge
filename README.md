@@ -140,11 +140,14 @@ Open http://localhost:5173 for the visual editor, or http://localhost:3000/galle
 ```
 pixel-forge/
   packages/
+    core/         # @pixel-forge/core - headless substrate (kiln, image, providers)
     client/       # React 19 + React Flow 12 + Zustand + Tailwind CSS
     server/       # Hono API server with Zod validation
-    shared/       # Types, presets, prompt builders, API contracts
-  scripts/        # CLI generation scripts (TypeScript + Python)
-  docs/           # Prompt templates, workflows, asset specs
+    shared/       # Cross-adapter types
+    cli/          # `pixelforge` CLI (citty over core)
+    mcp/          # MCP stdio server (over core)
+  scripts/        # Recipe scripts over @pixel-forge/core (+ Python)
+  docs/           # Prompt templates, workflows, asset specs, wave reports
   e2e/            # Playwright end-to-end tests
   .claude/        # AI agent skill definitions
 ```
@@ -190,36 +193,52 @@ See [`AGENTS.md`](AGENTS.md) for the full API reference, batch manifest format, 
 
 Two thin wrappers over `@pixel-forge/core` for agentic workflows.
 
-**CLI** (citty):
+### CLI (`pixelforge`, citty)
 
 ```bash
 cd packages/cli && bun link    # puts `pixelforge` on PATH
-pixelforge gen sprite       --prompt "..." --bg magenta --out ./sprite.png
-pixelforge gen glb          --prompt "..." --category vehicle --out ./model.glb
+# Or invoke directly without linking:
+bun packages/cli/src/index.ts <command> [...args]
+
+# Worked example: a single sprite end-to-end
+pixelforge gen sprite \
+  --prompt "m16 rifle, side view" \
+  --bg magenta \
+  --out ./out/m16.png
+
+# More commands
+pixelforge gen icon         --prompt "ammo crate" --variant mono --out ./icon.png
+pixelforge gen texture      --description "jungle floor moss" --size 512 --out ./tile.png
+pixelforge gen glb          --prompt "guard tower"  --category structure --out ./tower.glb
+pixelforge inspect glb      ./tower.glb
 pixelforge providers list
 pixelforge kiln list-primitives
 pixelforge kiln validate    ./code.ts
-# Or invoke directly without linking:
-bun packages/cli/src/index.ts <command> [...args]
 ```
 
 Every command supports `--json` for machine-readable stdout. Errors print
-`.fixHint` from the core's `PixelForgeError` taxonomy.
+`code` + `fixHint` from the core's `PixelForgeError` taxonomy and exit
+non-zero. See [`packages/cli/README.md`](packages/cli/README.md) for the
+full surface.
 
-**MCP server** (stdio):
+### MCP server (stdio)
 
 ```bash
+# Install once:
 claude mcp add pixelforge --stdio bun packages/mcp/src/index.ts
+
+# Then from Claude Code (or any MCP client), tools are auto-discovered:
+#   pixelforge_gen_sprite      { prompt: "m16 rifle", bg: "magenta" }
+#   pixelforge_kiln_inspect    { code: "..." }
+#   pixelforge_providers_capabilities { }
 ```
 
 Tools: `pixelforge_gen_{sprite,icon,texture,glb,soldier_set}`,
 `pixelforge_kiln_{inspect,validate,refactor,list_primitives}`,
 `pixelforge_providers_capabilities`. Binary outputs (PNG/GLB) default to
 writing a tmp file and returning the path; pass `inline: true` to receive
-base64 instead.
-
-See [packages/cli/README.md](packages/cli/README.md) and
-[packages/mcp/README.md](packages/mcp/README.md) for details.
+base64 instead, or `outPath: "..."` for an explicit destination. See
+[`packages/mcp/README.md`](packages/mcp/README.md) for details.
 
 ## Architecture
 

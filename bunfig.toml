@@ -1,0 +1,4 @@
+[test]
+# examples/ holds cloned reference repos (gitignored) used for research only.
+# Skip scanning their test files during `bun test`.
+root = "packages"

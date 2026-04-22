@@ -103,12 +103,13 @@ All sprite presets use magenta by default. Never use red (`#FF0000`) for sprites
 ### Key Features
 
 - **30 node types** - image gen, bg removal, 3D gen, canvas ops, batch processing, analysis, export
+- **48 Kiln primitives** - Three.js-primitive-based 3D generation (CSG, UV unwrap, PBR textures, parametric gears & blades, shape-aware unwraps). LLM-authored JS renders to GLB headlessly via `@gltf-transform/core` — no Blender required. See [`docs/kiln-vision.md`](docs/kiln-vision.md).
 - **Parallel execution** - topological sort with wave-based parallelism
 - **Resilient** - per-node timeouts, retry with backoff, error boundaries on every node
 - **Fast** - lazy-loaded nodes, ~103KB gzip main bundle, Three.js loaded on demand
 - **Recoverable** - undo/redo snapshots, auto-save to localStorage, recovery banner
-- **CLI + UI** - visual editor or command-line batch scripts
-- **Agent-friendly** - documented API for AI agent workflows (see [`AGENTS.md`](AGENTS.md))
+- **CLI + UI + MCP** - visual editor, `pixelforge` CLI, or stdio MCP server — all wrap the same `@pixel-forge/core` substrate
+- **Agent-friendly** - documented API for AI agent workflows (see [`AGENTS.md`](AGENTS.md)); secret-scan pre-commit hook at [`scripts/secret-scan.sh`](scripts/secret-scan.sh)
 
 ## Quick Start
 
@@ -116,9 +117,9 @@ All sprite presets use magenta by default. Never use red (`#FF0000`) for sprites
 # Prerequisites: Bun (https://bun.sh), Node 22+
 bun install
 
-# Configure API keys
+# Configure API keys (copy template, paste your keys):
+cp .env.example .env.local
 cp .env.example packages/server/.env.local
-# Edit packages/server/.env.local with your keys (see API Keys below)
 
 # Start
 bun run dev:server    # API server on :3000
@@ -129,11 +130,26 @@ Open http://localhost:5173 for the visual editor, or http://localhost:3000/galle
 
 ## API Keys
 
+Bun auto-loads `.env.local` from the repo root and from `packages/server/`. Put your keys in both (or use the central-store workflow below).
+
 | Service | Required | What It Powers | Get a Key |
 |---------|:--------:|----------------|-----------|
 | Google Gemini | Yes | 2D sprite generation | [Google AI Studio](https://aistudio.google.com/apikey) |
 | FAL AI | Yes | Background removal, texture gen, 3D gen | [FAL Dashboard](https://fal.ai/dashboard/keys) |
 | Anthropic | Optional | 3D primitive composition (Kiln) | [Anthropic Console](https://console.anthropic.com/settings/keys) |
+| OpenAI | Optional | gpt-image-1.5 / gpt-image-2 fallback | [OpenAI Platform](https://platform.openai.com/api-keys) |
+
+### Central key store (optional workflow)
+
+If you run multiple projects and don't want keys duplicated across repos, keep a single file at `~/.config/mk-agent/env` and fan it out on demand:
+
+```bash
+# Keys live once in ~/.config/mk-agent/env — KEY=value, one per line.
+bun scripts/pull-keys.ts
+# Writes .env.local and packages/server/.env.local from the central file.
+```
+
+**Before committing:** run `bash scripts/secret-scan.sh` (or install it as a pre-commit hook: `cp scripts/secret-scan.sh .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`). Scans staged changes for Gemini / Anthropic / OpenAI / FAL / GitHub / Slack / AWS key patterns and blocks commits that contain them.
 
 ## Project Structure
 
@@ -166,9 +182,12 @@ bun run typecheck         # TypeScript (tsc --noEmit)
 bun run lint              # ESLint
 
 # Tests
-cd packages/client && bunx vitest run    # ~1900 client tests
-cd packages/server && bun test           # ~120 server tests
-bun run test:e2e                         # Playwright smoke tests
+cd packages/core   && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 302 pass
+cd packages/server && bun test           # 114 pass
+cd packages/client && bunx vitest run    # ~1900 pass
+cd packages/cli    && bun test           # 16 pass
+cd packages/mcp    && bun test           # 7 pass
+bun run test:e2e                         # Playwright smoke + mobile + workflow
 ```
 
 ## CLI Asset Generation

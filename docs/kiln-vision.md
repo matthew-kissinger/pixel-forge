@@ -465,17 +465,27 @@ Full brief: see conversation history 2026-04-22.
 - **2026-04-22**: Wave 2.5a gallery quick wins complete — wireframe toggle per GLB card (yellow when active), tri + material-count + file-size badges rendered from model-viewer's loaded Three.js scene, validation category pinned first in filter list, `W` keyboard shortcut in fullscreen modal toggles wireframe. Zero architectural change (stays in [packages/server/src/routes/gallery.ts](../packages/server/src/routes/gallery.ts)); full rearchitect deferred to Wave 2.5b after Wave 3.
 - **2026-04-22**: Wave 3A UV auto-unwrap complete — installed `xatlasjs@0.2.0` (Node-compatible WASM, works without web workers); [packages/core/src/kiln/uv.ts](../packages/core/src/kiln/uv.ts) wraps it with `autoUnwrap(geometry, opts)`. Output geometry has `uv` attribute in [0,1] + `userData.atlas` metadata (width/height/atlasCount). Works on CSG output (boolDiff → autoUnwrap tested). 5 unit tests.
 - **2026-04-22**: Wave 3B PBR material + texture bridge complete — [packages/core/src/kiln/textures.ts](../packages/core/src/kiln/textures.ts) adds `loadTexture(source)` (PNG/JPG/WebP via sharp; stashes encoded bytes on `userData.encoded`) and `pbrMaterial({ albedo, normal, roughness, metalness, emissive, aoMap })` (each slot is color/scalar OR Texture). Extended the GLB bridge with a texture cache + serialization for baseColor / normal / metallicRoughness / emissive / occlusion texture slots. Tests prove PNG bytes round-trip through GLB export byte-identical. **3 textured validation GLBs** added: **crate-textured.glb** (12 tris, procedural wood), **barrel-textured.glb** (96 tris, metal bands), **sign-textured.glb** (12 tris, 'KILN' label) — all via a procedural-SVG-to-PNG pipeline (no external asset deps, no API key needed). System prompt + worked example added for the textured-asset pipeline. **All 12 validation GLBs now landed.**
+- **2026-04-22**: **Round 1 primitive fixes complete** — all 5 tasks landed in one sitting with test coverage. See [docs/kiln-round-1.md](kiln-round-1.md) for the task-level writeup. Summary:
+    1. `mergeVertices(geo, { positionOnly?, tolerance? })` in ops.ts + auto-weld on `subdivide` non-indexed inputs — fixes rock-smooth shards.
+    2. `{ smooth }` option on `boolUnion`/`boolDiff`/`boolIntersect` (default **flat**, for mechanical CSG) and `hull` (default **smooth**, for organic wrapping). Detected via last-arg options object; signatures stay variadic.
+    3. `gearGeo({ teeth, rootRadius, tipRadius, boreRadius, height, toothWidthFrac })` — direct triangulation, no CSG, flat-shaded. 4N-vert crown polygon + annulus caps + concentric bore.
+    4. `bladeGeo({ length, baseWidth, thickness, tipLength, edgeBevel })` — 5-pt tapered profile extruded; `edgeBevel > 0` pinches cross-section toward a diamond ridge.
+    5. `boxUnwrap` / `cylinderUnwrap` / `planeUnwrap` in [uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts) — preserve Three.js's built-in directional UVs instead of letting xatlas rotate them. Sync, no WASM. Key realization from tracing `CylinderGeometry.js`: the default UVs already wrap u-around / v-up, which is correct for barrels/bands.
 
-### Totals after Wave 3B
+    Catalog: **42 → 48 primitives** across **10 → 12 categories**. Core tests: 252 → 302 pass / 0 fail. Monorepo typecheck clean. Three.js 0.182 (latest 0.184 — minor bump deferred).
+
+- **2026-04-22**: **Security housekeeping** (alongside Round 1). Leaked Gemini key in `SESSION_CONTEXT.md` purged across all 342 commits via `git filter-repo --replace-text`; remote force-pushed; key rotated upstream. Added [scripts/secret-scan.sh](../scripts/secret-scan.sh) (Gemini / Anthropic / OpenAI / FAL / GitHub / Slack / AWS patterns) for pre-commit use, and [scripts/pull-keys.ts](../scripts/pull-keys.ts) which reads the central `~/.config/mk-agent/env` and fans it out to `.env.local` files — single source of truth for API keys going forward. `.gitignore` now blocks `SESSION_*.md`, `NOTES.md`, `SCRATCH.md`, `HANDOFF.md` scratch-doc class.
+
+### Totals after Round 1
 
 | Metric | Count |
 |---|---:|
-| Primitives exposed to agents | **42** (was 25) |
-| Primitive categories | 10 |
-| Core tests | 252 pass / 6 skip / 0 fail (was 225) |
-| Validation GLBs | 12 / 12 |
+| Primitives exposed to agents | **48** (was 42 after Wave 3B, 25 at start) |
+| Primitive categories | 12 |
+| Core tests | 302 pass / 6 skip / 0 fail (was 252) |
+| Validation GLBs | 12 / 12 (7 still need Round 2 re-author) |
 | Monorepo typecheck | clean across 5 packages |
-| New Kiln modules | solids.ts, ops.ts, uv.ts, textures.ts |
+| New Kiln modules | solids.ts, ops.ts, uv.ts, textures.ts, gears.ts, uv-shapes.ts |
 
 ### Progress summary (updated)
 
@@ -562,7 +572,7 @@ Once the Round 1 primitives land, rewrite the broken validation scripts:
 - Crate / barrel / sign: route through `boxUnwrap` / `cylinderUnwrap` / `planeUnwrap` instead of `autoUnwrap`
 - Regenerate all 12, re-audit with the fixed inspector
 
-### Progress summary (as of 2026-04-22)
+### Progress summary (as of 2026-04-22, post Round 1)
 
 | Wave | Status | Validation assets |
 |---|---|---|
@@ -577,8 +587,8 @@ Once the Round 1 primitives land, rewrite the broken validation scripts:
 | 3A UV unwrap | ✅ | — (infra for 3B) |
 | 3B PBR + textures | ✅ | crate-textured, barrel-textured, sign-textured |
 | Visual audit + Inspector v2 | ✅ | 5 of 12 assets pass, 7 flagged |
-| Round 1 primitive fixes | ⏳ next | — |
-| Round 2 re-author validation | ⏳ after R1 | — |
+| **Round 1 primitive fixes** | ✅ | 6 new primitives (`mergeVertices`, `gearGeo`, `bladeGeo`, `boxUnwrap`, `cylinderUnwrap`, `planeUnwrap`) + CSG smooth option |
+| Round 2 re-author validation | ⏳ next | gear / sword / tower / vending / rock-smooth / crate / barrel / sign |
 | 2C Node graph | ⏳ deferred | — |
 | 3C Texture gen (FAL) | ⏳ pending | — |
 | 3D Projection bake | ⏳ pending | — |

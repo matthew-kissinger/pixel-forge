@@ -6,7 +6,7 @@ Node-based AI game asset generator. Substrate library `@pixel-forge/core` + four
 >
 > **Recent refactor**: see [docs/next-cycle.md](docs/next-cycle.md) for the 2026-04 cycle that landed `@pixel-forge/core` + CLI + MCP.
 >
-> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 42 primitives, 12 validation GLBs, PBR + UV + CSG all wired. First visual audit flagged 7/12 assets; Round 1 primitive fixes next.
+> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 48 primitives, 12 validation GLBs, PBR + UV + CSG all wired. Round 1 primitive fixes ✅ landed (parametric `gearGeo`/`bladeGeo`, shape-aware UV unwraps, CSG flat-shading option, `mergeVertices`). Round 2 validation-script rewrites next — see [docs/kiln-round-1.md](docs/kiln-round-1.md).
 
 ## Commands
 
@@ -20,7 +20,7 @@ bun run lint          # ESLint (all packages)
 # Tests (run per-package, NOT from root)
 cd packages/client && bunx vitest run                                # 1938 pass, 0 fail
 cd packages/server && bun test                                       # 114 pass, 0 fail
-cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 225 pass, 6 skip
+cd packages/core && KILN_SPIKE_LIVE=0 IMAGE_PROVIDERS_LIVE=0 bun test  # 302 pass, 6 skip
 cd packages/cli && bun test                                          # 16 pass
 cd packages/mcp && bun test                                          # 7 pass
 bun run test:e2e                                                     # Playwright smoke + mobile + workflow
@@ -160,10 +160,12 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 
 ## Current Gaps
 
+- **Round 2 validation rewrites pending**: 7 of 12 validation GLBs still use pre-Round-1 primitives. See [docs/kiln-round-1.md](docs/kiln-round-1.md) "Round 2" section.
 - **No live integration tests** against real Gemini/FAL/Claude/OpenAI APIs (live tests gated behind `KILN_SPIKE_LIVE=1` and `IMAGE_PROVIDERS_LIVE=1` — run them manually)
-- **`generate.ts` lines 343-359 + 411-427** in core/kiln are duplicate error-dispatch branches — extract one helper to lift remaining coverage and reduce LoC
 - **`createSoldierSetPipeline` partial regen**: pipeline always regenerates the T-pose. Needs discriminated `tPose: Buffer | { prompt, refs? }` input for resumable runs.
 - **`pickProviderFor`** isn't on the public namespace — CLI mirrors the routing logic in `cli/src/routing.ts`. Surface on the `image` namespace next touch.
+- **Three.js is at 0.182**, latest is 0.184. Minor bump is safe; deferred until after Round 2.
+- **Agent signal missing**: no instrumentation of which Kiln primitives generated code actually uses. Post-Round-2 improvement — wrap sandbox globals with a usage counter that surfaces in `render.meta`.
 - **Dep upgrade pending**: 5 patch + 12 minor + 15 major bumps available. See [docs/dep-upgrade-audit.md](docs/dep-upgrade-audit.md). Biggest forced coupling: `@vitejs/plugin-react@6` peer-requires `vite@8`.
 
 ## Known Issues

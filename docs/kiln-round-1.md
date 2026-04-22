@@ -1,15 +1,16 @@
 # Kiln Round 1 — Primitive Fixes Handoff
 
-**Status:** Waves 1–3 + Inspector v2 committed at [3072594](https://github.com/matthew-kissinger/pixel-forge/commit/3072594). First visual audit flagged 7 of 12 validation GLBs as broken. This doc is a self-contained handoff for the next session to land Round 1 primitive fixes.
+**Status:** Round 1 primitives **✅ landed** 2026-04-22. All five fixes shipped with tests; 302 core tests pass / 0 fail. Validation-script rewrites (Round 2) still pending — see bottom of doc.
 
-**Read first:** [docs/kiln-vision.md](kiln-vision.md) for the cycle-level vision, DAG, validation asset suite, and full progress log. This doc focuses on the *next* five tasks.
+**Read first:** [docs/kiln-vision.md](kiln-vision.md) for the cycle-level vision, DAG, validation asset suite, and full progress log. This doc focuses on the *Round 1 tasks* and the follow-up work still to do.
 
 ---
 
-## Context snapshot
+## Context snapshot (post Round 1)
 
-- **42 primitives** exposed to agents across 10 categories in [packages/core/src/kiln/list-primitives.ts](../packages/core/src/kiln/list-primitives.ts)
-- **Tests:** 252 pass / 6 skip / 0 fail (core), 114 pass (server). All packages typecheck clean.
+- **48 primitives** across 12 categories in [packages/core/src/kiln/list-primitives.ts](../packages/core/src/kiln/list-primitives.ts) (was 42)
+- **Tests:** 302 pass / 6 skip / 0 fail (core), 114 pass (server). All packages typecheck clean.
+- **New Kiln modules:** [gears.ts](../packages/core/src/kiln/gears.ts), [uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts); `mergeVertices` + CSG `{ smooth }` option added in-place.
 - **Validation artifacts:** 12 GLBs in `war-assets/validation/` (gitignored). Regen with `bun scripts/validate-wave2a.ts && bun scripts/validate-wave2b.ts && bun scripts/validate-wave3.ts`.
 - **Inspector:** `GET /gallery/view/:category/:name` on `packages/server`. 7 camera presets (keys 1–7), wireframe (W), studio/void/checker scene (B/N/M), cycle-all-views (C), metadata panel.
 
@@ -32,11 +33,11 @@ From visual inspection in the new fullscreen inspector:
 | barrel-textured | ❌ Bands run diagonally | Same |
 | sign-textured | ❌ "KILN" text split/cropped | Same |
 
-## Round 1 — five primitive fixes
+## Round 1 — five primitive fixes ✅ ALL LANDED
 
-Each task: what, where, why, concrete signature, validation.
+All five tasks shipped. Each kept the original signature goals but hardened against real codebase findings (see "Deviations" note at the end of this section).
 
-### Task 1 — `mergeVertices(geo)` and auto-merge in `subdivide()`
+### Task 1 ✅ — `mergeVertices(geo)` and auto-merge in `subdivide()`
 
 **Why:** `boxGeo` / `cylinderGeo` / `sphereGeo` are non-indexed (each face has its own verts). `subdivide()` (Loop via `three-subdivide`) processes them as disconnected face islands → rock-smooth ends up as 3 floating shards.
 
@@ -62,7 +63,7 @@ export function subdivide(geometry, iterations = 1, opts = {}) {
 
 **Validate:** regenerate `rock-smooth.glb`. Open `/gallery/view/validation/rock-smooth.glb` — should be one connected lumpy mesh, not shards.
 
-### Task 2 — CSG flat-shading option
+### Task 2 ✅ — CSG flat-shading option
 
 **Why:** `manifoldToThree` always calls `geo.computeVertexNormals()` which averages adjacent-face normals. On mechanical parts (gear, vending machine) that kills the faceted look and produces a lumpy blob.
 
@@ -94,7 +95,7 @@ export async function boolUnion(name, ...parts: THREE.Object3D[], opts?: { smoot
 
 **Validate:** regenerate gear.glb / vending-machine.glb. Expect hard mechanical edges.
 
-### Task 3 — Parametric `gearGeo`
+### Task 3 ✅ — Parametric `gearGeo`
 
 **Why:** The current gear is built by CSG'ing 8 box cutters out of a cylinder at r=1.1 — produces notches not teeth. Game gears want **additive teeth** on a base disc with a center bore.
 
@@ -133,7 +134,7 @@ const gearMesh = new THREE.Mesh(gearGeo({ teeth: 12, rootRadius: 0.8, tipRadius:
 ```
 Expect a clean gear silhouette with 12 visible teeth around the rim, center bore, hard edges.
 
-### Task 4 — Parametric `bladeGeo`
+### Task 4 ✅ — Parametric `bladeGeo`
 
 **Why:** Sword is `boxGeo(0.08, 1.5, 0.01)` — a flat rectangle with no tip. Needs a tapered blade with a point.
 
@@ -172,7 +173,7 @@ const blade = createPart('Blade', bladeGeo({ length: 1.5, baseWidth: 0.08, thick
 ```
 Expect a pointed blade, not a ruler.
 
-### Task 5 — Shape-aware UV unwraps
+### Task 5 ✅ — Shape-aware UV unwraps
 
 **Why:** `autoUnwrap` (xatlas) packs all charts into an atlas with arbitrary per-chart rotation/scale. For box / cylinder / plane primitives that carry directional textures (wood planks, metal bands, text), we need UVs that preserve orientation.
 
@@ -206,13 +207,23 @@ export function planeUnwrap(geo: THREE.BufferGeometry): THREE.BufferGeometry
 
 ---
 
-## Round 2 — validation script rewrites
+## Deviations from the original plan (for the record)
 
-Once Round 1 lands, revise the scripts:
+Implementation found five spots where the doc assumptions didn't match the codebase:
 
-- [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts): gear uses `gearGeo`; vending-machine cutter depth `0.12u` + add emissive glass pane mesh on window.
-- [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts): sword uses `bladeGeo`; tower restructured — try stacked stone courses with visible mortar lines OR a simpler cylindrical keep with battlements.
-- [scripts/validate-wave3.ts](../scripts/validate-wave3.ts): crate → `boxUnwrap`; barrel → `cylinderUnwrap`; sign → `planeUnwrap`.
+1. **`BufferGeometryUtils` is named-export only**, not a namespace object. Correct import: `import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js'`.
+2. **Three's `mergeVertices` hashes ALL attributes**, so a boxGeo's 24 verts (6 faces × 4) never collapsed to 8 even though positions coincide (each face has its own normals/UVs). Added a `{ positionOnly: true }` option that strips non-position attributes before hashing — required for the rock-smooth fix.
+3. **BoxGeometry and CylinderGeometry already carry correct directional UVs** in Three.js. `autoUnwrap` (xatlas) rotates them during atlas-packing which is what scrambles plank / band orientation. Shape-aware unwraps therefore preserve the built-in UVs instead of rebuilding them — a near-trivial implementation.
+4. **CSG variadic `...parts` + `{ smooth }` opts.** Rather than changing signatures, we detect an options object on the last arg: `boolUnion('X', a, b, { smooth: true })`. `boolUnion/Diff/Intersect` default to flat (hard edges); `hull` defaults to smooth (organic). Override either direction with `{ smooth: ... }`.
+5. **Blade bevel**: the full-diamond mode pinches the cross-section to `z = 0` at the centerline ridge; verified by test. Flat mode (`edgeBevel: 0`) keeps a pure prism.
+
+## Round 2 — validation script rewrites ⏳ NEXT
+
+Primitives are ready. Now rewrite the three validation scripts:
+
+- [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts): gear uses `gearGeo`; vending-machine deepen cutters to 0.12u + add emissive glass pane mesh on window; add `{ smooth: false }` to CSG calls for hard mechanical edges.
+- [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts): sword uses `bladeGeo`; rock-smooth calls `mergeVertices(..., { positionOnly: true })` before jittering; tower restructured — stacked stone courses with visible mortar lines OR a cylindrical keep with battlements.
+- [scripts/validate-wave3.ts](../scripts/validate-wave3.ts): crate → `boxUnwrap`; barrel → `cylinderUnwrap`; sign → `planeUnwrap` (all sync; drop the `await autoUnwrap(...)` calls).
 
 Regen all 12 GLBs, open `http://localhost:3000/gallery/view/validation/<name>.glb` for each, cycle through views (press `C`), toggle wireframe (`W`), and confirm none of the Round 1 issues persist.
 
@@ -230,22 +241,26 @@ bun run typecheck
 
 Add at least one unit test per new primitive in `packages/core/src/kiln/__tests__/`. Patterns already established in `solids.test.ts`, `uv.test.ts`, `textures.test.ts`.
 
-## Files to touch
+## Files touched in Round 1
 
-| File | Purpose |
-|---|---|
-| [packages/core/src/kiln/ops.ts](../packages/core/src/kiln/ops.ts) | add `mergeVertices`, wire into `subdivide` |
-| [packages/core/src/kiln/solids.ts](../packages/core/src/kiln/solids.ts) | add `smooth` option to bool* + hull |
-| [packages/core/src/kiln/gears.ts](../packages/core/src/kiln/gears.ts) | new `gearGeo` |
-| [packages/core/src/kiln/blade.ts](../packages/core/src/kiln/blade.ts) | new `bladeGeo` |
-| [packages/core/src/kiln/uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts) | new `boxUnwrap` / `cylinderUnwrap` / `planeUnwrap` |
-| [packages/core/src/kiln/index.ts](../packages/core/src/kiln/index.ts) | export new primitives |
-| [packages/core/src/kiln/list-primitives.ts](../packages/core/src/kiln/list-primitives.ts) | agent-facing catalog entries |
-| [packages/core/src/kiln/prompt.ts](../packages/core/src/kiln/prompt.ts) | one-line examples in system prompt |
-| [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts) | gear + vending rewrites |
-| [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts) | sword + tower rewrites |
-| [scripts/validate-wave3.ts](../scripts/validate-wave3.ts) | swap autoUnwrap for shape-aware |
-| [docs/kiln-vision.md](kiln-vision.md) | log Round 1 completion at the end |
+| File | Status | Purpose |
+|---|---|---|
+| [packages/core/src/kiln/ops.ts](../packages/core/src/kiln/ops.ts) | ✅ | `mergeVertices` + `subdivide` auto-weld (with `{ positionOnly }` option) |
+| [packages/core/src/kiln/solids.ts](../packages/core/src/kiln/solids.ts) | ✅ | `{ smooth }` option on `boolUnion`/`boolDiff`/`boolIntersect`/`hull` |
+| [packages/core/src/kiln/gears.ts](../packages/core/src/kiln/gears.ts) | ✅ new | `gearGeo` + `bladeGeo` (co-located — both parametric primitives) |
+| [packages/core/src/kiln/uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts) | ✅ new | `boxUnwrap` / `cylinderUnwrap` / `planeUnwrap` |
+| [packages/core/src/kiln/index.ts](../packages/core/src/kiln/index.ts) | ✅ | export 6 new primitives |
+| [packages/core/src/kiln/list-primitives.ts](../packages/core/src/kiln/list-primitives.ts) | ✅ | 6 new catalog entries; CSG entries updated for `smooth` option |
+| [packages/core/src/kiln/prompt.ts](../packages/core/src/kiln/prompt.ts) | ✅ | one-line primitives added to API block |
+| [packages/core/src/kiln/primitives.ts](../packages/core/src/kiln/primitives.ts) | ✅ | sandbox globals wired up for new primitives |
+| [packages/core/src/kiln/\_\_tests\_\_/ops.test.ts](../packages/core/src/kiln/__tests__/ops.test.ts) | ✅ new | mergeVertices + subdivide-auto-weld coverage |
+| [packages/core/src/kiln/\_\_tests\_\_/gears.test.ts](../packages/core/src/kiln/__tests__/gears.test.ts) | ✅ new | gearGeo + bladeGeo shape invariants |
+| [packages/core/src/kiln/\_\_tests\_\_/uv-shapes.test.ts](../packages/core/src/kiln/__tests__/uv-shapes.test.ts) | ✅ new | UV preservation across boxUnwrap/cylinderUnwrap/planeUnwrap |
+| [packages/core/src/kiln/\_\_tests\_\_/solids.test.ts](../packages/core/src/kiln/__tests__/solids.test.ts) | ✅ | 4 new cases for flat vs smooth shading |
+| [scripts/validate-wave2a.ts](../scripts/validate-wave2a.ts) | ⏳ Round 2 | gear + vending rewrites |
+| [scripts/validate-wave2b.ts](../scripts/validate-wave2b.ts) | ⏳ Round 2 | sword + tower + rock-smooth rewrites |
+| [scripts/validate-wave3.ts](../scripts/validate-wave3.ts) | ⏳ Round 2 | swap autoUnwrap for shape-aware |
+| [docs/kiln-vision.md](kiln-vision.md) | ✅ | Round 1 completion logged |
 
 ## Useful commands
 

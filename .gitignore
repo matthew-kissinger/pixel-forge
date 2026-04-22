@@ -68,3 +68,13 @@ NUL
 .claude/worktrees/
 .claude/launch.json
 .claude/scheduled_tasks.lock
+examples/
+
+# Session / scratch docs — NEVER commit. Use ~/.claude/projects/.../memory/
+# for durable notes. Keeps session context from ending up in git history.
+SESSION_CONTEXT.md
+SESSION_*.md
+NOTES.md
+SCRATCH.md
+HANDOFF.md
+.session/

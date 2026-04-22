@@ -158,7 +158,7 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 ## Known Issues
 
 - Three.js chunk is 1.4MB/380KB gzip (Vite warns about chunk size) - lazy loaded, only affects 3D workflows
-- 38 stale `mycel/task-*` remote branches could be deleted
+- **bun:test `mock.module` is importer-resolved**. In a monorepo with hoisted deps (e.g. `@anthropic-ai/claude-agent-sdk` resolved differently from `packages/server` vs `packages/core`), a single `mock.module('<bare-specifier>', ...)` only catches one resolution. Register a second mock against the absolute resolved path (via `fileURLToPath(import.meta.url)` + `path.resolve`) to cover both. See `packages/server/tests/services/claude.test.ts` for the pattern.
 
 ## Quality Bar
 

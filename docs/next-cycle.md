@@ -207,7 +207,7 @@ Everything else parallelizes off the hub.
   - Risk: Low (Combine touches edges graph, mitigated by util extraction)
   - Execution estimate confirmed at 3h
 
-### Wave 2 — Core hub (fan-out) — **UNBLOCKED**
+### Wave 2 — Core hub (fan-out) — **LARGELY DONE** (2.1/2.3/2.4/2.5 ✅ · 2.2 remaining)
 
 > **W2 kick-off — 7 follow-ups from the spike report** (docs/spike-report.md §Known Issues):
 > 1. Primitive coverage audit (TSL vs GLB surface boundary — TSL stays client, GLB moves to core)
@@ -218,35 +218,33 @@ Everything else parallelizes off the hub.
 > 6. Runtime-aware joint-name validation (currently regex-only; surface mismatches as `warnings[]`)
 > 7. Reconcile the two `gltf-transform`-bridge vs `GLTFExporter` paths — likely retire editor's GLTFExporter in favor of core's bridge
 
-- [ ] **2.1 Full kiln extraction** · deps: 1.1 passes · est: 4-6h
-  - Client `runtime.ts` imports primitives from `@pixel-forge/core` (no more local copies)
-  - `scripts/export-glb.ts` reduces to one-liner calling core
-  - Delete dupes: `packages/client/src/lib/kiln/primitives.ts`, `packages/shared/kiln-prompts.ts`, `packages/shared/kiln-validation.ts`
-  - Apply follow-up #2: unconditional `CLAUDECODE` strip in generate.ts
-  - Accept: zero `three` imports in `packages/server`, zero primitive dupes, editor unaffected
+- [x] **2.1 Full kiln extraction** · deps: 1.1 passes · est: 4-6h · **done** (merge `09f3378` + regression fix `5d1cea2`)
+  - Deleted duplicated primitives, migrated shared/kiln-* consumers, ported companion entries (editCode/compactCode/refactorCode) to core
+  - Unconditional CLAUDECODE strip + tunable `timeoutMs` per call + joint-name validation warnings in renderGLB
+  - 6 of 7 follow-ups landed; GLTFExporter unify deferred to W2.2 with `TODO(W2.1.7)` in runtime.ts
+  - Net: ~1.9k lines of duplication collapsed into one canonical copy
+  - **bun:test quirk**: `mock.module` resolves per-importer. In a hoisted-deps monorepo, a single mock call from the server package won't propagate into core. Fix: register a second mock against the absolute resolved path. Worth propagating to project CLAUDE.md.
 
 - [ ] **2.2 runtime.ts 8-way split** · deps: 2.1 · est: 3-4h
   - Extract per audit: config/init, renderer lifecycle, sandbox, TSL, camera, export, animation, cleanup
   - Keep in `packages/client/src/lib/kiln/runtime/` subdir
   - Accept: no file >200 lines in runtime/, existing editor tests pass
 
-- [ ] **2.3 Provider/Pipeline interfaces** · deps: 2.1 · est: 2h · **FAN-OUT ENABLER**
-  - `core/src/schemas/` — zod schemas for every public op
-  - `ImageProvider` interface (generate, editWithRefs, capabilities)
-  - `CodeGenProvider` interface (generate, refactor)
-  - `TextureProvider` interface (flux + LoRA flow)
-  - `Pipeline<Input, Output>` generic interface
-  - Accept: interfaces compiled, no implementations yet
+- [x] **2.3 Provider/Pipeline interfaces** · deps: 2.1 · est: 2h · **done** (commit `fbf931e`)
+  - `schemas/{image,kiln,index}.ts` — zod schemas for image + kiln input/output, inferred TS types
+  - `providers/types.ts` — `ImageProvider`, `TextureProvider`, `BgRemovalProvider`, `CodeGenProvider`
+  - `image/pipelines/types.ts` — `Pipeline<I,O>` + `BatchPipeline<I,O>`
 
-- [ ] **2.4 errors.ts taxonomy** · deps: 2.1 · est: 1.5h
-  - Structured errors: `ProviderRateLimited`, `ProviderCapabilityMismatch`, `ValidationFailed`, `KilnRenderFailed`, etc.
-  - Every error has `.code`, `.message`, `.fix_hint`, `.retryable`
-  - Accept: error taxonomy exported, used in spike paths
+- [x] **2.4 errors.ts taxonomy** · deps: 2.1 · est: 1.5h · **done** (commit `fbf931e`)
+  - `PixelForgeError` abstract base + 12 concrete classes
+  - Hierarchy: `ProviderError` (rate-limited, auth, capability, timeout, network), `ValidationError` (schema, kiln code), `KilnRenderError` (execution failed), `PipelineError` (input, step with `underlying: PixelForgeError` chain)
+  - Each error: `.code`, `.message`, `.fixHint?`, `.retryable`, `.cause?`
+  - `isPixelForgeError()` type guard + `AnyPixelForgeError` union
 
-- [ ] **2.5 capabilities.ts** · deps: 2.3 · est: 1h
-  - `capabilities(provider) → { supportsRefs, maxRefs, supportsTransparency, pricePerImage, rateLimit, strengths[] }`
-  - Static data for now, queryable
-  - Accept: returns capability object for each provider
+- [x] **2.5 capabilities.ts** · deps: 2.3 · est: 1h · **done** (commit `fbf931e`)
+  - `capabilities()`, `capabilitiesFor(provider)`, `capabilitiesForAll(kind)`, `pickProviderFor(requirements)`
+  - Full matrix for gemini/openai/fal/anthropic with gpt-image-2 dual-model routing (refs > 0 → gpt-image-2; text-only → gpt-image-1.5 or gemini)
+  - Static data, queryable, agent-facing
 
 ### Wave 3a — Providers (parallel with W3b, W4)
 

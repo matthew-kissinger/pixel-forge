@@ -70,7 +70,7 @@ test.describe('Mobile Viewport Smoke Tests', () => {
         await expect(canvas).toBeVisible();
       });
 
-      test('pinch-zoom simulation does not crash', async ({ page }) => {
+      test('pinch-zoom simulation does not crash', async ({ page, browserName }) => {
         await page.goto('/');
         await page.waitForSelector('.react-flow', { timeout: 10000 });
 
@@ -81,11 +81,17 @@ test.describe('Mobile Viewport Smoke Tests', () => {
         const centerX = box!.x + box!.width / 2;
         const centerY = box!.y + box!.height / 2;
 
-        // Simulate pinch-zoom using wheel event with ctrlKey (Playwright convention)
-        await page.mouse.move(centerX, centerY);
-        await page.mouse.wheel(0, -100);
-        await page.waitForTimeout(200);
-        await page.mouse.wheel(0, 100);
+        if (browserName === 'webkit') {
+          // Mobile WebKit does not support mouse wheel input in Playwright.
+          await page.touchscreen.tap(centerX, centerY);
+          await page.waitForTimeout(200);
+        } else {
+          // Simulate pinch-zoom using wheel input, the browser-agnostic path Playwright exposes.
+          await page.mouse.move(centerX, centerY);
+          await page.mouse.wheel(0, -100);
+          await page.waitForTimeout(200);
+          await page.mouse.wheel(0, 100);
+        }
 
         // Page should still be responsive after zoom
         await expect(page.locator('body')).toBeVisible();

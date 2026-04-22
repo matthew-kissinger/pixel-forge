@@ -183,6 +183,8 @@ vi.mock('three', () => {
     VectorKeyframeTrack,
     AnimationClip,
     Color,
+    InterpolateDiscrete: 2300,
+    InterpolateLinear: 2301,
     MathUtils: {
       degToRad: (deg: number) => deg * (Math.PI / 180),
     },
@@ -501,7 +503,8 @@ describe('kiln/primitives', () => {
       expect(THREE.VectorKeyframeTrack).toHaveBeenCalledWith(
         'Joint_Root.position',
         [0, 2],
-        [0, 0, 0, 1, 2, 3]
+        [0, 0, 0, 1, 2, 3],
+        THREE.InterpolateLinear
       );
       expect(track.name).toBe('Joint_Root.position');
     });
@@ -515,7 +518,8 @@ describe('kiln/primitives', () => {
       expect(THREE.VectorKeyframeTrack).toHaveBeenCalledWith(
         'Joint_Root.scale',
         [0, 2],
-        [1, 1, 1, 2, 3, 4]
+        [1, 1, 1, 2, 3, 4],
+        THREE.InterpolateLinear
       );
       expect(track.name).toBe('Joint_Root.scale');
     });

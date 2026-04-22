@@ -70,7 +70,7 @@ function ensureConfigured(apiKey?: string): void {
 // =============================================================================
 
 export interface FalTextureProviderOptions {
-  /** Override FLUX endpoint id. Default: `fal-ai/flux-2/lora`. */
+  /** Override FLUX endpoint id. Default: `fal-ai/flux-lora` (Seamless LoRA is FLUX 1 only — FLUX 2 weights have mismatched tensor shape). */
   endpoint?: string;
   /** Per-call timeout in ms. Default 60_000. */
   timeoutMs?: number;
@@ -91,7 +91,7 @@ export function createFalTextureProvider(
     });
   }
 
-  const endpoint = opts.endpoint ?? 'fal-ai/flux-2/lora';
+  const endpoint = opts.endpoint ?? 'fal-ai/flux-lora';
   const timeoutMs = opts.timeoutMs ?? FLUX_TIMEOUT_MS;
 
   return {

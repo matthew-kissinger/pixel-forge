@@ -41,6 +41,27 @@ import type { ImageProvider } from './types';
 const DEFAULT_MODEL = 'gemini-3.1-flash-image-preview';
 const DEFAULT_TIMEOUT_MS = 60_000;
 
+// Gemini's `imageConfig.aspectRatio` only accepts this exact whitelist.
+// Anything else (including reduced forms like `1024:1024`) returns 400.
+const SUPPORTED_ASPECT_RATIOS: ReadonlyArray<readonly [number, number]> = [
+  [1, 1], [1, 4], [1, 8], [2, 3], [3, 2], [3, 4], [4, 1], [4, 3],
+  [4, 5], [5, 4], [8, 1], [9, 16], [16, 9], [21, 9],
+];
+
+function pickGeminiAspectRatio(width: number, height: number): string {
+  const target = width / height;
+  let best = SUPPORTED_ASPECT_RATIOS[0]!;
+  let bestDelta = Math.abs(best[0] / best[1] - target);
+  for (const ratio of SUPPORTED_ASPECT_RATIOS) {
+    const delta = Math.abs(ratio[0] / ratio[1] - target);
+    if (delta < bestDelta) {
+      best = ratio;
+      bestDelta = delta;
+    }
+  }
+  return `${best[0]}:${best[1]}`;
+}
+
 // =============================================================================
 // Factory
 // =============================================================================
@@ -106,11 +127,13 @@ export function createGeminiProvider(
 
     const imageConfig: Record<string, string> = {};
     if (input.dimensions) {
-      // Gemini's API uses string aspect ratios, not explicit w/h. Let callers
-      // pass `dimensions` through to the facade layer for structural shape; the
-      // provider falls back to natural model output.
-      const { width, height } = input.dimensions;
-      imageConfig['aspectRatio'] = `${width}:${height}`;
+      // Gemini only accepts a whitelist of simplified aspect ratios (e.g. '1:1',
+      // '3:2', '16:9'). Reduce w:h by GCD, then fall back to the closest
+      // supported ratio if the reduced form isn't on the whitelist.
+      imageConfig['aspectRatio'] = pickGeminiAspectRatio(
+        input.dimensions.width,
+        input.dimensions.height,
+      );
     }
 
     try {

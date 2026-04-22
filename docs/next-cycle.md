@@ -322,27 +322,32 @@ Everything else parallelizes off the hub.
   - Shared utilities: `image/chroma.ts` (4 chroma variants + `chromaCleanFor` router), `image/texture-processing.ts` (pixelate, upscale, quantize, seamless-wrap-aware black cleanup)
   - +85 tests against fake providers (doubled the target of 40)
   - **sharp quirk**: `Buffer`/`ArrayBuffer` pooled — pooled buffer views reach adjacent memory. Both utility modules clone via `pixels.set(new Uint8Array(data.buffer, data.byteOffset, data.byteLength))` first. Documented in report.
-- [ ] **4.7 Archive 24 scripts** · deps: 0.3 list · est: 1h
-  - Move to `scripts/_archive/`
-  - ARCHIVE.md documents each
-- [ ] **4.8 Rewrite recipe scripts** · deps: 4.1-4.6 · est: 3h
-  - ~10-15 thin wrappers calling core pipelines
-  - Drop-in replacements for the 24 live scripts
+- [x] **4.7 Archive 24 scripts** · deps: 0.3 list · est: 1h · **done** (merge `be202c9`)
+  - 20 scripts moved via `git mv` to `scripts/_archive/` (16 one-shot + 4 superseded)
+  - 5 previously-untracked scripts categorized: 2 staged live, 3 archived
+  - ARCHIVE.md updated with completion status
+- [x] **4.8 Rewrite recipe scripts** · deps: 4.1-4.6 · est: 3h · **done** (merge `be202c9`)
+  - 13 live scripts rewritten as thin wrappers over `@pixel-forge/core`
+  - **Net: −1,176 LoC** (2,093 → 917) plus a 44-line shared helper
+  - `gen-ui-icons.ts` went from 625 → 278 LoC by delegating chroma/variant/retry to core
+  - 5 Python GLB scripts kept as-is per audit principle (POSTing to running server)
+  - Pipeline gap captured: `createSoldierSetPipeline` partial regen needs discriminated `tPose: Buffer | { prompt, refs? }` input
 
-### Wave 5 — Adapters (parallel)
+### Wave 5 — Adapters ✅ COMPLETE (commits 6497176 → 1f8d836)
 
-- [ ] **5.1 CLI package (citty)** · deps: W4 complete · est: 4h
-  - `packages/cli/` scaffold
-  - Commands: `gen sprite|icon|texture|glb|soldier-set`, `inspect glb`, `providers list`
-  - `--json` flag for machine-readable stdout
-  - `--help` auto-generated from zod
-  - `bun link` installable
+- [x] **5.1 CLI package (citty)** · **done**
+  - `packages/cli/` with citty 0.2.2
+  - Commands: `gen sprite|icon|texture|glb|soldier-set`, `inspect glb`, `providers list|pick`, `kiln list-primitives|validate|inspect|refactor`
+  - Every command takes `--json`; errors print `code` + `fixHint`
+  - 16 smoke tests passing
 
-- [ ] **5.2 MCP package (stdio)** · deps: W4 complete · est: 4h · parallel with 5.1
-  - `packages/mcp/` scaffold with `@modelcontextprotocol/sdk`
-  - Tools: `pixelforge_gen_{sprite,icon,texture,glb}`, `pixelforge_kiln_{inspect,refactor,list_primitives}`, `pixelforge_providers_capabilities`
-  - Rich structured returns (not bare base64)
-  - Installable via `claude mcp add pixelforge --stdio bun run packages/mcp/src/index.ts`
+- [x] **5.2 MCP package (stdio)** · **done**
+  - `packages/mcp/` with `@modelcontextprotocol/sdk@1.29` over stdio (v2 still alpha)
+  - Tools: `pixelforge_gen_{sprite,icon,texture,glb,soldier_set}`, `pixelforge_kiln_{inspect,validate,refactor,list_primitives}`, `pixelforge_providers_capabilities`
+  - Binary payload strategy: default writes tmp file + returns `{ path, sizeBytes, meta }`; `inline:true` for base64 fallback; `outPath:"..."` for explicit destination
+  - 7 smoke tests using `InMemoryTransport.createLinkedPair()` for round-trip
+  - Install: `claude mcp add pixelforge --stdio bun packages/mcp/src/index.ts`
+  - **Deferred follow-up**: core's `exports` map blocks deep imports of `pickProviderFor`; CLI mirrors the routing logic in `cli/src/routing.ts`. Worth surfacing on the namespace.
 
 ### Wave 6 — Docs finale
 
@@ -354,7 +359,11 @@ Everything else parallelizes off the hub.
 
 ### Wave 7 — Polish (slot anywhere after W2)
 
-- [ ] **7.1 Split canvas.ts by operation** · deps: 1.3 · est: 3h · parallel
+- [x] **7.1 Split canvas.ts by operation** · deps: 1.3 · est: 3h · **done** (commits ac6bbaf → 3c5ca39)
+  - 5 op files + utils.ts + index.ts under `packages/client/src/lib/handlers/canvas/`
+  - All under 200 LoC ceiling
+  - Test split: 38 op tests preserved 1:1 across 5 files + 7 new utils tests
+  - Client total: 1931 → 1938
 - [x] **7.2 Fix skipped executor test** · deps: none · est: 2h · **done** (landed early while waiting on W1.1 spike)
   - Option B lightweight: added `timeoutOverrideMs` on `ExecutionContext`; `executeNode` reads it over `NODE_TIMEOUTS`
   - Rewrote test with real timers + 50ms override (the old fake-timer path had a hidden bug anyway)

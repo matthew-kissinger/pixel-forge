@@ -163,6 +163,26 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 
 **Offline audit:** `bun run audit:glb` renders a 3×2 grid PNG (Front / Right / Back / Left / Top / 3-4) for each GLB in `war-assets/validation/` to `war-assets/validation/_grids/`. Headless Three.js with strict back-face culling — catches winding bugs the `<model-viewer>`-based inspector hides. Use this whenever you touch primitive geometry; the inspector renders double-sided, which masks inverted normals. Script: [scripts/visual-audit.ts](scripts/visual-audit.ts).
 
+## Critical: Kiln GLB Orientation and Attachment
+
+Kiln uses one world frame for game-ready assets: `+X` forward/nose/muzzle, `+Y` up, `+Z` right side, ground at `Y=0`. Keep aircraft, vehicles, weapons, boats, and buildings in that frame.
+
+Default `cylinderGeo`, `capsuleGeo`, and `coneGeo` are Y-axis primitives. For common oriented parts, use the newer helpers instead of hand-rotating:
+
+| Need | Use |
+|---|---|
+| Forward fuselage, cannon, barrel, missile, muzzle | `capsuleXGeo`, `cylinderXGeo`, `coneXGeo` |
+| Side pod, rail, float, crossbar | `capsuleZGeo`, `cylinderZGeo`, `coneZGeo` |
+| Strut, brace, cable, skid support, scaffold rail | `beamBetween()` |
+| Ladder | `createLadder()` |
+| Aircraft/helicopter wings or stub wings | `createWingPair()` |
+
+Attachment is mandatory. Wings need `createWingPair()` with `rootZ` equal to the fuselage half-width so roots visibly touch the body. Ladders need two continuous rails plus repeated rungs. Rails, braces, and struts should be built from endpoint helpers so they terminate on the surfaces they connect. Any visually-attached part should touch or overlap by about `0.02` units.
+
+Low-triangle output can still be bad output. Spend triangles on silhouettes that players read immediately: aircraft bodies, swept wings, cockpits, rotors, wheels, organic rocks, and ruins. Name checks and tri budgets do not prove quality; use `kiln.inspect()` plus the gallery/audit screenshots.
+
+Do not silently replace requested generated sprites/icons/NPCs/vegetation/effects with procedural SVG/HTML/canvas placeholders. If provider calls fail, report the provider failure or leave the asset marked pending. Real 2D assets must use the sprite, icon, soldier-set, or texture pipelines.
+
 ## Current Gaps
 
 Round 3 landed (2026-04-22). Remaining follow-ups in [docs/kiln-round-3.md](docs/kiln-round-3.md) §4:

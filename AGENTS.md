@@ -255,6 +255,26 @@ Do not include yellow/orange in Vietnam jungle biomes. Do not describe focal poi
 
 Sprites <50KB. Power-of-2 dimensions. Clean transparency. Test by generating a real asset and eyeballing the gallery at `http://localhost:3000/gallery`, not just by running the code.
 
+### 7d. Kiln GLB orientation and attachment rules
+
+Kiln assets use one coordinate contract: `+X` is forward/nose/muzzle, `+Y` is up, `+Z` is the asset's right side. Ground-contact geometry rests at `Y=0`. Vehicles, aircraft, weapons, buildings, and boats must all follow this frame so downstream games can orient them consistently.
+
+Default `cylinderGeo`, `capsuleGeo`, and `coneGeo` are Y-axis primitives. Do not hand-rotate them for common forward/side parts. Use the axis-specific helpers exposed by `kiln.listPrimitives()`:
+
+| Need | Use |
+|---|---|
+| Forward fuselage, cannon, barrel, missile, muzzle | `capsuleXGeo`, `cylinderXGeo`, `coneXGeo` |
+| Side pod, rail, float, crossbar | `capsuleZGeo`, `cylinderZGeo`, `coneZGeo` |
+| Strut, brace, cable, scaffold rail, skid support | `beamBetween()` |
+| Ladder | `createLadder()` |
+| Aircraft/helicopter wings or stub wings | `createWingPair()` |
+
+Attachment is part of correctness, not polish. Wings must use `createWingPair()` with `rootZ` set to the fuselage half-width so roots touch the body. Ladders must be two continuous rails plus repeated rungs, not unrelated boxes. Struts and rails must terminate on the parts they connect. Visually-attached pieces should touch or overlap by about `0.02` units; floating parts are invalid even if named-parts validation passes.
+
+Low triangle count is not the goal by itself. Spend triangles where silhouette matters: aircraft bodies, cockpits, rotors, wheels, organic rocks, ruins, and curved weapons. Validate with `kiln.inspect()`, `kiln.listPrimitives()`, and a visual gallery or audit screenshot. Name/triangle checks alone do not prove an asset looks right.
+
+Do not substitute procedural SVG/HTML/canvas placeholder art for requested 2D generated assets. If the task asks for sprites, NPCs, vegetation, icons, or effects, use the sprite/icon/texture pipelines above and clearly surface provider failures instead of silently replacing the model output with symbolic fallback art.
+
 ---
 
 ## 8. Providers
@@ -293,7 +313,7 @@ Pixel Forge is built **agent-first**. Three concrete consequences:
 
 1. **Errors carry `.fixHint`.** Any throw from `@pixel-forge/core` is a `PixelForgeError` subclass with `.code` (stable), `.message`, `.fixHint` (one-action suggestion), and `.retryable` (boolean). The CLI and MCP adapters surface these verbatim. When you catch one, read `fixHint` and use it as your rationale for the next action.
 2. **Providers carry `.capabilities`.** Don't guess which model handles refs or transparency — call `capabilities.pickProviderFor({ kind, refs, transparency })` and route accordingly. The matrix is in `packages/core/src/capabilities.ts`.
-3. **Kiln primitives are introspectable.** `kiln.listPrimitives()` returns the full catalog with args + return type + example. `kiln.inspect(code)` returns tri count, bounds, named parts, and animation tracks. Use these to debug LLM-generated GLB code instead of eyeballing it.
+3. **Kiln primitives are introspectable.** `kiln.listPrimitives()` returns the full catalog with args + return type + example, including axis-specific geometry and attachment helpers. `kiln.inspect(code)` returns tri count, bounds, named parts, and animation tracks. Use these to debug LLM-generated GLB code, then visually audit the result.
 
 ---
 
@@ -386,4 +406,4 @@ Claude Code has additional project-specific guidance in [`CLAUDE.md`](CLAUDE.md)
 
 ---
 
-Last updated: 2026-04-21
+Last updated: 2026-04-23

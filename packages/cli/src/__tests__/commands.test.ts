@@ -11,7 +11,7 @@
 
 import { describe, expect, test } from 'bun:test';
 
-import { genCommand } from '../commands/gen';
+import { genCommand, readBooleanOption, readOption } from '../commands/gen';
 import { inspectCommand } from '../commands/inspect';
 import { providersCommand } from '../commands/providers';
 import { kilnCommand } from '../commands/kiln';
@@ -128,5 +128,37 @@ describe('parseCsvList', () => {
       'b.png',
       'c.png',
     ]);
+  });
+});
+
+describe('CLI option aliases', () => {
+  test('reads kebab-case options', () => {
+    expect(readOption({ 'no-birefnet': true }, 'no-birefnet')).toBe(true);
+    expect(readOption({ 'save-code': 'asset.js' }, 'save-code')).toBe(
+      'asset.js',
+    );
+  });
+
+  test('reads citty camelCase aliases for kebab-case options', () => {
+    expect(readOption({ noBirefnet: true }, 'no-birefnet')).toBe(true);
+    expect(readOption({ saveCode: 'asset.js' }, 'save-code')).toBe('asset.js');
+    expect(readOption({ tposePrompt: 'soldier' }, 'tpose-prompt')).toBe(
+      'soldier',
+    );
+  });
+
+  test('reads citty negated no-* boolean aliases', () => {
+    expect(
+      readBooleanOption(
+        { 'no-birefnet': false, noBirefnet: false, birefnet: false },
+        'no-birefnet',
+      ),
+    ).toBe(true);
+    expect(
+      readBooleanOption(
+        { 'no-animation': false, noAnimation: false, animation: false },
+        'no-animation',
+      ),
+    ).toBe(true);
   });
 });

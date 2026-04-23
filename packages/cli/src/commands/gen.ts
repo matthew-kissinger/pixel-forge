@@ -27,6 +27,33 @@ function ensureDir(filePath: string): void {
   mkdirSync(dirname(resolve(filePath)), { recursive: true });
 }
 
+type CliArgs = Record<string, unknown>;
+
+function optionAlias(name: string): string {
+  return name.replace(/-([a-z])/g, (_match, char: string) =>
+    char.toUpperCase(),
+  );
+}
+
+export function readOption(args: CliArgs, name: string): unknown {
+  return args[name] ?? args[optionAlias(name)];
+}
+
+export function readBooleanOption(args: CliArgs, name: string): boolean {
+  if (name.startsWith('no-')) {
+    const positiveValue = readOption(args, name.slice(3));
+    if (positiveValue === false) {
+      return true;
+    }
+  }
+  return Boolean(readOption(args, name));
+}
+
+function readStringOption(args: CliArgs, name: string): string | undefined {
+  const value = readOption(args, name);
+  return typeof value === 'string' ? value : undefined;
+}
+
 function loadRefBuffers(refsCsv: string | undefined): Buffer[] {
   const paths = parseCsvList(refsCsv);
   return paths.map((p) => readFileSync(resolve(p)));
@@ -80,13 +107,14 @@ const spriteCommand = defineCommand({
   },
   async run({ args }) {
     try {
+      const cliArgs = args as CliArgs;
       const registry = loadProvidersFromEnv();
       const imageProvider = requireProvider(
         registry,
         'image',
         'OPENAI_API_KEY or GEMINI_API_KEY',
       );
-      const runBiRefNet = !args['no-birefnet'];
+      const runBiRefNet = !readBooleanOption(cliArgs, 'no-birefnet');
       const bgRemoval = runBiRefNet
         ? requireProvider(registry, 'bgRemoval', 'FAL_KEY')
         : undefined;
@@ -102,7 +130,7 @@ const spriteCommand = defineCommand({
         background: args.bg as 'magenta' | 'blue' | 'green',
         ...(refs.length > 0 ? { refs } : {}),
         runBiRefNet,
-        preserveFlash: args['preserve-flash'],
+        preserveFlash: readBooleanOption(cliArgs, 'preserve-flash'),
       });
 
       ensureDir(args.out);
@@ -293,6 +321,7 @@ const glbCommand = defineCommand({
   },
   async run({ args }) {
     try {
+      const cliArgs = args as CliArgs;
       // Codegen lives in core/kiln; pipeline factory uses that internally
       // and surfaces the Anthropic dependency as ProviderAuthFailed via the
       // SDK chain when ANTHROPIC_API_KEY is missing.
@@ -318,15 +347,16 @@ const glbCommand = defineCommand({
         prompt: args.prompt,
         category: cat,
         ...(args.style ? { style: args.style as 'low-poly' } : {}),
-        includeAnimation: !args['no-animation'],
+        includeAnimation: !readBooleanOption(cliArgs, 'no-animation'),
       });
 
       ensureDir(args.out);
       writeFileSync(resolve(args.out), result.glb);
 
-      if (args['save-code']) {
-        ensureDir(args['save-code']);
-        writeFileSync(resolve(args['save-code']), result.code, 'utf-8');
+      const saveCode = readStringOption(cliArgs, 'save-code');
+      if (saveCode) {
+        ensureDir(saveCode);
+        writeFileSync(resolve(saveCode), result.code, 'utf-8');
       }
 
       printResult(
@@ -334,7 +364,7 @@ const glbCommand = defineCommand({
           ok: true,
           path: resolve(args.out),
           sizeBytes: result.glb.byteLength,
-          codePath: args['save-code'] ? resolve(args['save-code']) : undefined,
+          codePath: saveCode ? resolve(saveCode) : undefined,
           codeBytes: result.code.length,
           meta: result.meta,
           warnings: result.warnings,
@@ -392,6 +422,7 @@ const soldierSetCommand = defineCommand({
   },
   async run({ args }) {
     try {
+      const cliArgs = args as CliArgs;
       const registry = loadProvidersFromEnv();
       const imageProvider = requireProvider(
         registry,
@@ -400,7 +431,16 @@ const soldierSetCommand = defineCommand({
       );
       const bgRemoval = requireProvider(registry, 'bgRemoval', 'FAL_KEY');
 
-      const posesFileRaw = readFileSync(resolve(args['poses-file']), 'utf-8');
+      const posesFile = readStringOption(cliArgs, 'poses-file');
+      const tPosePrompt = readStringOption(cliArgs, 'tpose-prompt');
+      const outDir = readStringOption(cliArgs, 'out-dir');
+      if (!posesFile || !tPosePrompt || !outDir) {
+        throw new Error(
+          '--tpose-prompt, --poses-file, and --out-dir are required.',
+        );
+      }
+
+      const posesFileRaw = readFileSync(resolve(posesFile), 'utf-8');
       const parsed = JSON.parse(posesFileRaw) as {
         poses: Array<{
           name: string;
@@ -421,7 +461,7 @@ const soldierSetCommand = defineCommand({
           : {}),
       }));
 
-      const styleRefs = loadRefBuffers(args['style-refs']);
+      const styleRefs = loadRefBuffers(readStringOption(cliArgs, 'style-refs'));
 
       const pipeline = coreImage.pipelines.createSoldierSetPipeline({
         imageProvider,
@@ -430,18 +470,18 @@ const soldierSetCommand = defineCommand({
 
       const result = await pipeline.run({
         faction: args.faction,
-        tPosePrompt: args['tpose-prompt'],
+        tPosePrompt,
         ...(styleRefs.length > 0 ? { factionStyleRefs: styleRefs } : {}),
         poses,
         background: args.bg as 'magenta' | 'blue' | 'green',
       });
 
-      mkdirSync(resolve(args['out-dir']), { recursive: true });
-      const tposePath = resolve(join(args['out-dir'], 'tpose.png'));
+      mkdirSync(resolve(outDir), { recursive: true });
+      const tposePath = resolve(join(outDir, 'tpose.png'));
       writeFileSync(tposePath, result.tPose.image);
       const posePaths: string[] = [];
       for (const pose of result.poses) {
-        const p = resolve(join(args['out-dir'], `${pose.name}.png`));
+        const p = resolve(join(outDir, `${pose.name}.png`));
         writeFileSync(p, pose.sprite.image);
         posePaths.push(p);
       }

@@ -225,6 +225,86 @@ const refactorCommand = defineCommand({
 });
 
 // =============================================================================
+// kiln lod
+// =============================================================================
+
+const lodCommand = defineCommand({
+  meta: {
+    name: 'lod',
+    description:
+      'Generate a multi-level LOD chain from a GLB using meshoptimizer. Writes lod0.glb, lod1.glb, ... + manifest.',
+  },
+  args: {
+    input: {
+      type: 'positional',
+      description: 'Path to the source GLB.',
+      required: true,
+    },
+    'out-dir': {
+      type: 'string',
+      description: 'Directory to write lod<N>.glb files into.',
+      required: true,
+    },
+    ratios: {
+      type: 'string',
+      description: 'Comma-separated target ratios. Default "1.0,0.5,0.25,0.1".',
+      default: '1.0,0.5,0.25,0.1',
+    },
+    error: {
+      type: 'string',
+      description: 'Error threshold (fraction of mesh radius). Default 0.01.',
+      default: '0.01',
+    },
+    'lock-border': {
+      type: 'boolean',
+      description: 'Lock topological borders (for tiled terrain).',
+      default: false,
+    },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const ratios = (args.ratios as string)
+        .split(',')
+        .map((s) => Number(s.trim()))
+        .filter((n) => Number.isFinite(n) && n > 0 && n <= 1);
+      if (!ratios.length) throw new Error(`invalid --ratios (got "${args.ratios}")`);
+      const errorThreshold = Number(args.error);
+      if (!Number.isFinite(errorThreshold)) throw new Error(`invalid --error (got "${args.error}")`);
+
+      const inputPath = resolve(args.input);
+      const outDir = resolve(args['out-dir'] as string);
+      mkdirSync(outDir, { recursive: true });
+
+      const { kiln: kilnNs } = await import('@pixel-forge/core');
+      const result = await kilnNs.generateLODChain(inputPath, {
+        ratios,
+        errorThreshold,
+        lockBorder: !!args['lock-border'],
+      });
+
+      const written: Array<{ level: number; path: string; triangles: number; bytes: number }> = [];
+      for (const lod of result.lods) {
+        const outPath = resolve(outDir, `lod${lod.level}.glb`);
+        writeFileSync(outPath, lod.glb);
+        written.push({ level: lod.level, path: outPath, triangles: lod.triangles, bytes: lod.bytes });
+      }
+
+      printResult(
+        {
+          ok: true,
+          source: result.source,
+          lods: written,
+        },
+        { json: args.json },
+      );
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
 // kiln bake-imposter
 // =============================================================================
 
@@ -349,5 +429,6 @@ export const kilnCommand = defineCommand({
     inspect: inspectCommand,
     refactor: refactorCommand,
     'bake-imposter': bakeImposterCommand,
+    lod: lodCommand,
   },
 });

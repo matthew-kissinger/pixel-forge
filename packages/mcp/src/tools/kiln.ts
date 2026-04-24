@@ -128,6 +128,68 @@ export function registerKilnTools(server: McpServer): void {
   );
 
   // ---------------------------------------------------------------------------
+  // pixelforge_kiln_lod
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    'pixelforge_kiln_lod',
+    {
+      description:
+        'Generate a multi-level LOD chain from a GLB on disk via meshoptimizer. Writes lod0.glb, lod1.glb, ... under outDir. Returns per-level tri/byte counts.',
+      inputSchema: {
+        inputPath: z.string().describe('Absolute path to the source GLB.'),
+        outDir: z.string().describe('Directory to write lod<N>.glb into.'),
+        ratios: z
+          .array(z.number().positive().max(1))
+          .default([1.0, 0.5, 0.25, 0.1])
+          .describe('Target ratios of vertices to keep, one per LOD level.'),
+        errorThreshold: z
+          .number()
+          .positive()
+          .default(0.01)
+          .describe('Max permitted error as a fraction of mesh radius.'),
+        lockBorder: z
+          .boolean()
+          .default(false)
+          .describe('Lock topological borders (tiled terrain).'),
+      },
+    },
+    async (input) => {
+      try {
+        const { writeFileSync: writeSync, mkdirSync: mkSync } = await import('node:fs');
+        const result = await kiln.generateLODChain(resolve(input.inputPath), {
+          ratios: input.ratios,
+          errorThreshold: input.errorThreshold,
+          lockBorder: input.lockBorder,
+        });
+        const outDir = resolve(input.outDir);
+        mkSync(outDir, { recursive: true });
+        const written = result.lods.map((lod) => {
+          const outPath = resolve(outDir, `lod${lod.level}.glb`);
+          writeSync(outPath, lod.glb);
+          return { level: lod.level, path: outPath, triangles: lod.triangles, bytes: lod.bytes };
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text:
+                `Generated ${result.lods.length} LOD levels from ${result.source.triangles} source tris. ` +
+                `Written under ${outDir}.`,
+            },
+          ],
+          structuredContent: {
+            ok: true,
+            source: result.source,
+            lods: written,
+          },
+        };
+      } catch (err) {
+        return errorToToolResult(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // pixelforge_kiln_bake_imposter
   // ---------------------------------------------------------------------------
   server.registerTool(

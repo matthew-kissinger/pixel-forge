@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TIJ Asset Pipeline — Validation Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root {
+      --bg: #0e0f12;
+      --bg-raised: #16181d;
+      --bg-card: #1b1e25;
+      --border: #2a2e37;
+      --fg: #e5e7ec;
+      --fg-dim: #989ba3;
+      --accent: #5aa9ff;
+      --accent-dim: #2d5a87;
+      --warn: #ffb347;
+      --err: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 14px; }
+    header { padding: 16px 24px; background: var(--bg-raised); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 24px; position: sticky; top: 0; z-index: 10; }
+    header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    header .meta { color: var(--fg-dim); font-size: 13px; }
+    nav { display: flex; gap: 4px; margin-left: auto; }
+    nav button { background: transparent; color: var(--fg-dim); border: 1px solid transparent;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer; font: inherit; }
+    nav button:hover { background: var(--bg-card); color: var(--fg); }
+    nav button.active { background: var(--accent-dim); color: var(--fg); border-color: var(--accent); }
+    main { padding: 24px; max-width: 1600px; margin: 0 auto; }
+    section { display: none; }
+    section.active { display: block; }
+    h2 { margin-top: 0; font-size: 16px; font-weight: 600; color: var(--accent); }
+    .intro { color: var(--fg-dim); margin-bottom: 20px; font-size: 13px; max-width: 72ch; }
+
+    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px; }
+    .card.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .card-title { font-weight: 600; font-size: 14px; }
+    .card-sub { color: var(--fg-dim); font-size: 12px; }
+    .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+    .preview { position: relative; background: #222; border-radius: 4px; aspect-ratio: 1; overflow: hidden; }
+    .preview canvas { display: block; width: 100%; height: 100%; }
+    .preview img { display: block; width: 100%; height: 100%; object-fit: contain; background: repeating-conic-gradient(#1b1e25 0 25%, #222 0 50%) 50% 50% / 24px 24px; }
+    .caption { position: absolute; bottom: 4px; left: 6px; right: 6px; padding: 3px 6px;
+      font-size: 11px; background: rgba(0,0,0,0.55); border-radius: 3px; color: var(--fg); }
+    .meta-grid { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; font-size: 12px; }
+    .meta-grid dt { color: var(--fg-dim); }
+    .meta-grid dd { margin: 0; font-variant-numeric: tabular-nums; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .controls select, .controls button { background: var(--bg-raised); color: var(--fg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 4px 8px; font: inherit; font-size: 12px; }
+    .controls button { cursor: pointer; }
+    .controls button:hover { background: var(--accent-dim); border-color: var(--accent); }
+    .fail { color: var(--err); font-size: 12px; }
+    .warn { color: var(--warn); font-size: 12px; }
+
+    .props-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+    .prop-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 8px;
+      display: flex; flex-direction: column; gap: 6px; font-size: 12px; }
+    .prop-card .preview { aspect-ratio: 1; }
+    .prop-card .title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .atlas-wrap { background: #111; padding: 8px; border-radius: 6px; position: relative; }
+    .atlas-wrap img { max-width: 100%; display: block; background: repeating-conic-gradient(#1b1e25 0 25%, #222 0 50%) 50% 50% / 24px 24px; }
+    .atlas-overlay { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+    .hint { position: fixed; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: var(--fg-dim);
+      padding: 4px 10px; border-radius: 4px; font-size: 11px; z-index: 10; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>TIJ Asset Pipeline</h1>
+    <span class="meta" id="manifest-meta">loading manifest...</span>
+    <nav id="tabs">
+      <button data-tab="soldiers" class="active">Soldiers</button>
+      <button data-tab="weapons">Weapons</button>
+      <button data-tab="vegetation">Vegetation</button>
+      <button data-tab="atlas">Sprite atlas</button>
+      <button data-tab="props">Props (FBX)</button>
+    </nav>
+  </header>
+
+  <main>
+    <section id="sec-soldiers" class="active">
+      <h2>Ranked soldier shortlist</h2>
+      <p class="intro">
+        Each card shows the LOD0 character rotating alongside its 16-angle hemi-octahedral
+        imposter atlas. LOD chain ratios [1.0, 0.5, 0.25, 0.1]. Toggle
+        <code>g</code> for strict back-face cull.
+      </p>
+      <div id="soldiers-cards" class="cards"></div>
+    </section>
+
+    <section id="sec-weapons">
+      <h2>Ranked weapon shortlist</h2>
+      <p class="intro">Stand-in props for the Vietnam-era loadout. Each renders at the origin; mount point is the model's center.</p>
+      <div id="weapons-cards" class="cards"></div>
+    </section>
+
+    <section id="sec-vegetation">
+      <h2>Ranked vegetation combos</h2>
+      <p class="intro">
+        Per combo: live LOD0 of the first variant on the left, baked imposter atlas on the right with tile
+        cycling. All variants in the combo share the species's TIJ textureName target.
+      </p>
+      <div id="vegetation-cards" class="cards"></div>
+    </section>
+
+    <section id="sec-atlas">
+      <h2>Sprite atlas — 60-free-plants</h2>
+      <p class="intro">
+        60 plant sprites (each pre-downscaled to 512px max) packed into a single 4096² POT atlas via
+        the kiln shelf-packer. Each gridline rectangle corresponds to one frame entry in the JSON
+        sidecar.
+      </p>
+      <div id="atlas-host"></div>
+    </section>
+
+    <section id="sec-props">
+      <h2>Survival-kit FBX ingest</h2>
+      <p class="intro">
+        80 Kenney survival-kit FBX models converted to GLB via three.js FBXLoader + GLTFExporter,
+        then tightened through @gltf-transform dedup + prune. Texture references were stripped
+        because the FBXs point to external .png files we don't resolve — material colors are
+        preserved, so a downstream retex pass can restore surfaces.
+      </p>
+      <div id="props-cards" class="props-grid"></div>
+    </section>
+  </main>
+
+  <div class="hint">← / → to navigate · <b>g</b> strict cull · click title to deep-link</div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // ---- Shared state ----
+    const ASSET_BASE = './assets/';  // served alongside index.html via the server route
+    const state = {
+      manifest: null,
+      tab: 'soldiers',
+      strictCull: false,
+      viewers: new Map(),  // cardKey -> { renderer, dispose }
+    };
+
+    // ---- Fetch manifest ----
+    async function loadManifest() {
+      const r = await fetch('./gallery-manifest.json', { cache: 'no-cache' });
+      if (!r.ok) throw new Error('gallery-manifest.json not available: ' + r.status);
+      state.manifest = await r.json();
+      const { counts } = state.manifest;
+      document.getElementById('manifest-meta').textContent =
+        `${counts.soldier ?? 0} soldiers · ${counts.weapon ?? 0} weapons · ${counts.vegetation ?? 0} veg combos · ${counts.prop ?? 0} props · ${counts.atlas ?? 0} atlases · generated ${new Date(state.manifest.generatedAt).toLocaleString()}`;
+    }
+
+    // ---- Tabs ----
+    function activateTab(id) {
+      state.tab = id;
+      for (const s of document.querySelectorAll('section')) s.classList.toggle('active', s.id === 'sec-' + id);
+      for (const b of document.querySelectorAll('nav button')) b.classList.toggle('active', b.dataset.tab === id);
+      window.history.replaceState(null, '', `#${id}`);
+      // Dispose invisible viewers to free WebGL contexts.
+      for (const [key, v] of state.viewers) {
+        const card = document.querySelector(`[data-key="${CSS.escape(key)}"]`);
+        if (!card || !card.offsetParent) {
+          v.dispose();
+          state.viewers.delete(key);
+        }
+      }
+      // Reveal newly visible.
+      for (const el of document.querySelectorAll('.card[data-lazy], .prop-card[data-lazy]')) observeReveal(el);
+    }
+    document.querySelector('nav').addEventListener('click', (e) => {
+      if (e.target.dataset && e.target.dataset.tab) activateTab(e.target.dataset.tab);
+    });
+    const hash = window.location.hash.slice(1);
+    if (hash && document.querySelector(`[data-tab="${hash}"]`)) activateTab(hash);
+
+    // ---- Lazy viewer reveal ----
+    const io = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const glbPath = el.dataset.glb;
+          const canvasHost = el.querySelector('[data-viewer]');
+          if (glbPath && canvasHost && !state.viewers.has(el.dataset.key)) {
+            const v = makeViewer(canvasHost, ASSET_BASE + glbPath);
+            state.viewers.set(el.dataset.key, v);
+          }
+          io.unobserve(el);
+        }
+      }
+    }, { threshold: 0.2 });
+
+    function observeReveal(el) {
+      if (el.offsetParent) io.observe(el);
+    }
+
+    // ---- Three.js mini-viewer factory ----
+    const LOADER = new GLTFLoader();
+    function makeViewer(host, glbUrl) {
+      const w = host.clientWidth || 240;
+      const h = host.clientHeight || 240;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+      renderer.setSize(w, h);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      host.replaceChildren(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const key = new THREE.DirectionalLight(0xffffff, 1.1);
+      key.position.set(1.5, 2, 1); scene.add(key);
+      const fill = new THREE.DirectionalLight(0xffffff, 0.3);
+      fill.position.set(-1, 0.5, -1); scene.add(fill);
+      const cam = new THREE.PerspectiveCamera(35, w / h, 0.01, 200);
+
+      let root = null;
+      let radius = 1;
+      let center = new THREE.Vector3();
+      let mixer = null;
+      let disposed = false;
+      let clock = new THREE.Clock();
+      let clips = [];
+
+      const api = { renderer, scene, cam, setAnimation: () => {}, dispose: () => {
+        disposed = true;
+        if (root) scene.remove(root);
+        renderer.dispose();
+        renderer.forceContextLoss();
+      }, clips: () => clips };
+
+      LOADER.load(glbUrl, (gltf) => {
+        if (disposed) return;
+        root = gltf.scene;
+        scene.add(root);
+        const box = new THREE.Box3().setFromObject(root);
+        center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        radius = Math.max(size.x, size.y, size.z) * 0.5 || 1;
+        applyCullMode(root);
+        clips = gltf.animations ?? [];
+        if (clips.length) {
+          mixer = new THREE.AnimationMixer(root);
+          const action = mixer.clipAction(clips[0]);
+          action.play();
+          api.setAnimation = (i) => {
+            mixer.stopAllAction();
+            const clip = clips[i];
+            if (clip) mixer.clipAction(clip).play();
+          };
+          if (host.dataset.populateAnims === '1') populateAnims(host, clips);
+        }
+      }, undefined, (err) => {
+        console.warn('GLB load failed:', glbUrl, err);
+        host.innerHTML = `<div class="fail" style="padding:8px">failed to load ${glbUrl}</div>`;
+      });
+
+      let theta = 0.6;
+      function animate() {
+        if (disposed) return;
+        theta += 0.01;
+        if (mixer) mixer.update(clock.getDelta()); else clock.getDelta();
+        const camDist = radius * 2.6;
+        cam.position.set(center.x + Math.cos(theta) * camDist, center.y + radius * 0.7, center.z + Math.sin(theta) * camDist);
+        cam.lookAt(center);
+        renderer.render(scene, cam);
+        requestAnimationFrame(animate);
+      }
+      animate();
+      return api;
+    }
+
+    function applyCullMode(root) {
+      root.traverse((o) => {
+        if (!o.isMesh || !o.material) return;
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of mats) {
+          m.side = state.strictCull ? THREE.FrontSide : THREE.DoubleSide;
+          m.needsUpdate = true;
+        }
+      });
+    }
+
+    function refreshCull() {
+      for (const [, v] of state.viewers) {
+        v.scene.traverse((o) => {
+          if (!o.isMesh || !o.material) return;
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          for (const m of mats) {
+            m.side = state.strictCull ? THREE.FrontSide : THREE.DoubleSide;
+            m.needsUpdate = true;
+          }
+        });
+      }
+    }
+
+    function populateAnims(host, clips) {
+      const select = host.closest('.card').querySelector('select[data-anim]');
+      if (!select) return;
+      select.innerHTML = clips.map((c, i) => `<option value="${i}">${c.name || 'clip ' + i}</option>`).join('');
+      select.addEventListener('change', () => {
+        const key = host.closest('.card').dataset.key;
+        const v = state.viewers.get(key);
+        v?.setAnimation(parseInt(select.value, 10));
+      });
+    }
+
+    // ---- Card renderers ----
+    function renderSoldiers() {
+      const soldiers = state.manifest.entries.filter(e => e.kind === 'soldier').sort((a,b)=>a.rank-b.rank);
+      const weapons = state.manifest.entries.filter(e => e.kind === 'weapon').sort((a,b)=>a.rank-b.rank);
+      const host = document.getElementById('soldiers-cards');
+      host.innerHTML = '';
+      for (const s of soldiers) {
+        const m = s.meta ?? {};
+        const lodTris = Array.isArray(m.lodTriangles) ? m.lodTriangles.join(' → ') : 'n/a';
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.key = 'soldier:' + s.id;
+        card.dataset.glb = s.paths.lod0;
+        card.dataset.lazy = '1';
+        card.innerHTML = `
+          <div class="card-head">
+            <div class="card-title">#${s.rank} · ${shortName(s.id)}</div>
+            <div class="card-sub">${m.role ?? ''}</div>
+          </div>
+          <div class="card-row">
+            <div class="preview" data-viewer data-populate-anims="1"></div>
+            <div class="preview">
+              ${s.paths.imposter ? `<img src="${ASSET_BASE}${s.paths.imposter}"><div class="caption">imposter · ${m.imposterTiles ?? ''}</div>` : '<div class="fail">no imposter</div>'}
+            </div>
+          </div>
+          <div class="controls">
+            <label>Anim <select data-anim><option>(loading...)</option></select></label>
+            <label>Weapon <select data-weapon><option value="">(none)</option>${weapons.map(w => `<option value="${w.paths.weapon}">${w.meta?.standin ?? w.id}</option>`).join('')}</select></label>
+            <button data-screenshot>Screenshot</button>
+          </div>
+          <dl class="meta-grid">
+            <dt>Source tri</dt><dd>${m.sourceTriangles ?? '—'}</dd>
+            <dt>LOD tris</dt><dd>${lodTris}</dd>
+            <dt>LOD bytes</dt><dd>${[0,1,2,3].map(i => s.paths['lod'+i] ? 'lod'+i : '').filter(Boolean).join(', ')}</dd>
+            <dt>Imposter</dt><dd>${m.imposterAtlas ?? '—'} · worldSize ${m.worldSize?.toFixed?.(2) ?? '—'}</dd>
+            <dt>Source bytes</dt><dd>${formatBytes(m.sourceBytes)}</dd>
+          </dl>
+        `;
+        host.appendChild(card);
+        wireScreenshot(card);
+        wireWeaponSelect(card);
+        observeReveal(card);
+      }
+    }
+
+    function wireWeaponSelect(card) {
+      const sel = card.querySelector('select[data-weapon]');
+      if (!sel) return;
+      let weaponRoot = null;
+      sel.addEventListener('change', () => {
+        const key = card.dataset.key;
+        const v = state.viewers.get(key);
+        if (!v) return;
+        if (weaponRoot) { v.scene.remove(weaponRoot); weaponRoot = null; }
+        if (!sel.value) return;
+        LOADER.load(ASSET_BASE + sel.value, (gltf) => {
+          weaponRoot = gltf.scene;
+          // Try to attach to a right-hand bone; fall back to scene origin.
+          let hand = null;
+          v.scene.traverse((o) => {
+            if (hand) return;
+            const n = (o.name || '').toLowerCase();
+            if (n.includes('hand.r') || n.includes('righthand') || n.includes('hand_r')) hand = o;
+          });
+          if (hand) hand.add(weaponRoot); else v.scene.add(weaponRoot);
+          weaponRoot.scale.setScalar(0.5);
+          applyCullMode(weaponRoot);
+        });
+      });
+    }
+
+    function wireScreenshot(card) {
+      const btn = card.querySelector('button[data-screenshot]');
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const v = state.viewers.get(card.dataset.key);
+        if (!v) return;
+        v.renderer.render(v.scene, v.cam);
+        v.renderer.domElement.toBlob((blob) => {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = `${card.dataset.key.replace(/[:/]/g,'_')}.png`;
+          a.click();
+        });
+      });
+    }
+
+    function renderWeapons() {
+      const weapons = state.manifest.entries.filter(e => e.kind === 'weapon').sort((a,b)=>a.rank-b.rank);
+      const host = document.getElementById('weapons-cards');
+      host.innerHTML = '';
+      for (const w of weapons) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.key = 'weapon:' + w.id;
+        card.dataset.glb = w.paths.weapon;
+        card.dataset.lazy = '1';
+        card.innerHTML = `
+          <div class="card-head">
+            <div class="card-title">#${w.rank} · ${w.meta?.standin ?? ''}</div>
+            <div class="card-sub">${shortName(w.id)}</div>
+          </div>
+          <div class="card-row">
+            <div class="preview" data-viewer></div>
+            <dl class="meta-grid">
+              <dt>Bytes</dt><dd>${formatBytes(w.meta?.bytes)}</dd>
+              <dt>Source</dt><dd class="card-sub">${w.source ?? ''}</dd>
+            </dl>
+          </div>
+        `;
+        host.appendChild(card);
+        observeReveal(card);
+      }
+    }
+
+    function renderVegetation() {
+      const combos = state.manifest.entries.filter(e => e.kind === 'vegetation').sort((a,b)=>a.rank-b.rank);
+      const host = document.getElementById('vegetation-cards');
+      host.innerHTML = '';
+      for (const c of combos) {
+        const variants = c.meta?.variants ?? [];
+        const primary = variants.find(v => v.imposter) ?? variants[0];
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.key = 'veg:' + c.id;
+        if (primary) card.dataset.glb = `vegetation/${c.id}/${primary.variant}/model.glb`;
+        card.dataset.lazy = '1';
+        card.innerHTML = `
+          <div class="card-head">
+            <div class="card-title">#${c.rank} · ${c.id}</div>
+            <div class="card-sub">TIJ texture: ${c.meta?.tijTextureName ?? '—'} · ${c.meta?.angles ?? '?'} angles @ ${c.meta?.tileSize ?? '?'}px</div>
+          </div>
+          <div class="card-row">
+            <div class="preview" data-viewer></div>
+            <div class="preview">
+              ${primary?.imposter ? `<img src="${ASSET_BASE}${primary.imposter}"><div class="caption">imposter · ${primary.variant}</div>` : '<div class="fail">no imposter</div>'}
+            </div>
+          </div>
+          <dl class="meta-grid">
+            <dt>Variants</dt><dd>${variants.map(v => v.failed ? `<span class="fail">${v.variant}</span>` : v.variant).join(', ')}</dd>
+            <dt>Axis / angles</dt><dd>${c.meta?.axis ?? '—'} · ${c.meta?.angles ?? '—'}</dd>
+            <dt>Source tri</dt><dd>${variants.map(v => v.tris ?? '?').join(' / ')}</dd>
+          </dl>
+        `;
+        host.appendChild(card);
+        observeReveal(card);
+      }
+    }
+
+    async function renderAtlas() {
+      const atlas = state.manifest.entries.find(e => e.kind === 'atlas');
+      const host = document.getElementById('atlas-host');
+      if (!atlas) { host.innerHTML = '<div class="fail">no atlas in manifest</div>'; return; }
+      const framesRes = await fetch(ASSET_BASE + atlas.paths.frames);
+      const framesJson = await framesRes.json();
+      const W = framesJson.atlasWidth, H = framesJson.atlasHeight;
+      host.innerHTML = `
+        <div class="atlas-wrap" style="display:inline-block">
+          <img src="${ASSET_BASE}${atlas.paths.atlas}" style="max-width:min(100%, 800px); width: 800px;">
+          <svg class="atlas-overlay" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:800px; height: ${800 * H / W}px">
+            ${framesJson.frames.map(f => `
+              <rect x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" fill="none" stroke="#5aa9ff" stroke-width="4" stroke-opacity="0.6" />
+              <text x="${f.x + 6}" y="${f.y + 40}" font-size="32" fill="#ffb347" font-family="monospace">${f.name}</text>
+            `).join('')}
+          </svg>
+          <div class="card-sub" style="padding:8px">${framesJson.frames.length} frames · ${W}×${H} POT atlas · padding ${framesJson.padding}</div>
+        </div>
+      `;
+    }
+
+    function renderProps() {
+      const props = state.manifest.entries.filter(e => e.kind === 'prop');
+      const host = document.getElementById('props-cards');
+      host.innerHTML = '';
+      for (const p of props) {
+        const card = document.createElement('div');
+        card.className = 'prop-card';
+        card.dataset.key = 'prop:' + p.id;
+        card.dataset.glb = p.paths.glb;
+        card.dataset.lazy = '1';
+        card.innerHTML = `
+          <div class="title">${p.id}</div>
+          <div class="preview" data-viewer></div>
+          <div class="card-sub">${p.failed ? `<span class="fail">${p.failed.reason}</span>` : `${p.meta?.triangles ?? '?'} tris · ${formatBytes(p.meta?.bytes)}`}</div>
+        `;
+        host.appendChild(card);
+        observeReveal(card);
+      }
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'g' || e.key === 'G') { state.strictCull = !state.strictCull; refreshCull(); }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        const cards = Array.from(document.querySelectorAll('section.active .card, section.active .prop-card'));
+        const cur = document.querySelector('.focus');
+        let idx = cards.indexOf(cur);
+        if (idx < 0) idx = 0;
+        else idx = (idx + (e.key === 'ArrowRight' ? 1 : -1) + cards.length) % cards.length;
+        cards.forEach(c => c.classList.remove('focus'));
+        const next = cards[idx];
+        if (next) {
+          next.classList.add('focus');
+          next.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          if (next.dataset.key) {
+            window.history.replaceState(null, '', `#${state.tab}&asset=${encodeURIComponent(next.dataset.key)}`);
+          }
+        }
+      }
+    });
+
+    // ---- Helpers ----
+    function shortName(id) {
+      // Strip Poly Pizza ID prefix "abc123__" and trailing "_-_Free_Model_By_X".
+      return id.replace(/^[A-Za-z0-9]+__/, '').replace(/_-_Free_Model_By_.+$/, '').replace(/_/g, ' ');
+    }
+    function formatBytes(n) {
+      if (!n) return '—';
+      if (n < 1024) return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+      return (n / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    // ---- Boot ----
+    try {
+      await loadManifest();
+      renderSoldiers();
+      renderWeapons();
+      renderVegetation();
+      await renderAtlas();
+      renderProps();
+    } catch (err) {
+      document.querySelector('main').innerHTML = `<pre class="fail">${err.message}\n${err.stack}</pre>`;
+    }
+  </script>
+</body>
+</html>

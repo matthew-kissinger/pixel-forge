@@ -8,6 +8,7 @@ import { modelRouter } from './routes/model';
 import { kilnRouter } from './routes/kiln';
 import { exportRouter } from './routes/export';
 import { galleryRouter } from './routes/gallery';
+import { galleryTijRouter } from './routes/gallery-tij';
 import { isAppError, getErrorMessage } from './lib/errors';
 import { logger as pixelLogger } from '@pixel-forge/shared/logger';
 import { rateLimit } from './middleware/rateLimit';
@@ -68,6 +69,7 @@ app.route(
 
 // Asset gallery (no rate limit, read-only)
 app.route('/gallery', galleryRouter);
+app.route('/gallery-tij', galleryTijRouter);
 
 // 404 handler
 app.notFound((c) => {

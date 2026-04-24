@@ -35,7 +35,7 @@
     h2 { margin-top: 0; font-size: 16px; font-weight: 600; color: var(--accent); }
     .intro { color: var(--fg-dim); margin-bottom: 20px; font-size: 13px; max-width: 72ch; }
 
-    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(520px, 1fr)); }
+    .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(680px, 1fr)); }
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px;
       display: flex; flex-direction: column; gap: 12px; }
     .card.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
@@ -43,6 +43,13 @@
     .card-title { font-weight: 600; font-size: 14px; }
     .card-sub { color: var(--fg-dim); font-size: 12px; }
     .card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+    .card-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: start; }
+    /* Narrow viewport — stack the preview columns so nothing clips. */
+    @media (max-width: 900px) {
+      .card-row-3 { grid-template-columns: 1fr; }
+      .card-row   { grid-template-columns: 1fr; }
+      .cards      { grid-template-columns: 1fr; }
+    }
     .preview { position: relative; background: #222; border-radius: 4px; aspect-ratio: 1; overflow: hidden; }
     .preview canvas { display: block; width: 100%; height: 100%; }
     .preview img { display: block; width: 100%; height: 100%; object-fit: contain; background: repeating-conic-gradient(#1b1e25 0 25%, #222 0 50%) 50% 50% / 24px 24px; }
@@ -201,6 +208,12 @@
             const v = makeViewer(canvasHost, ASSET_BASE + glbPath);
             state.viewers.set(el.dataset.key, v);
           }
+          // Animated imposter billboard — mounts on any [data-billboard] host.
+          const bbHost = el.querySelector('[data-billboard]');
+          if (bbHost && !bbHost.__mounted && bbHost.dataset.atlas && bbHost.dataset.meta) {
+            bbHost.__mounted = true;
+            makeImposterBillboard(bbHost, bbHost.dataset.atlas, bbHost.dataset.meta);
+          }
           io.unobserve(el);
         }
       }
@@ -285,6 +298,162 @@
       return api;
     }
 
+    // ---- Animated imposter billboard preview ----
+    // Loads the atlas + meta, orbits a camera around a camera-facing quad, and
+    // samples the tile matching the current view direction via a shader. This
+    // is the "does the baked atlas hold up under movement" test.
+    const BILLBOARD_MAX_AZ = 16;
+    const BILLBOARD_MAX_EL = 8;
+    function makeImposterBillboard(host, atlasUrl, metaUrl) {
+      host.innerHTML = '';
+      const spinner = document.createElement('div');
+      spinner.className = 'card-sub';
+      spinner.style.padding = '8px';
+      spinner.textContent = 'loading imposter...';
+      host.appendChild(spinner);
+
+      fetch(metaUrl).then((r) => r.json()).then((meta) => {
+        if (meta.azimuths.length > BILLBOARD_MAX_AZ || meta.elevations.length > BILLBOARD_MAX_EL) {
+          host.innerHTML = `<div class="fail" style="padding:8px">atlas too big for shader arrays</div>`;
+          return;
+        }
+        const w = host.clientWidth || 240;
+        const h = host.clientHeight || 240;
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
+        renderer.setSize(w, h);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        host.replaceChildren(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        const cam = new THREE.PerspectiveCamera(35, w / h, 0.01, 500);
+
+        // Subtle ground reference (grid) so the camera motion reads as orbit.
+        const grid = new THREE.GridHelper(meta.worldSize * 4, 8, 0x2a2e37, 0x1b1e25);
+        grid.position.y = -meta.worldSize * 0.5 + meta.yOffset;
+        scene.add(grid);
+
+        const tex = new THREE.TextureLoader().load(atlasUrl);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.magFilter = THREE.LinearFilter;
+        tex.minFilter = THREE.LinearFilter;
+
+        // Pad arrays to shader max length; shader reads only the first N based on counts.
+        const azPadded = new Float32Array(BILLBOARD_MAX_AZ);
+        const elPadded = new Float32Array(BILLBOARD_MAX_EL);
+        for (let i = 0; i < meta.azimuths.length; i++) azPadded[i] = meta.azimuths[i];
+        for (let i = 0; i < meta.elevations.length; i++) elPadded[i] = meta.elevations[i];
+
+        const uniforms = {
+          atlas: { value: tex },
+          tilesX: { value: meta.tilesX },
+          tilesY: { value: meta.tilesY },
+          azimuths: { value: azPadded },
+          elevations: { value: elPadded },
+          numAzimuths: { value: meta.azimuths.length },
+          numElevations: { value: meta.elevations.length },
+          viewDir: { value: new THREE.Vector3(1, 0, 0) },
+        };
+
+        const mat = new THREE.ShaderMaterial({
+          transparent: true,
+          depthWrite: false,
+          uniforms,
+          vertexShader: `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }`,
+          fragmentShader: `
+            precision highp float;
+            uniform sampler2D atlas;
+            uniform int tilesX;
+            uniform int tilesY;
+            uniform float azimuths[${BILLBOARD_MAX_AZ}];
+            uniform float elevations[${BILLBOARD_MAX_EL}];
+            uniform int numAzimuths;
+            uniform int numElevations;
+            uniform vec3 viewDir;
+            varying vec2 vUv;
+            void main() {
+              float az = atan(viewDir.z, viewDir.x);
+              if (az < 0.0) az += 6.2831853;
+              float el = asin(clamp(viewDir.y, -1.0, 1.0));
+              int bestAz = 0;
+              float bestAzD = 99.0;
+              for (int i = 0; i < ${BILLBOARD_MAX_AZ}; i++) {
+                if (i >= numAzimuths) break;
+                float d = abs(az - azimuths[i]);
+                if (d > 3.1415926) d = 6.2831853 - d;
+                if (d < bestAzD) { bestAzD = d; bestAz = i; }
+              }
+              int bestEl = 0;
+              float bestElD = 99.0;
+              for (int i = 0; i < ${BILLBOARD_MAX_EL}; i++) {
+                if (i >= numElevations) break;
+                float d = abs(el - elevations[i]);
+                if (d < bestElD) { bestElD = d; bestEl = i; }
+              }
+              float invX = 1.0 / float(tilesX);
+              float invY = 1.0 / float(tilesY);
+              // Top row = highest elevation (bestEl=0), v starts at 1 - invY.
+              float tileU = float(bestAz) * invX;
+              float tileV = (1.0 - invY) - float(bestEl) * invY;
+              vec2 uv = vec2(tileU + vUv.x * invX, tileV + vUv.y * invY);
+              vec4 c = texture2D(atlas, uv);
+              if (c.a < 0.1) discard;
+              gl_FragColor = c;
+            }`,
+        });
+
+        // Billboard quad sized to worldSize, pivoted at bottom (yOffset accounts for source-mesh offset).
+        const quad = new THREE.Mesh(new THREE.PlaneGeometry(meta.worldSize, meta.worldSize), mat);
+        quad.position.y = meta.worldSize * 0.5 + meta.yOffset * 0.5;
+        scene.add(quad);
+
+        let disposed = false;
+        let t = 0;
+        function animate() {
+          if (disposed) return;
+          t += 0.012;
+          // Orbit camera — azimuth sweeps 360°, elevation oscillates 5° → 85° so
+          // aerial + ground views are both exercised.
+          const phi = 0.44 + 0.75 * Math.sin(t * 0.45);  // elevation in radians
+          const radius = meta.worldSize * 2.6;
+          cam.position.set(
+            Math.cos(t) * radius * Math.cos(phi),
+            Math.sin(phi) * radius + quad.position.y,
+            Math.sin(t) * radius * Math.cos(phi),
+          );
+          cam.lookAt(0, quad.position.y, 0);
+
+          // Billboard quad to face camera on Y axis (cylindrical billboard).
+          const camXZ = new THREE.Vector3(cam.position.x, quad.position.y, cam.position.z);
+          quad.lookAt(camXZ);
+
+          // View direction for shader: unit vector from quad center to camera, world space.
+          const vd = new THREE.Vector3().subVectors(cam.position, quad.position).normalize();
+          uniforms.viewDir.value.copy(vd);
+
+          renderer.render(scene, cam);
+          requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Expose a dispose hook on the host element so the tab-switch cleanup can find it.
+        host.__dispose = () => {
+          disposed = true;
+          tex.dispose();
+          mat.dispose();
+          renderer.dispose();
+          renderer.forceContextLoss();
+        };
+      }).catch((err) => {
+        host.innerHTML = `<div class="fail" style="padding:8px">billboard failed: ${err.message}</div>`;
+      });
+    }
+
     function applyCullMode(root) {
       root.traverse((o) => {
         if (!o.isMesh || !o.material) return;
@@ -339,10 +508,13 @@
             <div class="card-title">#${s.rank} · ${shortName(s.id)}</div>
             <div class="card-sub">${m.role ?? ''}</div>
           </div>
-          <div class="card-row">
+          <div class="card-row-3">
             <div class="preview" data-viewer data-populate-anims="1"></div>
             <div class="preview">
-              ${s.paths.imposter ? `<img src="${ASSET_BASE}${s.paths.imposter}"><div class="caption">imposter · ${m.imposterTiles ?? ''}</div>` : '<div class="fail">no imposter</div>'}
+              ${s.paths.imposter ? `<img src="${ASSET_BASE}${s.paths.imposter}"><div class="caption">atlas · ${m.imposterTiles ?? ''}</div>` : '<div class="fail">no imposter</div>'}
+            </div>
+            <div class="preview" ${s.paths.imposter && s.paths.imposterMeta ? `data-billboard data-atlas="${ASSET_BASE}${s.paths.imposter}" data-meta="${ASSET_BASE}${s.paths.imposterMeta}"` : ''}>
+              ${s.paths.imposter && s.paths.imposterMeta ? '<div class="caption">billboard (live)</div>' : ''}
             </div>
           </div>
           <div class="controls">
@@ -452,10 +624,13 @@
             <div class="card-title">#${c.rank} · ${c.id}</div>
             <div class="card-sub">TIJ texture: ${c.meta?.tijTextureName ?? '—'} · ${c.meta?.angles ?? '?'} angles @ ${c.meta?.tileSize ?? '?'}px</div>
           </div>
-          <div class="card-row">
+          <div class="card-row-3">
             <div class="preview" data-viewer></div>
             <div class="preview">
-              ${primary?.imposter ? `<img src="${ASSET_BASE}${primary.imposter}"><div class="caption">imposter · ${primary.variant}</div>` : '<div class="fail">no imposter</div>'}
+              ${primary?.imposter ? `<img src="${ASSET_BASE}${primary.imposter}"><div class="caption">atlas · ${primary.variant}</div>` : '<div class="fail">no imposter</div>'}
+            </div>
+            <div class="preview" ${primary?.imposter && primary?.imposterMeta ? `data-billboard data-atlas="${ASSET_BASE}${primary.imposter}" data-meta="${ASSET_BASE}${primary.imposterMeta}"` : ''}>
+              ${primary?.imposter && primary?.imposterMeta ? '<div class="caption">billboard (live)</div>' : ''}
             </div>
           </div>
           <dl class="meta-grid">

@@ -92,6 +92,14 @@ interface VegCombo {
   tijTextureName: string;
 }
 
+// Angle budgets:
+//  - Aerial gameplay (helicopters / planes looking down) demands near-zenith
+//    coverage. 8 and 16 angle bakes top out at elevation 75° / 85° so the
+//    top-of-canopy read from directly above would snap to the highest tile.
+//  - Canopy + mid-level species bake at 32 angles (8 az × 4 el) for smoother
+//    transitions during fly-by.
+//  - Ground cover (fern) stays at 16 — players rarely fly 5 m above a fern
+//    bed and the silhouette is symmetric under elevation change.
 const VEG_COMBOS: VegCombo[] = [
   {
     rank: 1,
@@ -101,7 +109,7 @@ const VEG_COMBOS: VegCombo[] = [
       'bamboo-google-1', 'bamboo-google-2', 'bamboo-google-3',
       'bamboo-quaternius-1', 'bamboo-quaternius-2', 'bamboo-quaternius-3',
     ],
-    angles: 8,
+    angles: 32,
     tileSize: 512,
     axis: 'hemi-y',
   },
@@ -110,7 +118,7 @@ const VEG_COMBOS: VegCombo[] = [
     species: 'coconutPalm',
     tijTextureName: 'CoconutPalm',
     variants: ['coconut-palm-google', 'royal-palm-google-1', 'royal-palm-google-2', 'queen-palm-google', 'date-palm-google'],
-    angles: 16,
+    angles: 32,
     tileSize: 1024,
     axis: 'hemi-y',
   },
@@ -119,7 +127,7 @@ const VEG_COMBOS: VegCombo[] = [
     species: 'rubberTree',
     tijTextureName: 'RubberTree',
     variants: ['rubber-fig-google', 'palm-tree-jarlan-perez-1', 'palm-tree-jarlan-perez-2', 'vine-google'],
-    angles: 16,
+    angles: 32,
     tileSize: 1024,
     axis: 'hemi-y',
   },
@@ -128,7 +136,7 @@ const VEG_COMBOS: VegCombo[] = [
     species: 'fern',
     tijTextureName: 'Fern',
     variants: ['fern-danni-bittman', 'fern-quaternius', 'fiddlehead-google', 'big-leaf-plant-reyshapes'],
-    angles: 8,
+    angles: 16,
     tileSize: 512,
     axis: 'hemi-y',
   },
@@ -137,7 +145,7 @@ const VEG_COMBOS: VegCombo[] = [
     species: 'bananaPlant',
     tijTextureName: 'BananaPlant',
     variants: ['banana-tree-google', 'banana-tree-sean-tarrant'],
-    angles: 8,
+    angles: 32,
     tileSize: 512,
     axis: 'hemi-y',
   },
@@ -150,7 +158,7 @@ const VEG_COMBOS: VegCombo[] = [
       'triangle-palm-google', 'umbrella-palm-google',
       'ivory-cane-palm-google', 'everglades-palm-google',
     ],
-    angles: 16,
+    angles: 32,
     tileSize: 1024,
     axis: 'hemi-y',
   },
@@ -159,7 +167,7 @@ const VEG_COMBOS: VegCombo[] = [
     species: 'dipterocarp',
     tijTextureName: 'DipterocarpGiant',
     variants: ['palm-quaternius-1', 'palm-quaternius-2', 'palm-quaternius-3', 'palm-quaternius-4', 'palm-quaternius-5'],
-    angles: 16,
+    angles: 32,
     tileSize: 1024,
     axis: 'hemi-y',
   },

@@ -21,6 +21,8 @@ import { genCommand } from './commands/gen';
 import { inspectCommand } from './commands/inspect';
 import { providersCommand } from './commands/providers';
 import { kilnCommand } from './commands/kiln';
+import { auditCommand } from './commands/audit';
+import { healthCommand } from './commands/health';
 
 const main = defineCommand({
   meta: {
@@ -34,6 +36,8 @@ const main = defineCommand({
     inspect: inspectCommand,
     providers: providersCommand,
     kiln: kilnCommand,
+    audit: auditCommand,
+    health: healthCommand,
   },
 });
 

@@ -48,8 +48,19 @@ import type { ImageProvider } from './types';
 // Constants
 // =============================================================================
 
-const MODEL_TEXT = 'gpt-image-1.5';
-const MODEL_REFS = 'gpt-image-2';
+/**
+ * Text-to-image default (`gpt-image-1.5`). Override with env
+ * `OPENAI_TEXT_MODEL` for A/B testing.
+ */
+const MODEL_TEXT = process.env['OPENAI_TEXT_MODEL'] ?? 'gpt-image-1.5';
+
+/**
+ * Multi-ref / hero default (`gpt-image-2`). Override with env
+ * `OPENAI_HERO_MODEL` (e.g. the dated `gpt-image-2-2026-04-21` snapshot) to
+ * pin hero runs without touching pipeline code.
+ */
+const MODEL_REFS = process.env['OPENAI_HERO_MODEL'] ?? 'gpt-image-2';
+
 const DEFAULT_TIMEOUT_MS = 180_000;
 const DEFAULT_SIZE = '1024x1024';
 

@@ -33,7 +33,11 @@ bun run audit:review                                                 # open sing
 
 React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
 
-**AI Services:** Gemini 3.1 Flash Image (2D sprites), FAL BiRefNet (bg removal), FAL FLUX 2 + Seamless LoRA (tileable textures), FAL Meshy (3D), Claude/Kiln (3D primitives)
+**AI Services (live — regenerate snapshot with `pixelforge health --audit`):**
+- Gemini `gemini-3.1-flash-image-preview` (Nano Banana Pro, hero) + `gemini-2.5-flash-image` (bulk cohort) for 2D sprites
+- OpenAI `gpt-image-2` (refs ≤ 16) + `gpt-image-1.5` (transparency/text-only); `OPENAI_HERO_MODEL` env pins a dated snapshot
+- FAL `fal-ai/flux-2/lora` (tileable textures) + `fal-ai/birefnet/v2` (bg removal with variant selector) + `fal-ai/bria/background/remove` (fallback) + Hunyuan3D V3 (image-to-3D spike)
+- Claude `claude-opus-4-7` (Kiln 3D codegen, default) + `claude-sonnet-4-6` (preferCheap); `KILN_MODEL` env overrides
 
 ## Structure
 
@@ -179,9 +183,38 @@ Default `cylinderGeo`, `capsuleGeo`, and `coneGeo` are Y-axis primitives. For co
 
 Attachment is mandatory. Wings need `createWingPair()` with `rootZ` equal to the fuselage half-width so roots visibly touch the body. Ladders need two continuous rails plus repeated rungs. Rails, braces, and struts should be built from endpoint helpers so they terminate on the surfaces they connect. Any visually-attached part should touch or overlap by about `0.02` units.
 
+**Decals (red stars, hull numbers, stamps, ARVN markings, unpainted windows)** use `decalBox(width, height, depth=0.01)` — a thin box you can position against a surface. Do NOT reach for `planeGeo` for solid-color decals; without a texture it renders as a 2-triangle square at world origin and the structural validator flags it. `planeGeo` is reserved for textured signs / unwrapped billboards.
+
+**Y-axis aliases are registered.** `cylinderYGeo` / `capsuleYGeo` / `coneYGeo` are valid calls that alias the Y-default primitives. Pick the form that best documents intent — both work. Use `cylinderXGeo` / `cylinderZGeo` only when you need the alternate orientation.
+
+**`beamBetween("name", start, end)` rejects zero-length inputs** (δ < 1e-4) with a descriptive error. Either pick distinct endpoints or switch to `cylinderGeo` with explicit length + position.
+
 Low-triangle output can still be bad output. Spend triangles on silhouettes that players read immediately: aircraft bodies, swept wings, cockpits, rotors, wheels, organic rocks, and ruins. Name checks and tri budgets do not prove quality; use `kiln.inspect()` plus the gallery/audit screenshots.
 
 Do not silently replace requested generated sprites/icons/NPCs/vegetation/effects with procedural SVG/HTML/canvas placeholders. If provider calls fail, report the provider failure or leave the asset marked pending. Real 2D assets must use the sprite, icon, soldier-set, or texture pipelines.
+
+## Error-recovery loop (Kiln GLB)
+
+The batch harness now **feeds runtime errors and structural warnings back into the next attempt's prompt.** When a Kiln codegen attempt throws at render time, the retry receives both the prior code and the exact error text — and should emit a *corrected* program, not the same code again. Two categories of feedback you will see:
+
+- **Runtime errors** — full message (up to 800 chars) + the code that threw. Fix the specific call site. Consumed `maxRetries` budget.
+- **Structural warnings** — `Stray plane at origin: <name>` or `Floating parts: <names>`. These come from `inspectSceneStructure` in [packages/core/src/kiln/render.ts](packages/core/src/kiln/render.ts). One soft-retry is allocated; if still flagged the asset writes with the warnings preserved in its provenance sidecar so the review UI can surface them.
+
+Practical implications for Kiln codegen:
+
+- If an error mentions `cylinderYGeo` / `capsuleYGeo` / `coneYGeo` not defined, update your mental model — those aliases are registered now.
+- If you see a stray-plane warning, replace `planeGeo` with `decalBox` or position the plane against the target surface.
+- If you see a floating-part warning, extend geometry into contact (≥ `0.02` overlap) or delete the dangling piece.
+
+## Review artifacts agents can consume
+
+Every generated asset now drops a sibling provenance sidecar plus optional human annotations:
+
+- `<asset>.provenance.json` — `{ provider, model, prompt, promptHash, latencyMs, warnings, code, extras }`. Written automatically by the sprite / icon / texture / GLB / soldier-set CLIs and by `scripts/_direct-batch.ts`.
+- `war-assets/_review/issues.json` — `{ <asset-slug>: { chips, note, ts } }`, written by the tier-2 review UI (`pixelforge audit review --serve`). Chips are `wrong-axis`, `floating`, `stray-plane`, `proportions`, `missing-part`, `style`; `note` is freetext.
+- Audit grids — `war-assets/validation/_grids/*.png` (from `bun run audit:glb`) plus `war-assets/validation/review.html` (from `scripts/audit-review-page.ts`, served via `pixelforge audit server`).
+
+Before re-running a batch, read `issues.json` to pick up human QA that happened between runs.
 
 ## Current Gaps
 

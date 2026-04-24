@@ -14,7 +14,7 @@ import { dirname, resolve, join } from 'node:path';
 
 import { defineCommand } from 'citty';
 
-import { image as coreImage } from '@pixel-forge/core';
+import { image as coreImage, writeProvenance, hashContent } from '@pixel-forge/core';
 
 import { loadProvidersFromEnv, requireProvider } from '../providers';
 import { parseCsvList, printError, printResult } from '../output';
@@ -135,6 +135,17 @@ const spriteCommand = defineCommand({
 
       ensureDir(args.out);
       writeFileSync(resolve(args.out), result.image);
+      writeProvenance(resolve(args.out), {
+        pipeline: 'sprite',
+        provider: result.meta.provider,
+        model: result.meta.model,
+        prompt: args.prompt,
+        latencyMs: result.meta.latencyMs,
+        ...(result.meta.costUsd !== undefined
+          ? { costUsd: result.meta.costUsd }
+          : {}),
+        warnings: result.meta.warnings,
+      });
 
       printResult(
         {
@@ -205,6 +216,18 @@ const iconCommand = defineCommand({
 
       ensureDir(args.out);
       writeFileSync(resolve(args.out), result.image);
+      writeProvenance(resolve(args.out), {
+        pipeline: 'icon',
+        provider: result.meta.provider,
+        model: result.meta.model,
+        prompt: args.prompt,
+        latencyMs: result.meta.latencyMs,
+        ...(result.meta.costUsd !== undefined
+          ? { costUsd: result.meta.costUsd }
+          : {}),
+        warnings: result.meta.warnings,
+        extras: { variant: result.meta.variant },
+      });
 
       printResult(
         {
@@ -262,6 +285,23 @@ const textureCommand = defineCommand({
 
       ensureDir(args.out);
       writeFileSync(resolve(args.out), result.image);
+      writeProvenance(resolve(args.out), {
+        pipeline: 'texture',
+        provider: result.meta.provider,
+        model: 'fal-ai/flux-2/lora',
+        prompt: args.description,
+        latencyMs: result.meta.latencyMs,
+        ...(result.meta.costUsd !== undefined
+          ? { costUsd: result.meta.costUsd }
+          : {}),
+        warnings: result.meta.warnings,
+        extras: {
+          size: result.meta.size,
+          ...(result.meta.paletteSize !== undefined
+            ? { paletteSize: result.meta.paletteSize }
+            : {}),
+        },
+      });
 
       printResult(
         {
@@ -317,14 +357,23 @@ const glbCommand = defineCommand({
       type: 'string',
       description: 'Optional path to also write the generated JS to disk.',
     },
+    model: {
+      type: 'string',
+      description:
+        'Override the Kiln code model (e.g. claude-opus-4-7, claude-sonnet-4-6). Takes precedence over KILN_MODEL env var.',
+    },
     json: { type: 'boolean', default: false },
   },
   async run({ args }) {
     try {
       const cliArgs = args as CliArgs;
-      // Codegen lives in core/kiln; pipeline factory uses that internally
-      // and surfaces the Anthropic dependency as ProviderAuthFailed via the
-      // SDK chain when ANTHROPIC_API_KEY is missing.
+      // --model flag is the most common override. Set KILN_MODEL so it's
+      // picked up by core/kiln/generate.ts's DEFAULT_OPUS_MODEL resolver
+      // without needing a pipeline-level model option.
+      const modelOverride = readStringOption(cliArgs, 'model');
+      if (modelOverride) {
+        process.env['KILN_MODEL'] = modelOverride;
+      }
       const pipeline = coreImage.pipelines.createGlbPipeline();
 
       const validCats = [
@@ -358,6 +407,29 @@ const glbCommand = defineCommand({
         ensureDir(saveCode);
         writeFileSync(resolve(saveCode), result.code, 'utf-8');
       }
+
+      writeProvenance(resolve(args.out), {
+        pipeline: 'glb',
+        provider: 'anthropic',
+        model:
+          process.env['KILN_MODEL'] ??
+          process.env['PIXEL_FORGE_MODEL'] ??
+          'claude-opus-4-7',
+        prompt: args.prompt,
+        warnings: result.warnings,
+        code: {
+          bytes: result.code.length,
+          sha1: hashContent(result.code),
+        },
+        extras: {
+          category: cat,
+          ...(result.meta.name !== undefined ? { name: result.meta.name } : {}),
+          ...(result.meta.tris !== undefined ? { tris: result.meta.tris } : {}),
+          ...(result.meta.primitiveUsage
+            ? { primitiveUsage: result.meta.primitiveUsage }
+            : {}),
+        },
+      });
 
       printResult(
         {
@@ -479,10 +551,38 @@ const soldierSetCommand = defineCommand({
       mkdirSync(resolve(outDir), { recursive: true });
       const tposePath = resolve(join(outDir, 'tpose.png'));
       writeFileSync(tposePath, result.tPose.image);
+      writeProvenance(tposePath, {
+        pipeline: 'soldier-set',
+        provider: result.tPose.meta.provider,
+        model: result.tPose.meta.model,
+        prompt: tPosePrompt,
+        latencyMs: result.tPose.meta.latencyMs,
+        ...(result.tPose.meta.costUsd !== undefined
+          ? { costUsd: result.tPose.meta.costUsd }
+          : {}),
+        warnings: result.tPose.meta.warnings,
+        extras: { faction: args.faction, role: 'tpose' },
+      });
       const posePaths: string[] = [];
       for (const pose of result.poses) {
         const p = resolve(join(outDir, `${pose.name}.png`));
         writeFileSync(p, pose.sprite.image);
+        writeProvenance(p, {
+          pipeline: 'soldier-set',
+          provider: pose.sprite.meta.provider,
+          model: pose.sprite.meta.model,
+          prompt: poses.find((q) => q.name === pose.name)?.prompt ?? pose.name,
+          latencyMs: pose.sprite.meta.latencyMs,
+          ...(pose.sprite.meta.costUsd !== undefined
+            ? { costUsd: pose.sprite.meta.costUsd }
+            : {}),
+          warnings: pose.sprite.meta.warnings,
+          extras: {
+            faction: args.faction,
+            role: 'pose',
+            poseName: pose.name,
+          },
+        });
         posePaths.push(p);
       }
 

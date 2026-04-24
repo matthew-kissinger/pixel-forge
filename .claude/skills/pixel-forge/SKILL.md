@@ -88,15 +88,56 @@ bunx pixelforge providers pick --kind image --refs 8 --json
 
 `capabilities.pickProviderFor({ kind, refs?, transparency? })`:
 
-- `image` + `refs > 0` -> `gpt-image-2` (decisive on multi-ref / faction work)
+- `image` + `refs > 0` -> `gpt-image-2` (decisive on multi-ref / faction work); `OPENAI_HERO_MODEL` env pins a dated snapshot
 - `image` + `transparency: true` -> `gpt-image-1.5` (only model with native alpha)
-- `image` text-only -> `gemini-3.1-flash-image-preview` (cheap bulk)
-- `texture` -> `fal-ai/flux-2/lora` (only seamless option)
-- `bg-removal` -> `fal-ai/birefnet`
-- `code-gen` -> `claude-opus-4-7` (sonnet on `preferCheap`)
+- `image` text-only -> `gemini-3.1-flash-image-preview` (Nano Banana Pro, hero) or `gemini-2.5-flash-image` (bulk cohort via `createGeminiFlashProvider()`)
+- `texture` -> `fal-ai/flux-2/lora` (FLUX 1 `fal-ai/flux-lora` kept as escape hatch)
+- `bg-removal` -> `fal-ai/birefnet/v2` with `variant: 'light' | 'light-2k' | 'heavy' | 'matting' | 'portrait' | 'general-dynamic'`; `createFalBriaBgRemovalProvider()` is the enterprise fallback
+- `image-to-3d` -> `fal-ai/hunyuan3d-v3/image-to-3d` (spike; pair with Gemini sprite output)
+- `code-gen` -> `claude-opus-4-7` (sonnet on `preferCheap`); `KILN_MODEL` env overrides
 
 The `image.getDefaultImageGen().generate({ provider: 'auto', ... })` facade
-consults this for you.
+consults this for you. Regenerate the live catalog with
+`pixelforge health --audit` — writes
+`docs/model-catalog-YYYY-MM-DD.md` and
+`packages/core/src/providers/_catalog.generated.json`.
+
+## Pre-flight
+
+Before any batch generation, probe all four providers:
+
+```bash
+pixelforge health            # one-line per-provider liveness
+pixelforge health --strict   # exit 2 if MISSING / AUTH_FAIL / BALANCE
+pixelforge health --audit    # also regenerate docs/model-catalog-*.md
+```
+
+If a key is red, recover with `bun scripts/_key-paste.ts --key=<NAME>` —
+serves a local HTML form that writes `~/.config/mk-agent/env`. Do not edit
+env files by hand.
+
+`scripts/run-overnight.sh` and `scripts/run-2d-additions.sh` already gate on
+this probe; set `PF_SKIP_HEALTH=1` to bypass for offline runs.
+
+## Review annotations
+
+Generated assets now carry structured provenance and optional human QA:
+
+- `<asset>.provenance.json` sidecar — `{ provider, model, prompt, promptHash, latencyMs, warnings, code }`. Written by every CLI generate command and by `scripts/_direct-batch.ts`. Read it to reconstruct how any file was produced.
+- `war-assets/_review/issues.json` — human QA from `pixelforge audit review --serve`. Chips are `wrong-axis`, `floating`, `stray-plane`, `proportions`, `missing-part`, `style`; `note` is freetext. Last-write-wins per asset slug.
+
+Before re-running a category, read `issues.json` to pick up annotations made
+between runs. Format:
+
+```json
+{
+  "aircraft-uh1-huey": {
+    "chips": ["wrong-axis", "missing-part"],
+    "note": "tail rotor should spin on +X, not +Y; no skids",
+    "ts": 1745416800000
+  }
+}
+```
 
 ## Error handling (READ THIS)
 

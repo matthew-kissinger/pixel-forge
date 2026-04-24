@@ -19,3 +19,10 @@ export * as providers from './providers';
 export * as schemas from './schemas';
 export { capabilities } from './capabilities';
 export * from './errors';
+export {
+  writeProvenance,
+  hashContent,
+  type ProvenanceInput,
+  type ProvenanceCodeInfo,
+  type ProvenanceRefInfo,
+} from './provenance';

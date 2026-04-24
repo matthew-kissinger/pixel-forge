@@ -1,0 +1,731 @@
+{
+  "generatedAt": "2026-04-24T01:53:41.479Z",
+  "providers": {
+    "anthropic": {
+      "ok": true,
+      "live": true,
+      "models": [
+        {
+          "id": "claude-haiku-4-5-20251001",
+          "kind": "text",
+          "notes": "Claude Haiku 4.5"
+        },
+        {
+          "id": "claude-opus-4-1-20250805",
+          "kind": "text",
+          "notes": "Claude Opus 4.1"
+        },
+        {
+          "id": "claude-opus-4-20250514",
+          "kind": "text",
+          "notes": "Claude Opus 4"
+        },
+        {
+          "id": "claude-opus-4-5-20251101",
+          "kind": "text",
+          "notes": "Claude Opus 4.5"
+        },
+        {
+          "id": "claude-opus-4-6",
+          "kind": "text",
+          "notes": "Claude Opus 4.6"
+        },
+        {
+          "id": "claude-opus-4-7",
+          "kind": "text",
+          "notes": "Claude Opus 4.7"
+        },
+        {
+          "id": "claude-sonnet-4-20250514",
+          "kind": "text",
+          "notes": "Claude Sonnet 4"
+        },
+        {
+          "id": "claude-sonnet-4-5-20250929",
+          "kind": "text",
+          "notes": "Claude Sonnet 4.5"
+        },
+        {
+          "id": "claude-sonnet-4-6",
+          "kind": "text",
+          "notes": "Claude Sonnet 4.6"
+        }
+      ]
+    },
+    "openai": {
+      "ok": true,
+      "live": true,
+      "models": [
+        {
+          "id": "dall-e-2",
+          "kind": "image"
+        },
+        {
+          "id": "dall-e-3",
+          "kind": "image"
+        },
+        {
+          "id": "gpt-4.1",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4.1-2025-04-14",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4.1-mini",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4.1-mini-2025-04-14",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4.1-nano",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4.1-nano-2025-04-14",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-2024-05-13",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-2024-08-06",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-2024-11-20",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-audio-preview",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-audio-preview-2024-12-17",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-audio-preview-2025-06-03",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-2024-07-18",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-audio-preview",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-audio-preview-2024-12-17",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-realtime-preview",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-realtime-preview-2024-12-17",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-search-preview",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-search-preview-2025-03-11",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-transcribe",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-transcribe-2025-03-20",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-transcribe-2025-12-15",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-tts",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-tts-2025-03-20",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-mini-tts-2025-12-15",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-realtime-preview",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-realtime-preview-2024-12-17",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-realtime-preview-2025-06-03",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-search-preview",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-search-preview-2025-03-11",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-transcribe",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-4o-transcribe-diarize",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-2025-08-07",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-chat-latest",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-codex",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-mini",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-mini-2025-08-07",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-nano",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-nano-2025-08-07",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-pro",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-pro-2025-10-06",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-search-api",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5-search-api-2025-10-14",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.1",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.1-2025-11-13",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.1-chat-latest",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.1-codex",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.1-codex-max",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.1-codex-mini",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.2",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.2-2025-12-11",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.2-chat-latest",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.2-codex",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.2-pro",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.2-pro-2025-12-11",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.3-chat-latest",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.3-codex",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4-2026-03-05",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4-mini",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4-mini-2026-03-17",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4-nano",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4-nano-2026-03-17",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4-pro",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-5.4-pro-2026-03-05",
+          "kind": "text"
+        },
+        {
+          "id": "gpt-image-1",
+          "kind": "image"
+        },
+        {
+          "id": "gpt-image-1-mini",
+          "kind": "image"
+        },
+        {
+          "id": "gpt-image-1.5",
+          "kind": "image"
+        },
+        {
+          "id": "gpt-image-2",
+          "kind": "image"
+        },
+        {
+          "id": "gpt-image-2-2026-04-21",
+          "kind": "image"
+        },
+        {
+          "id": "o3",
+          "kind": "text"
+        },
+        {
+          "id": "o3-2025-04-16",
+          "kind": "text"
+        },
+        {
+          "id": "o3-deep-research",
+          "kind": "text"
+        },
+        {
+          "id": "o3-deep-research-2025-06-26",
+          "kind": "text"
+        },
+        {
+          "id": "o3-mini",
+          "kind": "text"
+        },
+        {
+          "id": "o3-mini-2025-01-31",
+          "kind": "text"
+        },
+        {
+          "id": "o3-pro",
+          "kind": "text"
+        },
+        {
+          "id": "o3-pro-2025-06-10",
+          "kind": "text"
+        },
+        {
+          "id": "o4-mini",
+          "kind": "text"
+        },
+        {
+          "id": "o4-mini-2025-04-16",
+          "kind": "text"
+        },
+        {
+          "id": "o4-mini-deep-research",
+          "kind": "text"
+        },
+        {
+          "id": "o4-mini-deep-research-2025-06-26",
+          "kind": "text"
+        }
+      ],
+      "meta": {
+        "totalModels": 130
+      }
+    },
+    "gemini": {
+      "ok": true,
+      "live": true,
+      "models": [
+        {
+          "id": "gemini-2.0-flash",
+          "kind": "text",
+          "notes": "Gemini 2.0 Flash"
+        },
+        {
+          "id": "gemini-2.0-flash-001",
+          "kind": "text",
+          "notes": "Stable version of Gemini 2.0 Flash, our fast and versatile multimodal model for scaling across diverse tasks, released i"
+        },
+        {
+          "id": "gemini-2.0-flash-lite",
+          "kind": "text",
+          "notes": "Gemini 2.0 Flash-Lite"
+        },
+        {
+          "id": "gemini-2.0-flash-lite-001",
+          "kind": "text",
+          "notes": "Stable version of Gemini 2.0 Flash-Lite"
+        },
+        {
+          "id": "gemini-2.5-computer-use-preview-10-2025",
+          "kind": "text",
+          "notes": "Gemini 2.5 Computer Use Preview 10-2025"
+        },
+        {
+          "id": "gemini-2.5-flash",
+          "kind": "text",
+          "notes": "Stable version of Gemini 2.5 Flash, our mid-size multimodal model that supports up to 1 million tokens, released in June"
+        },
+        {
+          "id": "gemini-2.5-flash-image",
+          "kind": "image",
+          "notes": "Gemini 2.5 Flash Preview Image"
+        },
+        {
+          "id": "gemini-2.5-flash-lite",
+          "kind": "text",
+          "notes": "Stable version of Gemini 2.5 Flash-Lite, released in July of 2025"
+        },
+        {
+          "id": "gemini-2.5-flash-preview-tts",
+          "kind": "text",
+          "notes": "Gemini 2.5 Flash Preview TTS"
+        },
+        {
+          "id": "gemini-2.5-pro",
+          "kind": "text",
+          "notes": "Stable release (June 17th, 2025) of Gemini 2.5 Pro"
+        },
+        {
+          "id": "gemini-2.5-pro-preview-tts",
+          "kind": "text",
+          "notes": "Gemini 2.5 Pro Preview TTS"
+        },
+        {
+          "id": "gemini-3-flash-preview",
+          "kind": "text",
+          "notes": "Gemini 3 Flash Preview"
+        },
+        {
+          "id": "gemini-3-pro-image-preview",
+          "kind": "image",
+          "notes": "Gemini 3 Pro Image Preview"
+        },
+        {
+          "id": "gemini-3-pro-preview",
+          "kind": "text",
+          "notes": "Gemini 3 Pro Preview"
+        },
+        {
+          "id": "gemini-3.1-flash-image-preview",
+          "kind": "image",
+          "notes": "Gemini 3.1 Flash Image Preview."
+        },
+        {
+          "id": "gemini-3.1-flash-lite-preview",
+          "kind": "text",
+          "notes": "Gemini 3.1 Flash Lite Preview"
+        },
+        {
+          "id": "gemini-3.1-flash-tts-preview",
+          "kind": "text",
+          "notes": "Gemini 3.1 Flash TTS Preview"
+        },
+        {
+          "id": "gemini-3.1-pro-preview",
+          "kind": "text",
+          "notes": "Gemini 3.1 Pro Preview"
+        },
+        {
+          "id": "gemini-3.1-pro-preview-customtools",
+          "kind": "text",
+          "notes": "Gemini 3.1 Pro Preview optimized for custom tool usage"
+        },
+        {
+          "id": "gemini-embedding-001",
+          "kind": "text",
+          "notes": "Obtain a distributed representation of a text."
+        },
+        {
+          "id": "gemini-embedding-2",
+          "kind": "text",
+          "notes": "Obtain a distributed representation of multimodal content."
+        },
+        {
+          "id": "gemini-embedding-2-preview",
+          "kind": "text",
+          "notes": "Obtain a distributed representation of multimodal content."
+        },
+        {
+          "id": "gemini-flash-latest",
+          "kind": "text",
+          "notes": "Latest release of Gemini Flash"
+        },
+        {
+          "id": "gemini-flash-lite-latest",
+          "kind": "text",
+          "notes": "Latest release of Gemini Flash-Lite"
+        },
+        {
+          "id": "gemini-pro-latest",
+          "kind": "text",
+          "notes": "Latest release of Gemini Pro"
+        },
+        {
+          "id": "gemini-robotics-er-1.5-preview",
+          "kind": "text",
+          "notes": "Gemini Robotics-ER 1.5 Preview"
+        },
+        {
+          "id": "gemini-robotics-er-1.6-preview",
+          "kind": "text",
+          "notes": "Gemini Robotics-ER 1.6 Preview"
+        },
+        {
+          "id": "gemma-3-12b-it",
+          "kind": "text"
+        },
+        {
+          "id": "gemma-3-1b-it",
+          "kind": "text"
+        },
+        {
+          "id": "gemma-3-27b-it",
+          "kind": "text"
+        },
+        {
+          "id": "gemma-3-4b-it",
+          "kind": "text"
+        },
+        {
+          "id": "gemma-3n-e2b-it",
+          "kind": "text"
+        },
+        {
+          "id": "gemma-3n-e4b-it",
+          "kind": "text"
+        },
+        {
+          "id": "gemma-4-26b-a4b-it",
+          "kind": "text",
+          "notes": "Gemma 4 26B A4B IT"
+        },
+        {
+          "id": "gemma-4-31b-it",
+          "kind": "text",
+          "notes": "Gemma 4 31B IT"
+        },
+        {
+          "id": "imagen-4.0-fast-generate-001",
+          "kind": "image",
+          "notes": "Vertex served Imagen 4.0 Fast model"
+        },
+        {
+          "id": "imagen-4.0-generate-001",
+          "kind": "image",
+          "notes": "Vertex served Imagen 4.0 model"
+        },
+        {
+          "id": "imagen-4.0-ultra-generate-001",
+          "kind": "image",
+          "notes": "Vertex served Imagen 4.0 ultra model"
+        },
+        {
+          "id": "nano-banana-pro-preview",
+          "kind": "image",
+          "notes": "Gemini 3 Pro Image Preview"
+        }
+      ],
+      "meta": {
+        "totalModels": 50
+      }
+    },
+    "fal": {
+      "ok": true,
+      "live": true,
+      "models": [
+        {
+          "id": "fal-ai/flux-2/lora",
+          "kind": "image",
+          "notes": "FLUX 2 base + LoRA adapters (texture default)"
+        },
+        {
+          "id": "fal-ai/birefnet/v2",
+          "kind": "image",
+          "notes": "BiRefNet v2 — matting / bg removal, variants: light, light-2k, heavy, matting, portrait, dynamic"
+        },
+        {
+          "id": "fal-ai/bria/background/remove",
+          "kind": "image",
+          "notes": "Bria bg removal — fallback when BiRefNet flakes"
+        },
+        {
+          "id": "fal-ai/recraft/v3/text-to-image",
+          "kind": "image",
+          "notes": "Recraft v3 — crisp illustrations, good for UI sprites"
+        },
+        {
+          "id": "fal-ai/hunyuan3d-v3/image-to-3d",
+          "kind": "3d",
+          "notes": "Hunyuan3D V3 — image→3D mesh"
+        },
+        {
+          "id": "fal-ai/aura-sr",
+          "kind": "image",
+          "notes": "Aura SR — 4x upscale for sprite finishing"
+        },
+        {
+          "id": "fal-ai/flux-lora",
+          "kind": "image",
+          "notes": "Legacy FLUX LoRA — keep as safety net; prefer flux-2/lora"
+        },
+        {
+          "id": "fal-ai/fast-sdxl",
+          "kind": "image",
+          "notes": "SDXL turbo — cheap liveness probe"
+        }
+      ],
+      "meta": {
+        "probeStatus": 200,
+        "reachable": true,
+        "note": "FAL exposes no enumerate-all endpoint; this list is curated from docs/fal-models-2026-04.md and maintained by the audit script."
+      }
+    }
+  },
+  "curated": {
+    "kiln": {
+      "primary": "claude-opus-4-7",
+      "fallback": "claude-sonnet-4-6",
+      "notes": "Opus 4.7 restored once claude-agent-sdk ^0.2.118 landed (adaptive thinking). Fallback via env KILN_MODEL=claude-sonnet-4-6."
+    },
+    "image": [
+      {
+        "label": "quality / refs",
+        "provider": "openai",
+        "model": "gpt-image-2",
+        "notes": "Best for ref-image conditioning, faction style sheets, sharp sprites."
+      },
+      {
+        "label": "quality / text-only",
+        "provider": "openai",
+        "model": "gpt-image-1.5",
+        "notes": "Clean transparent PNGs when we do not need refs."
+      },
+      {
+        "label": "quality / bulk",
+        "provider": "gemini",
+        "model": "gemini-3.1-flash-image-preview",
+        "notes": "Nano Banana Pro (3.1). Preferred when we need consistent style across 20+ prompts."
+      },
+      {
+        "label": "cheap / bulk",
+        "provider": "gemini",
+        "model": "gemini-2.5-flash-image",
+        "notes": "Cheaper sibling for high-volume bulk runs where quality ceiling is fine."
+      },
+      {
+        "label": "illustration fallback",
+        "provider": "fal",
+        "model": "fal-ai/recraft/v3/text-to-image",
+        "notes": "Crisp illustration path when gpt-image / gemini are saturated."
+      }
+    ],
+    "bgRemoval": [
+      {
+        "label": "default (matting)",
+        "provider": "fal",
+        "model": "fal-ai/birefnet/v2",
+        "notes": "Variants: light | light-2k | heavy | matting | portrait | dynamic."
+      },
+      {
+        "label": "fallback",
+        "provider": "fal",
+        "model": "fal-ai/bria/background/remove",
+        "notes": "Use when BiRefNet flakes on complex backgrounds."
+      }
+    ],
+    "texture": [
+      {
+        "label": "default",
+        "provider": "fal",
+        "model": "fal-ai/flux-2/lora",
+        "notes": "Migrated from fal-ai/flux-lora (legacy) per docs/fal-models-2026-04.md §1."
+      }
+    ],
+    "image_to_3d": [
+      {
+        "label": "default",
+        "provider": "fal",
+        "model": "fal-ai/hunyuan3d-v3/image-to-3d",
+        "notes": "Image→3D mesh; optional pathway for photoreal asset seeds."
+      }
+    ]
+  }
+}

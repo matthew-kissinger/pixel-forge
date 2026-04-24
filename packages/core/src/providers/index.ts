@@ -19,14 +19,18 @@ export type {
 
 export {
   createGeminiProvider,
+  createGeminiFlashProvider,
   type GeminiProviderOptions,
 } from './gemini';
 
 export {
   createFalTextureProvider,
   createFalBgRemovalProvider,
+  createFalBriaBgRemovalProvider,
+  type BirefnetV2Variant,
   type FalTextureProviderOptions,
   type FalBgRemovalProviderOptions,
+  type FalBriaBgRemovalProviderOptions,
 } from './fal';
 
 export {

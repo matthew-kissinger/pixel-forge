@@ -1,17 +1,23 @@
 /**
  * FAL providers — texture generation + background removal.
  *
- * Wraps `@fal-ai/client@^1.9.5` (the replacement for the deprecated
- * `@fal-ai/serverless-client@^0.15.0`). The breaking change vs the old SDK:
- * `fal.subscribe()` now returns `{ data, requestId }` — every call site
- * destructures `.data`.
+ * Wraps `@fal-ai/client@^1.9.5`. `fal.subscribe()` returns `{ data, requestId }`
+ * — every call site destructures `.data`.
  *
  * Exported factories:
- * - `createFalTextureProvider()` — FLUX 2 + Seamless LoRA (endpoint
- *   `fal-ai/flux-2/lora`) with optional nearest-neighbor pixelate + palette
- *   quantization pipeline.
- * - `createFalBgRemovalProvider()` — BiRefNet background removal
- *   (`fal-ai/birefnet`) + chroma cleanup pass for residual edges.
+ * - `createFalTextureProvider()` — FLUX + Seamless LoRA. Default endpoint
+ *   `fal-ai/flux-lora` (FLUX 1) because our current Seamless LoRA
+ *   (`gokaygokay/Flux-Seamless-Texture-LoRA`) is FLUX-1-trained and FLUX 2
+ *   rejects it (422). Flip to `fal-ai/flux-2/lora` via `opts.endpoint` once a
+ *   FLUX-2-compatible seamless LoRA is available (see
+ *   `docs/fal-models-2026-04.md` §1).
+ * - `createFalBgRemovalProvider()` — BiRefNet v2 background removal
+ *   (`fal-ai/birefnet/v2`) with variant selector (light / light-2k / heavy /
+ *   matting / portrait / dynamic). Legacy `fal-ai/birefnet` reachable via
+ *   `opts.endpoint`.
+ * - `createFalBriaBgRemovalProvider()` — Bria RMBG 2.0 fallback
+ *   (`fal-ai/bria/background/remove`). Licensed-training-data, enterprise-safe,
+ *   and cheaper than BiRefNet. Use when BiRefNet is rate-limited.
  *
  * Error translation follows the core taxonomy:
  * - 429 / "quota" / "rate limit" → {@link ProviderRateLimited}
@@ -66,11 +72,19 @@ function ensureConfigured(apiKey?: string): void {
 }
 
 // =============================================================================
-// Texture provider (FLUX 2 + Seamless LoRA)
+// Texture provider (FLUX + Seamless LoRA)
 // =============================================================================
 
 export interface FalTextureProviderOptions {
-  /** Override FLUX endpoint id. Default: `fal-ai/flux-lora` (Seamless LoRA is FLUX 1 only — FLUX 2 weights have mismatched tensor shape). */
+  /**
+   * Override FLUX endpoint id. Default: `fal-ai/flux-lora` (FLUX 1 LoRA path).
+   *
+   * FLUX 2 (`fal-ai/flux-2/lora`) rejects our existing FLUX-1-trained
+   * seamless LoRA (422 Unprocessable Entity observed 2026-04-24), because
+   * FLUX 2 LoRAs use a different architecture. Flip to `fal-ai/flux-2/lora`
+   * only after training a FLUX 2 seamless LoRA or passing a compatible
+   * `loras` list at call time (not yet exposed on `TextureGenerateInput`).
+   */
   endpoint?: string;
   /** Per-call timeout in ms. Default 60_000. */
   timeoutMs?: number;
@@ -181,9 +195,45 @@ export function createFalTextureProvider(
 // Background removal (BiRefNet)
 // =============================================================================
 
+/**
+ * BiRefNet v2 variant ids (mapped to the `model` input field of
+ * `fal-ai/birefnet/v2`). Pick per use case:
+ * - `light` / `light-2k`: 512–2048px sprites (our default)
+ * - `heavy`: hero shots, tight hair/fur
+ * - `matting`: soft edges (foliage, smoke)
+ * - `portrait`: people
+ * - `general-dynamic`: unknown resolution, auto-scales 256–2304
+ *
+ * These short ids are mapped to the API's human-readable enum values
+ * (`General Use (Light)`, etc.) by `BIREFNET_V2_MODEL_MAP` below.
+ */
+export type BirefnetV2Variant =
+  | 'light'
+  | 'light-2k'
+  | 'heavy'
+  | 'matting'
+  | 'portrait'
+  | 'general-dynamic';
+
+const BIREFNET_V2_MODEL_MAP: Record<BirefnetV2Variant, string> = {
+  'light': 'General Use (Light)',
+  'light-2k': 'General Use (Light 2K)',
+  'heavy': 'General Use (Heavy)',
+  'matting': 'Matting',
+  'portrait': 'Portrait',
+  'general-dynamic': 'General Use (Dynamic)',
+};
+
 export interface FalBgRemovalProviderOptions {
-  /** Override endpoint. Default `fal-ai/birefnet`. */
+  /**
+   * Override endpoint id. Default `fal-ai/birefnet/v2`. Set to
+   * `fal-ai/birefnet` to fall back to the v1 endpoint.
+   */
   endpoint?: string;
+  /**
+   * BiRefNet v2 variant. Default `general-dynamic`. Ignored by v1 endpoint.
+   */
+  variant?: BirefnetV2Variant;
   /** Per-call timeout in ms. Default 30_000. */
   timeoutMs?: number;
 }
@@ -203,7 +253,10 @@ export function createFalBgRemovalProvider(
     });
   }
 
-  const endpoint = opts.endpoint ?? 'fal-ai/birefnet';
+  const endpoint = opts.endpoint ?? 'fal-ai/birefnet/v2';
+  // Default to 'light' — matches the API default and works reliably for
+  // sprite-sized assets. 'general-dynamic' requires callers to opt in.
+  const variant = opts.variant ?? 'light';
   const timeoutMs = opts.timeoutMs ?? BG_REMOVE_TIMEOUT_MS;
 
   return {
@@ -214,11 +267,19 @@ export function createFalBgRemovalProvider(
       const base64 = input.image.toString('base64');
 
       try {
+        const subscribeInput: Record<string, unknown> = {
+          image_url: `data:image/png;base64,${base64}`,
+        };
+        // Only v2 accepts `model` variant selector, and it takes the
+        // human-readable enum (e.g. 'General Use (Light)'), not the
+        // short slug we use internally.
+        if (endpoint === 'fal-ai/birefnet/v2') {
+          subscribeInput['model'] = BIREFNET_V2_MODEL_MAP[variant];
+        }
+
         const result = await withTimeout(
           fal.subscribe(endpoint, {
-            input: {
-              image_url: `data:image/png;base64,${base64}`,
-            },
+            input: subscribeInput,
           }) as Promise<{ data: { image?: { url?: string } } }>,
           timeoutMs,
           'fal',
@@ -248,6 +309,91 @@ export function createFalBgRemovalProvider(
           meta: {
             latencyMs: Date.now() - start,
             warnings: [],
+          },
+        };
+      } catch (err) {
+        throw translateError(err);
+      }
+    },
+  };
+}
+
+// =============================================================================
+// Bria RMBG 2.0 fallback (cheaper, licensed training data)
+// =============================================================================
+
+export interface FalBriaBgRemovalProviderOptions {
+  /** Override endpoint. Default `fal-ai/bria/background/remove`. */
+  endpoint?: string;
+  /** Per-call timeout in ms. Default 30_000. */
+  timeoutMs?: number;
+}
+
+/**
+ * Bria RMBG 2.0 background removal — enterprise-safe fallback to BiRefNet.
+ * Same contract as `createFalBgRemovalProvider`; emits warnings identifying
+ * the provider so the facade can log the fallback path.
+ */
+export function createFalBriaBgRemovalProvider(
+  apiKey?: string,
+  opts: FalBriaBgRemovalProviderOptions = {},
+): BgRemovalProvider {
+  ensureConfigured(apiKey);
+
+  const caps = capabilitiesFor('fal');
+  if (!caps) {
+    throw new ProviderCapabilityMismatch({
+      provider: 'fal',
+      requirement: 'bg-removal',
+      message: 'FAL bg-removal capabilities are not registered.',
+    });
+  }
+
+  const endpoint = opts.endpoint ?? 'fal-ai/bria/background/remove';
+  const timeoutMs = opts.timeoutMs ?? BG_REMOVE_TIMEOUT_MS;
+
+  return {
+    id: 'fal',
+    capabilities: caps,
+    async remove(input: BgRemovalInput): Promise<BgRemovalOutput> {
+      const start = Date.now();
+      const base64 = input.image.toString('base64');
+
+      try {
+        const result = await withTimeout(
+          fal.subscribe(endpoint, {
+            input: {
+              image_url: `data:image/png;base64,${base64}`,
+            },
+          }) as Promise<{ data: { image?: { url?: string } } }>,
+          timeoutMs,
+          'fal',
+        );
+
+        const url = result.data.image?.url;
+        if (!url) {
+          throw new ProviderNetworkError({
+            provider: 'fal',
+            message: 'Bria response contained no image URL.',
+          });
+        }
+
+        const response = await fetchWithTimeout(url, FETCH_TIMEOUT_MS);
+        if (!response.ok) {
+          throw new ProviderNetworkError({
+            provider: 'fal',
+            message: `Failed to fetch Bria result: ${response.statusText}`,
+          });
+        }
+
+        const raw = Buffer.from(new Uint8Array(await response.arrayBuffer()));
+        const cleaned = await chromaCleanup(raw, input.backgroundColor);
+
+        return {
+          image: cleaned,
+          meta: {
+            latencyMs: Date.now() - start,
+            warnings: ['bg-removal via Bria RMBG 2.0 (BiRefNet fallback)'],
           },
         };
       } catch (err) {

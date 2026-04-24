@@ -38,7 +38,21 @@ import type { ImageProvider } from './types';
 // Constants
 // =============================================================================
 
-const DEFAULT_MODEL = 'gemini-3.1-flash-image-preview';
+/**
+ * Default hero model — Nano Banana Pro lineage. Matches the `curated.image`
+ * entry in `_catalog.generated.json`. Honour `GEMINI_HERO_MODEL` for quick
+ * A/B against `nano-banana-pro-preview` / `gemini-3-pro-image-preview`.
+ */
+const DEFAULT_MODEL =
+  process.env['GEMINI_HERO_MODEL'] ?? 'gemini-3.1-flash-image-preview';
+
+/**
+ * Bulk / style-locked model — cheaper + faster than hero. Used by
+ * `createGeminiFlashProvider` for cohort generations where style comes from
+ * reference images rather than hero-quality prompt reasoning.
+ */
+const FLASH_MODEL = 'gemini-2.5-flash-image';
+
 const DEFAULT_TIMEOUT_MS = 60_000;
 
 // Gemini's `imageConfig.aspectRatio` only accepts this exact whitelist.
@@ -206,6 +220,18 @@ export function createGeminiProvider(
       return runGenerate(input, input.refs);
     },
   };
+}
+
+/**
+ * Bulk / flash Gemini image provider — pinned to `gemini-2.5-flash-image`.
+ * Use for cohort/style-locked batches where throughput matters more than
+ * single-image polish. Respects the same env auth rules as the hero factory.
+ */
+export function createGeminiFlashProvider(
+  apiKey?: string,
+  opts: Omit<GeminiProviderOptions, 'model'> = {},
+): ImageProvider {
+  return createGeminiProvider(apiKey, { ...opts, model: FLASH_MODEL });
 }
 
 // =============================================================================

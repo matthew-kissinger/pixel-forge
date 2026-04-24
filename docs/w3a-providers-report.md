@@ -118,7 +118,7 @@ fighting the SDK's discriminator. Documented inline in
 `providers/openai.ts`.
 
 Also worth noting: `@fal-ai/client@1.9.5` shipped (not the 1.9.1
-documented in `model-audit-2026-04.md`). Resolved version is current; no
+documented in `model-catalog-2026-04-24.md`). Resolved version is current; no
 behavior diff observed.
 
 ## 7. Follow-ups

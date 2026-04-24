@@ -10,7 +10,7 @@
  *   (`gokaygokay/Flux-Seamless-Texture-LoRA`) is FLUX-1-trained and FLUX 2
  *   rejects it (422). Flip to `fal-ai/flux-2/lora` via `opts.endpoint` once a
  *   FLUX-2-compatible seamless LoRA is available (see
- *   `docs/fal-models-2026-04.md` §1).
+ *   current FLUX 1-trained seamless LoRA setup).
  * - `createFalBgRemovalProvider()` — BiRefNet v2 background removal
  *   (`fal-ai/birefnet/v2`) with variant selector (light / light-2k / heavy /
  *   matting / portrait / dynamic). Legacy `fal-ai/birefnet` reachable via

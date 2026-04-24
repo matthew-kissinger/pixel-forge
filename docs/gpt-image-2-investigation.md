@@ -1,6 +1,6 @@
 # gpt-image-2 Investigation for Pixel Forge Sprite Pipeline
 
-_Investigation date: 2026-04-21. Supersedes the "use gpt-image-1.5" recommendation in [`docs/model-audit-2026-04.md`](./model-audit-2026-04.md) §2.4._
+_Investigation date: 2026-04-21. Supersedes earlier "use gpt-image-1.5 by default" guidance; current routing baseline lives in [`docs/model-catalog-2026-04-24.md`](./model-catalog-2026-04-24.md)._
 
 ## 1. Executive summary
 

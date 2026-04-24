@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-24T01:53:41.479Z",
+  "generatedAt": "2026-04-24T02:51:40.094Z",
   "providers": {
     "anthropic": {
       "ok": true,
@@ -655,7 +655,7 @@
       "meta": {
         "probeStatus": 200,
         "reachable": true,
-        "note": "FAL exposes no enumerate-all endpoint; this list is curated from docs/fal-models-2026-04.md and maintained by the audit script."
+        "note": "FAL exposes no enumerate-all endpoint; this list is curated from provider wiring defaults and maintained by the audit script."
       }
     }
   },
@@ -715,8 +715,8 @@
       {
         "label": "default",
         "provider": "fal",
-        "model": "fal-ai/flux-2/lora",
-        "notes": "Migrated from fal-ai/flux-lora (legacy) per docs/fal-models-2026-04.md §1."
+        "model": "fal-ai/flux-lora",
+        "notes": "Current default while our seamless LoRA remains FLUX 1 trained. Use fal-ai/flux-2/lora only with a FLUX 2 compatible seamless LoRA."
       }
     ],
     "image_to_3d": [

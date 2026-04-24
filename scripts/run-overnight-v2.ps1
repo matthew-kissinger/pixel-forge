@@ -33,6 +33,48 @@ function Log($msg) {
   Add-Content -Path $SummaryLog -Value $msg
 }
 
+function Get-EnvInt([string]$name, [int]$defaultValue): [int] {
+  $raw = [Environment]::GetEnvironmentVariable($name)
+  if ([string]::IsNullOrWhiteSpace($raw)) { return $defaultValue }
+  $n = 0
+  if ([int]::TryParse($raw, [ref]$n)) { return $n }
+  return $defaultValue
+}
+
+function Get-RetryAfterSeconds([string[]]$tail): [int] {
+  foreach ($line in $tail) {
+    $m = [regex]::Match($line, '(?i)retry[- ]after[^0-9]*(\d{1,4})')
+    if ($m.Success) {
+      return [int]$m.Groups[1].Value
+    }
+  }
+  return 0
+}
+
+function Is-RetryableFailure([string[]]$tail): [bool] {
+  if (-not $tail -or $tail.Count -eq 0) { return $false }
+  $blob = ($tail -join "`n").ToLowerInvariant()
+  $patterns = @(
+    '429',
+    'too many requests',
+    'rate limit',
+    'rate_limit',
+    'resource exhausted',
+    'request timed out',
+    'timed out',
+    'timeout',
+    '503',
+    '504',
+    'overloaded',
+    'econnreset',
+    'etimedout'
+  )
+  foreach ($p in $patterns) {
+    if ($blob.Contains($p)) { return $true }
+  }
+  return $false
+}
+
 # Strip Claude Code markers so the Agent SDK doesn't think it's spawning a
 # nested CC instance.
 foreach ($k in @(
@@ -77,6 +119,11 @@ if (-not $env:PF_SKIP_HEALTH) {
   }
 }
 
+$phaseMaxRetries = Get-EnvInt "PF_PHASE_MAX_RETRIES" 4
+$backoffBaseSec = Get-EnvInt "PF_BACKOFF_BASE_SECONDS" 20
+$backoffCapSec = Get-EnvInt "PF_BACKOFF_MAX_SECONDS" 600
+Log "[retry-policy] phase_max_retries=$phaseMaxRetries base=${backoffBaseSec}s cap=${backoffCapSec}s (expo + jitter; honors retry-after when present)"
+
 # Queue: label -> script. Ordered by priority.
 $Queue = @(
   @{ label="aircraft";          script="scripts/gen-aircraft.ts";              prefix="aircraft-" },
@@ -107,13 +154,39 @@ foreach ($entry in $Queue) {
   Log "[$label] log -> $log"
   Log "=========================================="
 
-  & bun $script *>> $log
-  $rc = $LASTEXITCODE
+  $attempt = 1
+  $rc = 1
+  while ($attempt -le $phaseMaxRetries) {
+    Log "[$label] attempt $attempt/$phaseMaxRetries"
+    & bun $script *>> $log
+    $rc = $LASTEXITCODE
+    if ($rc -eq 0) { break }
+
+    $tail = @()
+    if (Test-Path $log) {
+      $tail = Get-Content $log -Tail 120
+    }
+    $retryable = Is-RetryableFailure $tail
+    $retryAfter = Get-RetryAfterSeconds $tail
+
+    if (-not $retryable -or $attempt -ge $phaseMaxRetries) { break }
+
+    $exp = [Math]::Pow(2, $attempt - 1)
+    $baseDelay = [int]([Math]::Min($backoffCapSec, $backoffBaseSec * $exp))
+    $delaySec = if ($retryAfter -gt 0) { [Math]::Max($baseDelay, $retryAfter) } else { $baseDelay }
+    $jitter = Get-Random -Minimum 0 -Maximum ([Math]::Max(1, [int]($delaySec * 0.30 + 1)))
+    $sleepSec = [int]([Math]::Min($backoffCapSec, $delaySec + $jitter))
+
+    Log "[$label] retryable failure detected (rc=$rc). Backing off ${sleepSec}s before retry."
+    Start-Sleep -Seconds $sleepSec
+    $attempt++
+  }
+
   $elapsed = [int]((Get-Date) - $tStart).TotalSeconds
   if ($rc -eq 0) {
-    Log "[$label] generation OK (${elapsed}s)"
+    Log "[$label] generation OK (${elapsed}s, attempts=$attempt)"
   } else {
-    Log "[$label] generation FAILED rc=$rc (${elapsed}s, see $log) -- continuing"
+    Log "[$label] generation FAILED rc=$rc (${elapsed}s, attempts=$attempt, see $log) -- continuing"
   }
 
   if ($prefix -ne "") {

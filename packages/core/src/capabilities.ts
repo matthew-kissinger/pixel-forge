@@ -1,7 +1,7 @@
 /**
  * Provider capability matrix — agent-queryable routing facts.
  *
- * Static data distilled from docs/model-audit-2026-04.md and
+ * Static data distilled from the current provider catalog and
  * docs/gpt-image-2-investigation.md. Keep prices / latencies approximate;
  * this table is for routing decisions, not for billing.
  *
@@ -51,7 +51,7 @@ export interface ProviderCapabilities {
 }
 
 // =============================================================================
-// Matrix — keep in sync with docs/model-audit-2026-04.md
+// Matrix — keep in sync with docs/model-catalog-*.md snapshots
 // =============================================================================
 
 const MATRIX: ProviderCapabilities[] = [

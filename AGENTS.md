@@ -181,7 +181,7 @@ Six canonical pipelines under `image.pipelines`. They encapsulate the asset rule
 |----------|-------|--------|-------|
 | `createSpritePipeline` | `{ prompt, bg?, refs?, removeBackground? }` | `{ png: Buffer, meta }` | Gemini/OpenAI generate -> optional BiRefNet -> chroma cleanup |
 | `createIconPipeline` | `{ prompt, variant: 'mono' \| 'colored', styleSheet? }` | `{ png, meta }` | Style-sheet-driven, direct chroma key, NO BiRefNet |
-| `createTexturePipeline` | `{ description, size? }` | `{ png, meta }` | FLUX 2 + Seamless LoRA -> downscale -> quantize -> upscale |
+| `createTexturePipeline` | `{ description, size? }` | `{ png, meta }` | FLUX 1 (`fal-ai/flux-lora`) + Seamless LoRA -> downscale -> quantize -> upscale |
 | `createSoldierSetPipeline` | `{ faction, tpose, poses }` | `{ tposePng, posePngs[] }` | T-pose then 9-pose with dual references |
 | `createGlbPipeline` | `{ prompt, category, style? }` | `{ glb: Buffer, code, meta }` | Claude codegen -> sandboxed exec -> gltf-transform |
 | `createBatchPipeline` | wraps any pipeline + manifest | per-item results | Resumable, skips on `existsSync`, structured retries |
@@ -240,12 +240,13 @@ UI icons use Gemini with a **style sheet reference image** and a **direct chroma
 - Colored emblems: faction insignia on blue `#0000FF`. Direct blue chroma key.
 - Reference flow: style sheet -> seed icons -> (style sheet + seed raw) as 2 refs for remaining icons.
 
-### 7c. Tileable texture pipeline (FLUX 2 + Seamless LoRA, NOT Gemini)
+### 7c. Tileable texture pipeline (FLUX 1 + Seamless LoRA, NOT Gemini)
 
 Terrain textures are a different pipeline entirely — **do not use Gemini for textures**.
 
 - Pipeline: `image.pipelines.createTexturePipeline({ description, size })`
-- Model: `fal-ai/flux-2/lora` with Seamless Texture LoRA (LoRA scale 1.0, 28 steps, guidance 3.5).
+- Model: `fal-ai/flux-lora` with Seamless Texture LoRA (LoRA scale 1.0, 28 steps, guidance 3.5).
+- Why FLUX 1 right now: our current Seamless LoRA is FLUX 1 trained; `fal-ai/flux-2/lora` rejects it with 422. Use `opts.endpoint` only when a FLUX 2 compatible seamless LoRA is available.
 - Internal flow: generate at 256px -> nearest-neighbour downscale to 32px -> palette quantize to 24 colors (no dither) -> replace near-black pixels with neighbour avg -> nearest-neighbour upscale to 512x512.
 - Prompt token: start with `smlstxtr` (LoRA trigger) then describe tile.
 
@@ -308,7 +309,7 @@ Frozen snapshot (regenerate with the audit script — last audit: 2026-04-24):
 |----------|---------------|------------|-----------------|-------|
 | Google Gemini | `@google/genai@^1.48.0` | `gemini-3.1-flash-image-preview` (Nano Banana Pro) | `gemini-2.5-flash-image` for cohorts; `nano-banana-pro-preview` + `gemini-3-pro-image-preview` available for A/B | `createGeminiFlashProvider()` pins the flash model. `GEMINI_HERO_MODEL` env overrides the hero default without code changes. |
 | OpenAI | `openai@^6.1.0` | `gpt-image-2` (refs) + `gpt-image-1.5` (text + transparency) | Dated snapshot `gpt-image-2-2026-04-21` available | `OPENAI_HERO_MODEL` env pins the refs model; `OPENAI_TEXT_MODEL` pins the text-only model. |
-| FAL AI | `@fal-ai/client@^1.9.5` | `fal-ai/flux-2/lora` (textures), `fal-ai/birefnet/v2` (bg-removal) | Bria RMBG 2.0 fallback via `createFalBriaBgRemovalProvider()`; Hunyuan3D V3 for image-to-3D spikes | Pass `variant: 'light-2k' \| 'heavy' \| 'matting' \| 'portrait' \| 'general-dynamic'` to BiRefNet v2. |
+| FAL AI | `@fal-ai/client@^1.9.5` | `fal-ai/flux-lora` (textures), `fal-ai/birefnet/v2` (bg-removal) | Bria RMBG 2.0 fallback via `createFalBriaBgRemovalProvider()`; Hunyuan3D V3 for image-to-3D spikes | Pass `variant: 'light' \| 'light-2k' \| 'heavy' \| 'matting' \| 'portrait' \| 'general-dynamic'` to BiRefNet v2. |
 | Anthropic Claude | `@anthropic-ai/sdk@^0.90.0`, `@anthropic-ai/claude-agent-sdk@^0.2.118` | `claude-opus-4-7` (default) | `claude-sonnet-4-6` on `preferCheap` | `KILN_MODEL` or `PIXEL_FORGE_MODEL` env overrides. `pixelforge gen glb --model=...` also works. |
 
 ### Auto-routing
@@ -318,7 +319,7 @@ Frozen snapshot (regenerate with the audit script — last audit: 2026-04-24):
 - `kind: 'image'` + `refs > 0` → **gpt-image-2** (multi-ref fidelity wins decisively for faction/pose workflows)
 - `kind: 'image'` + `transparency: true` → **gpt-image-1.5** (only model with native alpha)
 - `kind: 'image'` text-only → **gemini flash** (cheapest bulk path)
-- `kind: 'texture'` → **fal-ai/flux-2/lora** (only seamless option)
+- `kind: 'texture'` → **fal-ai/flux-lora** (current seamless default)
 - `kind: 'bg-removal'` → **fal-ai/birefnet** (v2 by default, with variant selector)
 - `kind: 'code-gen'` → **claude-opus-4-7**, sonnet on `preferCheap`
 
@@ -328,7 +329,7 @@ Frozen snapshot (regenerate with the audit script — last audit: 2026-04-24):
 
 - **Never send `background: "transparent"` to gpt-image-2** — 400 error. The pipeline generates on solid magenta and strips via chroma cleanup; the dual-model router handles this.
 - **`@fal-ai/client@1.9.5` returns `{ data, requestId }`** from `subscribe()` — every call site needs `.data` destructure (`result.data.image?.url`). The legacy `@fal-ai/serverless-client` is deprecated.
-- **`fal-ai/flux-lora` is FLUX 1.** Use `fal-ai/flux-2/lora` (the current default). The FLUX 1 endpoint is retained as an escape hatch via `opts.endpoint`.
+- **`fal-ai/flux-lora` is FLUX 1 and is the current default.** Keep it until a FLUX 2 compatible seamless LoRA is adopted. You can still force `fal-ai/flux-2/lora` via `opts.endpoint` for experimentation.
 - **`mock.module` resolves per-importer in bun:test.** When mocking a module from one package that's consumed by another in a hoisted-deps monorepo, register the mock against the absolute resolved path *as well as* the package specifier. See `packages/server/__tests__/` for examples.
 
 ---

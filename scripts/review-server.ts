@@ -8,6 +8,8 @@
  * Endpoints:
  *   GET  /              -> enriched review.html (served from disk; run
  *                          `bun scripts/audit-review-page.ts` to refresh it).
+ *   GET  /review-2d.html -> grouped 2D review page (run
+ *                          `bun scripts/audit-review-2d.ts` to refresh).
  *   GET  /issues.json   -> current annotation state (for reload restore).
  *   POST /annotate      -> upsert { asset, chips, note, ts } into issues.json.
  *                          Per-asset last-write-wins semantics; empty chips
@@ -34,6 +36,7 @@ const HOST = '127.0.0.1';
 
 const ROOT = resolve(process.cwd());
 const REVIEW_HTML = join(ROOT, 'war-assets/validation/_grids/review.html');
+const REVIEW_2D_HTML = join(ROOT, 'war-assets/_review/review-2d.html');
 const ISSUES_FILE = join(ROOT, 'war-assets/_review/issues.json');
 
 type Annotation = {
@@ -156,12 +159,30 @@ const server = Bun.serve({
       });
     }
 
+    if (path === '/review-2d.html' && req.method === 'GET') {
+      if (!existsSync(REVIEW_2D_HTML)) {
+        return new Response(
+          '<!DOCTYPE html><title>no review-2d.html</title><body>' +
+            `<p>review-2d.html not found at <code>${REVIEW_2D_HTML}</code>.` +
+            ' Run <code>bun scripts/audit-review-2d.ts</code> first.</p></body>',
+          { status: 404, headers: { 'content-type': 'text/html; charset=utf-8' } },
+        );
+      }
+      return new Response(readFileSync(REVIEW_2D_HTML), {
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          ...CORS,
+        },
+      });
+    }
+
     return jsonResponse({ error: 'not found', path }, { status: 404 });
   },
 });
 
 console.log(`review-server listening on http://${HOST}:${PORT}`);
 console.log(`  GET  /              -> ${REVIEW_HTML}`);
+console.log(`  GET  /review-2d.html -> ${REVIEW_2D_HTML}`);
 console.log(`  GET  /issues.json`);
 console.log(`  POST /annotate`);
 console.log(`  persists to ${ISSUES_FILE}`);

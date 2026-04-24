@@ -71,6 +71,44 @@ if [ -z "${PF_SKIP_HEALTH:-}" ]; then
   fi
 fi
 
+# Phase-level retry policy (exponential backoff + jitter).
+PHASE_MAX_RETRIES="${PF_PHASE_MAX_RETRIES:-4}"
+BACKOFF_BASE_SECONDS="${PF_BACKOFF_BASE_SECONDS:-20}"
+BACKOFF_MAX_SECONDS="${PF_BACKOFF_MAX_SECONDS:-600}"
+echo "[retry-policy] phase_max_retries=$PHASE_MAX_RETRIES base=${BACKOFF_BASE_SECONDS}s cap=${BACKOFF_MAX_SECONDS}s (expo + jitter; honors retry-after if present)" | tee -a "$SUMMARY_LOG"
+
+is_retryable_failure() {
+  local log_file="$1"
+  if [ ! -f "$log_file" ]; then
+    return 1
+  fi
+  local tail_blob
+  tail_blob="$(tail -n 120 "$log_file" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+  case "$tail_blob" in
+    *"429"*|*"too many requests"*|*"rate limit"*|*"rate_limit"*|*"resource exhausted"*|*"request timed out"*|*"timed out"*|*"timeout"*|*"503"*|*"504"*|*"overloaded"*|*"econnreset"*|*"etimedout"*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+extract_retry_after_seconds() {
+  local log_file="$1"
+  if [ ! -f "$log_file" ]; then
+    echo 0
+    return
+  fi
+  local n
+  n="$(tail -n 120 "$log_file" 2>/dev/null | rg -o '(?i)retry[- ]after[^0-9]*([0-9]{1,4})' -r '$1' | tail -n 1)"
+  if [ -z "$n" ]; then
+    echo 0
+  else
+    echo "$n"
+  fi
+}
+
 # Queue: label -> script. Ordered by priority.
 declare -a QUEUE=(
   "aircraft:scripts/gen-aircraft.ts"
@@ -101,12 +139,48 @@ for entry in "${QUEUE[@]}"; do
   echo "[$label] log -> $log" | tee -a "$SUMMARY_LOG"
   echo "==========================================" | tee -a "$SUMMARY_LOG"
 
-  if bun "$script" >>"$log" 2>&1; then
-    rc=0
-    echo "[$label] generation OK" | tee -a "$SUMMARY_LOG"
+  attempt=1
+  rc=1
+  while [ "$attempt" -le "$PHASE_MAX_RETRIES" ]; do
+    echo "[$label] attempt $attempt/$PHASE_MAX_RETRIES" | tee -a "$SUMMARY_LOG"
+    if bun "$script" >>"$log" 2>&1; then
+      rc=0
+      break
+    else
+      rc=$?
+    fi
+
+    if [ "$attempt" -ge "$PHASE_MAX_RETRIES" ] || ! is_retryable_failure "$log"; then
+      break
+    fi
+
+    retry_after="$(extract_retry_after_seconds "$log")"
+    exp=$((2 ** (attempt - 1)))
+    base_delay=$((BACKOFF_BASE_SECONDS * exp))
+    if [ "$base_delay" -gt "$BACKOFF_MAX_SECONDS" ]; then
+      base_delay="$BACKOFF_MAX_SECONDS"
+    fi
+    delay="$base_delay"
+    if [ "$retry_after" -gt "$delay" ]; then
+      delay="$retry_after"
+    fi
+    jitter_max=$((delay * 30 / 100))
+    if [ "$jitter_max" -lt 1 ]; then jitter_max=1; fi
+    jitter=$((RANDOM % (jitter_max + 1)))
+    sleep_s=$((delay + jitter))
+    if [ "$sleep_s" -gt "$BACKOFF_MAX_SECONDS" ]; then
+      sleep_s="$BACKOFF_MAX_SECONDS"
+    fi
+
+    echo "[$label] retryable failure detected (rc=$rc). Backing off ${sleep_s}s before retry." | tee -a "$SUMMARY_LOG"
+    sleep "$sleep_s"
+    attempt=$((attempt + 1))
+  done
+
+  if [ "$rc" -eq 0 ]; then
+    echo "[$label] generation OK (attempts=$attempt)" | tee -a "$SUMMARY_LOG"
   else
-    rc=$?
-    echo "[$label] generation FAILED rc=$rc (see $log) — continuing" | tee -a "$SUMMARY_LOG"
+    echo "[$label] generation FAILED rc=$rc (attempts=$attempt, see $log) -- continuing" | tee -a "$SUMMARY_LOG"
   fi
   t_end="$(date +%s)"
   echo "[$label] elapsed $((t_end - t_start))s" | tee -a "$SUMMARY_LOG"

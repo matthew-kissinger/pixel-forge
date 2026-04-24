@@ -28,7 +28,7 @@ Single-subject 2D sprite on a solid chroma-key background.
 
 ### Known failure modes
 
-- **Transparent-background prompts produce checkerboards, not alpha.** Always ask for solid `#FF0000` / `#00FF00`, then feed through `createFalBgRemovalProvider()`.
+- **Transparent-background prompts produce checkerboards, not alpha.** Always ask for solid `#FF00FF` (default) or `#0000FF`, then feed through `createFalBgRemovalProvider()`.
 - **FAL_KEY empty** — entire 2D run dies silently before reaching the model. Pre-flight with `pixelforge health`; recover via `bun scripts/_key-paste.ts`.
 - **BiRefNet edge artifacts on red bg with red subjects** — swap subject bg to green or switch variant via `variant: 'portrait' | 'heavy'`.
 
@@ -52,10 +52,10 @@ UI icon variants (base / outline / silhouette) at small sizes.
 
 | Field | Value |
 |-------|-------|
-| Entry | `pixelforge gen icon --variant=base\|outline\|silhouette` |
-| Primary | `gpt-image-2` (crisp edges at 64–256 px) |
+| Entry | `pixelforge gen icon --variant=mono\|colored` |
+| Primary | `gpt-image-2` (crisp edges + ref fidelity) |
 | Bulk | `gemini-2.5-flash-image` |
-| BG removal | `fal-ai/birefnet/v2` (variant `light` for icons) |
+| BG removal | none (direct chroma key path in icon pipeline) |
 
 ### Known failure modes
 
@@ -76,13 +76,13 @@ Seamless tileable textures (stone, fabric, metal, wood).
 
 | Field | Value |
 |-------|-------|
-| Entry | `pixelforge gen texture --size=512 --paletteSize=16` |
-| Primary | `fal-ai/flux-2/lora` (FLUX 2 with LoRA-ready endpoint) |
+| Entry | `pixelforge gen texture --size=512` |
+| Primary | `fal-ai/flux-lora` (FLUX 1 endpoint, current seamless-LoRA-compatible default) |
 | Alt | `fal-ai/recraft/v3/text-to-image` (cleaner tileable output on some domains) |
 
 ### Known failure modes
 
-- **FAL default is still `flux-lora` in old code paths** — confirm `createFalTextureProvider()` constructed after this rail upgrade (defaults to `fal-ai/flux-2/lora`).
+- **FLUX 2 + current seamless LoRA mismatch** — `fal-ai/flux-2/lora` returns 422 with our current FLUX 1 trained seamless LoRA; keep default `fal-ai/flux-lora` until a FLUX 2 compatible LoRA is adopted.
 - **Seam artifacts at tile boundary** — prompt must include "seamless tile, repeats perfectly in all directions, no visible seam, no border, no shadow falloff at edges".
 - **Over-saturated output when paletteSize is small** — raise to 24 or 32 for organic textures; 16 is fine for pixel tiles.
 

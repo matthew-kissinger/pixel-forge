@@ -2,7 +2,7 @@
 
 _Audit date: 2026-04-21. Scope: every `package.json` in the monorepo (root + 4 packages). Purpose: catalog outdated deps, classify bump severity, call out breaking changes, and propose an upgrade sequence. **No package.json was modified.**_
 
-Companion doc: `docs/model-audit-2026-04.md` covers AI SDK versions (Anthropic, Gemini, FAL, OpenAI). This audit **does not re-research those** — it refers to them.
+Companion reference: `docs/model-catalog-2026-04-24.md` captures provider/model routing snapshot. This audit focuses on dependency upgrades.
 
 ---
 
@@ -274,7 +274,7 @@ Bump all packages classified "patch" in §2. Includes `@xyflow/react`, `konva`, 
 Isolated because it's an icon library rename risk. Grep imports, bump, smoke-test the client.
 
 **Wave D-3 — AI SDK wave (already planned)**
-Per `docs/model-audit-2026-04.md` action checklist. `@google/genai`, `@anthropic-ai/sdk`, `@anthropic-ai/claude-agent-sdk`, `@fal-ai/serverless-client` → `@fal-ai/client`. Plus new `openai` install.
+Per the current provider snapshot (`docs/model-catalog-2026-04-24.md`) and implemented wiring. `@google/genai`, `@anthropic-ai/sdk`, `@anthropic-ai/claude-agent-sdk`, `@fal-ai/serverless-client` → `@fal-ai/client`. Plus new `openai` install.
 
 **Wave D-4 — Tooling refresh (2–3h)**
 TypeScript 5.9 → 6.0, ESLint 9 → 10 (+ `@eslint/js`, `globals` 16 → 17, `@types/node` 24 → 25). All touch the same "strict typecheck + lint" surface. One merged wave minimises churn.
@@ -304,7 +304,7 @@ TypeScript 5.9 → 6.0, ESLint 9 → 10 (+ `@eslint/js`, `globals` 16 → 17, `@
 - [x] Every `package.json` in the repo audited (root + 4 packages). `shared` has no deps beyond workspace.
 - [x] Every outdated dep classified patch/minor/major (§1, §2, §3).
 - [x] Major bumps have migration notes (§6).
-- [x] Cross-referenced with `docs/model-audit-2026-04.md` — AI-SDK content not duplicated, just referenced (§3, §6.8, §6.9).
+- [x] Cross-referenced with `docs/model-catalog-2026-04-24.md` — AI-SDK/provider routing content not duplicated, just referenced (§3, §6.8, §6.9).
 - [x] Output under 1500 lines.
 
 ---
@@ -316,6 +316,6 @@ TypeScript 5.9 → 6.0, ESLint 9 → 10 (+ `@eslint/js`, `globals` 16 → 17, `@
 - [Vitest 4 migration guide](https://github.com/vitest-dev/vitest/blob/main/docs/guide/migration.md)
 - [TypeScript 6 deprecations](https://github.com/microsoft/typescript/blob/main/CONTRIBUTING.md)
 - [jsdom Changelog](https://github.com/jsdom/jsdom/blob/main/Changelog.md)
-- `docs/model-audit-2026-04.md` (companion doc — AI SDK upgrade details)
+- `docs/model-catalog-2026-04-24.md` (companion snapshot — provider and model routing context)
 - `docs/next-cycle.md` (wave planning context)
 - npm registry `latest` tags, queried 2026-04-21.

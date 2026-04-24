@@ -250,7 +250,7 @@ Everything else parallelizes off the hub.
 
 ### Wave 3a — Providers ✅ COMPLETE (commits 634cf7d → 205d593)
 
-> **Model audit (April 2026)** — see [docs/model-audit-2026-04.md](model-audit-2026-04.md) for full context.
+> **Model snapshot** — see [docs/model-catalog-2026-04-24.md](model-catalog-2026-04-24.md) for current routing context.
 > Scope of each provider task was expanded based on findings below.
 
 - [x] **3a.1 Gemini → core** · deps: 2.3 · est: 2h · parallel

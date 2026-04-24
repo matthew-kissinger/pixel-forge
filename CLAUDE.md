@@ -36,7 +36,7 @@ React 19, Vite 7, React Flow 12, Zustand, Tailwind, Bun, Hono
 **AI Services (live — regenerate snapshot with `pixelforge health --audit`):**
 - Gemini `gemini-3.1-flash-image-preview` (Nano Banana Pro, hero) + `gemini-2.5-flash-image` (bulk cohort) for 2D sprites
 - OpenAI `gpt-image-2` (refs ≤ 16) + `gpt-image-1.5` (transparency/text-only); `OPENAI_HERO_MODEL` env pins a dated snapshot
-- FAL `fal-ai/flux-2/lora` (tileable textures) + `fal-ai/birefnet/v2` (bg removal with variant selector) + `fal-ai/bria/background/remove` (fallback) + Hunyuan3D V3 (image-to-3D spike)
+- FAL `fal-ai/flux-lora` (tileable textures, current default) + `fal-ai/birefnet/v2` (bg removal with variant selector) + `fal-ai/bria/background/remove` (fallback) + Hunyuan3D V3 (image-to-3D spike)
 - Claude `claude-opus-4-7` (Kiln 3D codegen, default) + `claude-sonnet-4-6` (preferCheap); `KILN_MODEL` env overrides
 
 ## Structure
@@ -141,7 +141,7 @@ UI icons use Gemini with a **style sheet reference** and **direct chroma key** (
 
 Terrain textures use a **separate pipeline** from sprites. Do NOT use Gemini for textures.
 
-**Pipeline:** FLUX 2 + Seamless Texture LoRA (FAL) -> nearest-neighbor downscale (32px) -> palette quantize (24 colors, no dither) -> black pixel cleanup -> nearest-neighbor upscale (512x512)
+**Pipeline:** FLUX 1 + Seamless Texture LoRA (FAL) -> nearest-neighbor downscale (32px) -> palette quantize (24 colors, no dither) -> black pixel cleanup -> nearest-neighbor upscale (512x512)
 
 **FLUX prompt structure:**
 ```
@@ -149,7 +149,8 @@ smlstxtr, retro 16-bit SNES RPG terrain tileset tile, {terrain description}, top
 ```
 
 **Key settings:**
-- Model: `fal-ai/flux-2/lora` with Seamless Texture LoRA (scale 1.0)
+- Model: `fal-ai/flux-lora` with Seamless Texture LoRA (scale 1.0)
+- Why: current seamless LoRA is FLUX 1 trained; `fal-ai/flux-2/lora` returns 422 until we adopt a FLUX 2 compatible seamless LoRA.
 - LoRA: `https://huggingface.co/gokaygokay/Flux-Seamless-Texture-LoRA/resolve/main/seamless_texture.safetensors`
 - Generate at 256px, downscale to 32px, quantize 24 colors, clean blacks, upscale to 512x512
 - Black cleanup: replace near-black pixels (RGB sum < 40) with average of non-black neighbors

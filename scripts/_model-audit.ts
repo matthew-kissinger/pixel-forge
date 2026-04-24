@@ -159,7 +159,7 @@ async function probeGemini(): Promise<ProviderResult> {
 /**
  * FAL has no single `/v1/models` endpoint — models live behind
  * `fal.run/<namespace>/<model>`. We cross-reference the curated list below
- * with the survey in docs/fal-models-2026-04.md (if present) and return
+ * with our current provider wiring defaults and return
  * that as the "catalog" along with a reachability probe against the
  * lightweight `fast-sdxl` endpoint to confirm the key is live.
  */
@@ -193,7 +193,7 @@ async function probeFal(): Promise<ProviderResult> {
         probeStatus: r.status,
         reachable,
         note:
-          'FAL exposes no enumerate-all endpoint; this list is curated from docs/fal-models-2026-04.md and maintained by the audit script.',
+          'FAL exposes no enumerate-all endpoint; this list is curated from provider wiring defaults and maintained by the audit script.',
       },
     };
   } catch (e) {
@@ -261,8 +261,9 @@ const CURATED: CatalogSnapshot['curated'] = {
     {
       label: 'default',
       provider: 'fal',
-      model: 'fal-ai/flux-2/lora',
-      notes: 'Migrated from fal-ai/flux-lora (legacy) per docs/fal-models-2026-04.md §1.',
+      model: 'fal-ai/flux-lora',
+      notes:
+        'Current default while our seamless LoRA remains FLUX 1 trained. Use fal-ai/flux-2/lora only with a FLUX 2 compatible seamless LoRA.',
     },
   ],
   image_to_3d: [

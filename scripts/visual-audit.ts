@@ -53,10 +53,11 @@ interface View {
   pos: [number, number, number];
 }
 const VIEWS: View[] = [
-  { name: 'Front', pos: [0, 0, 1] },
-  { name: 'Right', pos: [1, 0, 0] },
-  { name: 'Back', pos: [0, 0, -1] },
-  { name: 'Left', pos: [-1, 0, 0] },
+  // Kiln world frame: +X forward, +Y up, +Z right.
+  { name: 'Front', pos: [1, 0, 0] },
+  { name: 'Right', pos: [0, 0, 1] },
+  { name: 'Back', pos: [-1, 0, 0] },
+  { name: 'Left', pos: [0, 0, -1] },
   { name: 'Top', pos: [0, 1, 0.0001] },
   { name: '3/4', pos: [0.7, 0.5, 0.7] },
 ];

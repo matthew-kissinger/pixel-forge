@@ -91,7 +91,7 @@ bunx pixelforge providers pick --kind image --refs 8 --json
 - `image` + `refs > 0` -> `gpt-image-2` (decisive on multi-ref / faction work); `OPENAI_HERO_MODEL` env pins a dated snapshot
 - `image` + `transparency: true` -> `gpt-image-1.5` (only model with native alpha)
 - `image` text-only -> `gemini-3.1-flash-image-preview` (Nano Banana Pro, hero) or `gemini-2.5-flash-image` (bulk cohort via `createGeminiFlashProvider()`)
-- `texture` -> `fal-ai/flux-2/lora` (FLUX 1 `fal-ai/flux-lora` kept as escape hatch)
+- `texture` -> `fal-ai/flux-lora` (current default; FLUX 2 optional via endpoint override)
 - `bg-removal` -> `fal-ai/birefnet/v2` with `variant: 'light' | 'light-2k' | 'heavy' | 'matting' | 'portrait' | 'general-dynamic'`; `createFalBriaBgRemovalProvider()` is the enterprise fallback
 - `image-to-3d` -> `fal-ai/hunyuan3d-v3/image-to-3d` (spike; pair with Gemini sprite output)
 - `code-gen` -> `claude-opus-4-7` (sonnet on `preferCheap`); `KILN_MODEL` env overrides
@@ -158,7 +158,7 @@ use it as your rationale for the next action**, rather than guessing.
 - Do NOT send `background: "transparent"` to gpt-image-2 - 400 error. The pipeline strips magenta via chroma cleanup; the dual-model router handles transparency by routing to `gpt-image-1.5` instead.
 - Do NOT run BiRefNet on faction insignia or solid-white silhouette icons - it eats into colored fills. Use direct chroma keying (`createIconPipeline` does this).
 - Do NOT use red `#FF0000` background on any sprite - bleeds into greens, browns, skin tones. Magenta `#FF00FF` is the safe default.
-- Do NOT use Gemini for terrain textures - use the texture pipeline (FLUX 2 + Seamless LoRA).
+- Do NOT use Gemini for terrain textures - use the texture pipeline (FLUX 1 + Seamless LoRA, currently).
 - Do NOT import from `@pixel-forge/core` deep paths - use the namespace surface (`import { kiln, image, providers, capabilities, schemas } from '@pixel-forge/core'`).
 - Do NOT regenerate anything in `war-assets/` without explicit user instruction.
 

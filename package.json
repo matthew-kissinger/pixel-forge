@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "check:bundle-size": "bun run scripts/check-bundle-size.ts",
     "audit:glb": "tsx scripts/visual-audit.ts",
-    "audit:review": "bun scripts/audit-review-page.ts --open"
+    "audit:review": "bun scripts/audit-review-page.ts --open",
+    "tij:pipeline": "tsx scripts/run-tij-pipeline.ts"
   },
   "devDependencies": {
     "playwright": "^1.59.1",

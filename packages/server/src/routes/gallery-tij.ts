@@ -19,7 +19,8 @@ import { existsSync, readFileSync } from 'fs';
 
 export const galleryTijRouter = new Hono();
 
-const SERVER_ROOT = path.resolve(import.meta.dir, '../../..');
+// import.meta.dir is packages/server/src/routes/. Two levels up = packages/server/.
+const SERVER_ROOT = path.resolve(import.meta.dir, '../..');
 const TIJ_OUT = path.resolve(SERVER_ROOT, 'output/tij');
 const GALLERY_HTML = path.resolve(SERVER_ROOT, 'tij-gallery/index.html');
 

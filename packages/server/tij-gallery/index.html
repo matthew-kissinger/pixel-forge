@@ -149,7 +149,7 @@
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
     // ---- Shared state ----
-    const ASSET_BASE = './assets/';  // served alongside index.html via the server route
+    const ASSET_BASE = '/gallery-tij/assets/';  // served via the /gallery-tij Hono route
     const state = {
       manifest: null,
       tab: 'soldiers',
@@ -159,7 +159,7 @@
 
     // ---- Fetch manifest ----
     async function loadManifest() {
-      const r = await fetch('./gallery-manifest.json', { cache: 'no-cache' });
+      const r = await fetch('/gallery-tij/gallery-manifest.json', { cache: 'no-cache' });
       if (!r.ok) throw new Error('gallery-manifest.json not available: ' + r.status);
       state.manifest = await r.json();
       const { counts } = state.manifest;

@@ -128,6 +128,67 @@ export function registerKilnTools(server: McpServer): void {
   );
 
   // ---------------------------------------------------------------------------
+  // pixelforge_kiln_pack_atlas
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    'pixelforge_kiln_pack_atlas',
+    {
+      description:
+        'Pack a directory of PNGs into a single sprite atlas + JSON frame table. Writes <outPath> (PNG) and <outPath>.json sibling.',
+      inputSchema: {
+        inDir: z.string().describe('Absolute path to a directory of PNGs.'),
+        outPath: z.string().describe('Absolute output path for the atlas PNG.'),
+        maxSize: z
+          .union([z.literal(1024), z.literal(2048), z.literal(4096)])
+          .default(2048),
+        padding: z.number().int().nonnegative().default(2),
+        pot: z.boolean().default(true),
+      },
+    },
+    async (input) => {
+      try {
+        const { readdirSync, readFileSync, writeFileSync: writeSync } = await import('node:fs');
+        const { basename, extname } = await import('node:path');
+        const inDir = resolve(input.inDir);
+        const outPath = resolve(input.outPath);
+        const pngs = readdirSync(inDir).filter((f) => f.toLowerCase().endsWith('.png')).sort();
+        if (!pngs.length) throw new Error(`no PNGs found in ${inDir}`);
+        const sprites = pngs.map((f) => ({
+          name: basename(f, extname(f)),
+          data: readFileSync(resolve(inDir, f)),
+        }));
+        const result = await kiln.packSpriteAtlas(sprites, {
+          maxSize: input.maxSize,
+          padding: input.padding,
+          pot: input.pot,
+        });
+        writeSync(outPath, result.atlas);
+        const baseOut = outPath.replace(new RegExp(`${extname(outPath)}$`), '');
+        const metaPath = `${baseOut}.json`;
+        writeSync(metaPath, JSON.stringify(result.frames, null, 2), 'utf-8');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Packed ${result.frames.frames.length} sprites into ${result.frames.atlasWidth}x${result.frames.atlasHeight} atlas at ${outPath}.`,
+            },
+          ],
+          structuredContent: {
+            ok: true,
+            atlas: outPath,
+            frames: metaPath,
+            count: result.frames.frames.length,
+            atlasWidth: result.frames.atlasWidth,
+            atlasHeight: result.frames.atlasHeight,
+          },
+        };
+      } catch (err) {
+        return errorToToolResult(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // pixelforge_kiln_lod
   // ---------------------------------------------------------------------------
   server.registerTool(

@@ -225,6 +225,93 @@ const refactorCommand = defineCommand({
 });
 
 // =============================================================================
+// kiln pack-atlas
+// =============================================================================
+
+const packAtlasCommand = defineCommand({
+  meta: {
+    name: 'pack-atlas',
+    description:
+      'Pack a directory of PNGs into a single sprite atlas + JSON frame table.',
+  },
+  args: {
+    'in-dir': {
+      type: 'positional',
+      description: 'Directory containing the PNGs to pack.',
+      required: true,
+    },
+    out: {
+      type: 'string',
+      description: 'Output path for the atlas PNG. Sibling .json gets the frame table.',
+      required: true,
+    },
+    'max-size': {
+      type: 'string',
+      description: '1024 | 2048 | 4096. Default 2048.',
+      default: '2048',
+    },
+    padding: {
+      type: 'string',
+      description: 'Transparent pixels between sprites. Default 2.',
+      default: '2',
+    },
+    pot: { type: 'boolean', default: true, description: 'Force power-of-two atlas size.' },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const { readdirSync, readFileSync: readSync } = await import('node:fs');
+      const { basename: baseOf, extname: extOf } = await import('node:path');
+
+      const inDir = resolve(args['in-dir']);
+      const outPath = resolve(args.out);
+      ensureDir(outPath);
+
+      const maxSize = Number(args['max-size']) as 1024 | 2048 | 4096;
+      if (![1024, 2048, 4096].includes(maxSize)) {
+        throw new Error(`--max-size must be 1024, 2048, or 4096 (got ${args['max-size']})`);
+      }
+      const padding = Number(args.padding);
+      if (!Number.isFinite(padding) || padding < 0) {
+        throw new Error(`--padding must be non-negative (got ${args.padding})`);
+      }
+
+      const pngs = readdirSync(inDir).filter((f) => f.toLowerCase().endsWith('.png')).sort();
+      if (!pngs.length) throw new Error(`no PNGs found in ${inDir}`);
+      const sprites = pngs.map((f) => ({
+        name: baseOf(f, extOf(f)),
+        data: readSync(resolve(inDir, f)),
+      }));
+
+      const { kiln: kilnNs } = await import('@pixel-forge/core');
+      const result = await kilnNs.packSpriteAtlas(sprites, {
+        maxSize,
+        padding,
+        pot: !!args.pot,
+      });
+
+      writeFileSync(outPath, result.atlas);
+      const baseOut = outPath.replace(new RegExp(`${extOf(outPath)}$`), '');
+      const metaPath = `${baseOut}.json`;
+      writeFileSync(metaPath, JSON.stringify(result.frames, null, 2), 'utf-8');
+
+      printResult(
+        {
+          ok: true,
+          atlas: outPath,
+          frames: metaPath,
+          count: result.frames.frames.length,
+          atlasSize: `${result.frames.atlasWidth}x${result.frames.atlasHeight}`,
+        },
+        { json: args.json },
+      );
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
 // kiln lod
 // =============================================================================
 
@@ -430,5 +517,6 @@ export const kilnCommand = defineCommand({
     refactor: refactorCommand,
     'bake-imposter': bakeImposterCommand,
     lod: lodCommand,
+    'pack-atlas': packAtlasCommand,
   },
 });

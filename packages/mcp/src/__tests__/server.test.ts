@@ -47,6 +47,7 @@ describe('MCP server tool registration', () => {
         'pixelforge_kiln_inspect',
         'pixelforge_kiln_list_primitives',
         'pixelforge_kiln_lod',
+        'pixelforge_kiln_pack_atlas',
         'pixelforge_kiln_refactor',
         'pixelforge_kiln_validate',
         'pixelforge_providers_capabilities',

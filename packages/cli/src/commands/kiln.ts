@@ -225,6 +225,71 @@ const refactorCommand = defineCommand({
 });
 
 // =============================================================================
+// kiln ingest-fbx
+// =============================================================================
+
+const ingestFbxCommand = defineCommand({
+  meta: {
+    name: 'ingest-fbx',
+    description: 'Convert an FBX file to GLB via three.js FBXLoader + GLTFExporter.',
+  },
+  args: {
+    input: {
+      type: 'positional',
+      description: 'Path to the source .fbx.',
+      required: true,
+    },
+    out: {
+      type: 'string',
+      description: 'Output path for the .glb.',
+      required: true,
+    },
+    scale: {
+      type: 'string',
+      description:
+        'Scale multiplier applied to the imported root. FBX often ships in cm — use 0.01 for meters. Default 1.0.',
+      default: '1.0',
+    },
+    'merge-materials': {
+      type: 'boolean',
+      description: 'Run gltf-transform dedup + prune post-export. Default true.',
+      default: true,
+    },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const scale = Number(args.scale);
+      if (!Number.isFinite(scale)) throw new Error(`invalid --scale (got "${args.scale}")`);
+      const inputPath = resolve(args.input);
+      const outPath = resolve(args.out);
+      ensureDir(outPath);
+
+      const { kiln: kilnNs } = await import('@pixel-forge/core');
+      const result = await kilnNs.ingestFbx(inputPath, {
+        scale,
+        mergeMaterials: !!args['merge-materials'],
+      });
+      writeFileSync(outPath, result.glb);
+
+      printResult(
+        {
+          ok: true,
+          glb: outPath,
+          sceneName: result.meta.sceneName,
+          triangles: result.meta.triangles,
+          bytes: result.meta.bytes,
+          sourceBytes: result.meta.sourceBytes,
+        },
+        { json: args.json },
+      );
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
 // kiln pack-atlas
 // =============================================================================
 
@@ -518,5 +583,6 @@ export const kilnCommand = defineCommand({
     'bake-imposter': bakeImposterCommand,
     lod: lodCommand,
     'pack-atlas': packAtlasCommand,
+    'ingest-fbx': ingestFbxCommand,
   },
 });

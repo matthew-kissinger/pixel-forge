@@ -128,6 +128,59 @@ export function registerKilnTools(server: McpServer): void {
   );
 
   // ---------------------------------------------------------------------------
+  // pixelforge_kiln_ingest_fbx
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    'pixelforge_kiln_ingest_fbx',
+    {
+      description:
+        'Convert an FBX file on disk to GLB via three.js FBXLoader + GLTFExporter. Writes the GLB and returns tri count + byte sizes.',
+      inputSchema: {
+        inputPath: z.string().describe('Absolute path to the source .fbx.'),
+        outPath: z.string().describe('Absolute output path for the .glb.'),
+        scale: z
+          .number()
+          .positive()
+          .default(1.0)
+          .describe('Scale multiplier for the imported root. 0.01 converts cm to meters.'),
+        mergeMaterials: z
+          .boolean()
+          .default(true)
+          .describe('Run @gltf-transform dedup + prune post-export.'),
+      },
+    },
+    async (input) => {
+      try {
+        const { writeFileSync: writeSync } = await import('node:fs');
+        const result = await kiln.ingestFbx(resolve(input.inputPath), {
+          scale: input.scale,
+          mergeMaterials: input.mergeMaterials,
+        });
+        const outPath = resolve(input.outPath);
+        writeSync(outPath, result.glb);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Ingested FBX -> GLB: ${result.meta.triangles} tris · ${result.meta.bytes} bytes · ${outPath}`,
+            },
+          ],
+          structuredContent: {
+            ok: true,
+            glb: outPath,
+            sceneName: result.meta.sceneName,
+            triangles: result.meta.triangles,
+            bytes: result.meta.bytes,
+            sourceBytes: result.meta.sourceBytes,
+          },
+        };
+      } catch (err) {
+        return errorToToolResult(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // pixelforge_kiln_pack_atlas
   // ---------------------------------------------------------------------------
   server.registerTool(

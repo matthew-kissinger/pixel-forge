@@ -171,7 +171,7 @@ Most-used entry points:
 
 | Namespace | Entry points |
 |-----------|--------------|
-| `kiln` | `generate(prompt, opts)`, `renderGLB(code)`, `inspect(code)`, `listPrimitives()`, `validate(code)`, `refactor(instruction, code)`, `bakeImposter(glb, opts)`, `openImposterSession()`, `generateLODChain(glb, opts)`, `packSpriteAtlas(sprites, opts)`, `ingestFbx(fbx, opts)`, `openFbxIngestSession()`, `retexCharacter(glb, opts)`, `cleanupPhotogrammetry(glb, opts)` |
+| `kiln` | `generate(prompt, opts)`, `renderGLB(code)`, `inspect(code)`, `listPrimitives()`, `validate(code)`, `refactor(instruction, code)`, `bakeImposter(glb, opts)`, `openImposterSession()`, `resolveClips(clipNames, targets)`, `applyClipFallbacks(report, fallbacks)`, `generateLODChain(glb, opts)`, `packSpriteAtlas(sprites, opts)`, `ingestFbx(fbx, opts)`, `openFbxIngestSession()`, `retexCharacter(glb, opts)`, `cleanupPhotogrammetry(glb, opts)` |
 | `image` | `getDefaultImageGen()`, `chromaCleanMagenta()`, `chromaCleanFor(bg)`, `pipelines.createSpritePipeline()`, `pipelines.createIconPipeline()`, `pipelines.createTexturePipeline()`, `pipelines.createSoldierSetPipeline()`, `pipelines.createGlbPipeline()`, `pipelines.createBatchPipeline()` |
 | `providers` | `createGeminiProvider()`, `createOpenAIProvider()`, `createFalTextureProvider()`, `createFalBgRemovalProvider()`, `createAnthropicProvider()` + `ImageProvider` / `CodeGenProvider` types |
 | `capabilities` | `capabilities()`, `capabilitiesFor(id)`, `pickProviderFor({ kind, refs?, transparency? })` |

@@ -17,6 +17,20 @@ Supersedes the generation-queue framing in [terror-in-the-jungle-assets.md](terr
 
 Human validation pass pending before any assets move into TIJ proper. See §"Handoff back to human" for what's expected.
 
+## Open architectural question — animated imposters for skeletal characters
+
+Validation raised this gap on 2026-04-24. Current imposters are STATIC: one pose per 32-angle atlas, baked from the GLB's rest frame. The validation gallery correctly renders the atlas but the billboard never breathes, walks, or fires — while the adjacent live-3D column plays real anim clips. At TIJ's 3000-NPC aerial-gameplay scale the dissonance matters.
+
+Industry consensus confirms this:
+
+- Unity Amplify Impostors and Unreal's ImpostorBaker **explicitly do not support skinned skeletal meshes**. Both ship dedicated sibling systems for the skinned case.
+- The skinned-at-distance problem is usually solved by **Vertex Animation Texture (VAT)**: per-vertex positions baked into a texture that a custom vertex shader samples at runtime. Open-source bakers exist for Unity (VatBaker), UE5 (VertexAnimSample, Vertex_Anim_Toolset), Godot (Godot_Vertex_Animation_Textures_Plugin), and Blender (OpenVAT, which exports through glTF). **None for Three.js.** The R3F community example (mikelyndon/r3f-webgl-vertex-animation-textures) just imports Houdini-baked outputs.
+- An alternative — the **flipbook impostor** (tiles = angles × time frames) — works without custom vertex shaders but explodes in storage and loses resolution at low angle/frame counts.
+
+A clip-resolver utility landed at [packages/core/src/kiln/imposter/clip-resolver.ts](../packages/core/src/kiln/imposter/clip-resolver.ts) — pure, tested against real Quaternius clip lists — so whichever baker we build can share the same logical-target-to-clip-name logic.
+
+A dedicated design pass starts from [docs/animated-imposter-brief.md](animated-imposter-brief.md). That doc is self-contained and the work to answer it is explicitly scoped; pick it up with a fresh agent before writing any new baker code.
+
 ---
 
 ## Mission for the fresh agent

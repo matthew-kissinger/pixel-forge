@@ -128,6 +128,52 @@ export function registerKilnTools(server: McpServer): void {
   );
 
   // ---------------------------------------------------------------------------
+  // pixelforge_kiln_retex
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    'pixelforge_kiln_retex',
+    {
+      description:
+        'Swap a character GLB material\'s base-color texture. Default targets the first material (Quaternius pattern).',
+      inputSchema: {
+        inputPath: z.string().describe('Absolute path to the source character GLB.'),
+        diffusePath: z.string().describe('Absolute path to the replacement diffuse PNG.'),
+        outPath: z.string().describe('Absolute output path for the retex\'d GLB.'),
+        materialName: z.string().optional().describe('Target material by name (first match wins).'),
+        materialIndex: z.number().int().nonnegative().optional(),
+        presetName: z
+          .enum(['OG-107-jungle', 'ERDL-leaf', 'tiger-stripe', 'khaki-plain', 'black-pajama'])
+          .optional()
+          .describe('Faction preset label for provenance. Does not affect the GLB.'),
+      },
+    },
+    async (input) => {
+      try {
+        const { writeFileSync: writeSync } = await import('node:fs');
+        const result = await kiln.retexCharacter(resolve(input.inputPath), {
+          diffuse: resolve(input.diffusePath),
+          ...(input.materialName ? { materialName: input.materialName } : {}),
+          ...(typeof input.materialIndex === 'number' ? { materialIndex: input.materialIndex } : {}),
+          ...(input.presetName ? { presetName: input.presetName } : {}),
+        });
+        const outPath = resolve(input.outPath);
+        writeSync(outPath, result.glb);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Retex'd material "${result.meta.materialName}" · ${result.meta.bytes} bytes · ${outPath}`,
+            },
+          ],
+          structuredContent: { ok: true, glb: outPath, meta: result.meta },
+        };
+      } catch (err) {
+        return errorToToolResult(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // pixelforge_kiln_ingest_fbx
   // ---------------------------------------------------------------------------
   server.registerTool(

@@ -225,6 +225,74 @@ const refactorCommand = defineCommand({
 });
 
 // =============================================================================
+// kiln retex
+// =============================================================================
+
+const retexCommand = defineCommand({
+  meta: {
+    name: 'retex',
+    description: 'Swap a character GLB material\'s base-color texture (faction retex).',
+  },
+  args: {
+    input: {
+      type: 'positional',
+      description: 'Path to the source character GLB.',
+      required: true,
+    },
+    diffuse: {
+      type: 'string',
+      description: 'Path to the replacement diffuse PNG.',
+      required: true,
+    },
+    out: {
+      type: 'string',
+      description: 'Output path for the retex\'d GLB.',
+      required: true,
+    },
+    'material-name': {
+      type: 'string',
+      description: 'Target material by name. Default = first material in the GLB.',
+    },
+    'material-index': {
+      type: 'string',
+      description: '0-based material index. Ignored if --material-name is set.',
+    },
+    preset: {
+      type: 'string',
+      description:
+        'Label for provenance (e.g. OG-107-jungle, ERDL-leaf, tiger-stripe, khaki-plain, black-pajama).',
+    },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const inputPath = resolve(args.input);
+      const diffusePath = resolve(args.diffuse as string);
+      const outPath = resolve(args.out);
+      ensureDir(outPath);
+
+      const materialIndex =
+        args['material-index'] !== undefined ? Number(args['material-index']) : undefined;
+      if (materialIndex !== undefined && !Number.isInteger(materialIndex)) {
+        throw new Error(`--material-index must be an integer (got "${args['material-index']}")`);
+      }
+
+      const { kiln: kilnNs } = await import('@pixel-forge/core');
+      const result = await kilnNs.retexCharacter(inputPath, {
+        diffuse: diffusePath,
+        ...(args['material-name'] ? { materialName: args['material-name'] as string } : {}),
+        ...(materialIndex !== undefined ? { materialIndex } : {}),
+        ...(args.preset ? { presetName: args.preset as string } : {}),
+      });
+      writeFileSync(outPath, result.glb);
+      printResult({ ok: true, glb: outPath, meta: result.meta }, { json: args.json });
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
 // kiln ingest-fbx
 // =============================================================================
 
@@ -584,5 +652,6 @@ export const kilnCommand = defineCommand({
     lod: lodCommand,
     'pack-atlas': packAtlasCommand,
     'ingest-fbx': ingestFbxCommand,
+    retex: retexCommand,
   },
 });

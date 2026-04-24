@@ -50,6 +50,7 @@ describe('MCP server tool registration', () => {
         'pixelforge_kiln_lod',
         'pixelforge_kiln_pack_atlas',
         'pixelforge_kiln_refactor',
+        'pixelforge_kiln_retex',
         'pixelforge_kiln_validate',
         'pixelforge_providers_capabilities',
       ].sort(),

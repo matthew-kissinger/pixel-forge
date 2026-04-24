@@ -407,20 +407,35 @@
             }`,
         });
 
-        // Billboard quad sized to worldSize, pivoted at bottom (yOffset accounts for source-mesh offset).
+        // Quad billboards to face camera each frame so it always has visible
+        // surface area (a fixed plane viewed edge-on disappears at high
+        // elevation — which matters here because the camera orbits up to 85°
+        // for aerial checks). The shader still samples the CORRECT tile for
+        // the camera's world-space angle, so the viewer sees a stationary
+        // world-space imposter that rotates as tiles transition.
         const quad = new THREE.Mesh(new THREE.PlaneGeometry(meta.worldSize, meta.worldSize), mat);
         quad.position.y = meta.worldSize * 0.5 + meta.yOffset * 0.5;
         scene.add(quad);
 
+        // Reference markers so orbit motion reads clearly. Four colored pillars
+        // on the cardinal compass points — they don't billboard, so as the
+        // camera orbits you see them swing around the imposter.
+        const markerGeo = new THREE.BoxGeometry(0.1, 0.4, 0.1);
+        const markerColors = [0xff4d4d, 0x4dff4d, 0x4d9dff, 0xffd24d];  // +X N, +Z E, -X S, -Z W
+        const markerDirs = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+        for (let i = 0; i < 4; i++) {
+          const m = new THREE.Mesh(markerGeo, new THREE.MeshBasicMaterial({ color: markerColors[i] }));
+          m.position.set(markerDirs[i][0] * meta.worldSize * 0.9, -meta.worldSize * 0.5 + meta.yOffset + 0.2, markerDirs[i][1] * meta.worldSize * 0.9);
+          scene.add(m);
+        }
+
         let disposed = false;
         let t = 0;
+        const radius = meta.worldSize * 1.8;
         function animate() {
           if (disposed) return;
           t += 0.012;
-          // Orbit camera — azimuth sweeps 360°, elevation oscillates 5° → 85° so
-          // aerial + ground views are both exercised.
-          const phi = 0.44 + 0.75 * Math.sin(t * 0.45);  // elevation in radians
-          const radius = meta.worldSize * 2.6;
+          const phi = 0.3 + 0.65 * (0.5 + 0.5 * Math.sin(t * 0.4));
           cam.position.set(
             Math.cos(t) * radius * Math.cos(phi),
             Math.sin(phi) * radius + quad.position.y,
@@ -428,11 +443,13 @@
           );
           cam.lookAt(0, quad.position.y, 0);
 
-          // Billboard quad to face camera on Y axis (cylindrical billboard).
+          // Billboard quad to face camera (cylindrical — stays upright).
           const camXZ = new THREE.Vector3(cam.position.x, quad.position.y, cam.position.z);
           quad.lookAt(camXZ);
 
-          // View direction for shader: unit vector from quad center to camera, world space.
+          // View direction for the shader — world space, from quad center to
+          // camera. This is what determines tile selection, independent of
+          // the quad's own orientation.
           const vd = new THREE.Vector3().subVectors(cam.position, quad.position).normalize();
           uniforms.viewDir.value.copy(vd);
 

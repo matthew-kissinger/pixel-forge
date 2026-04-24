@@ -43,6 +43,7 @@ describe('MCP server tool registration', () => {
         'pixelforge_gen_soldier_set',
         'pixelforge_gen_sprite',
         'pixelforge_gen_texture',
+        'pixelforge_kiln_bake_imposter',
         'pixelforge_kiln_inspect',
         'pixelforge_kiln_list_primitives',
         'pixelforge_kiln_refactor',

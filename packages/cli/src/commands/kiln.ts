@@ -11,7 +11,7 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, extname, resolve } from 'node:path';
 
 import { defineCommand } from 'citty';
 
@@ -225,6 +225,116 @@ const refactorCommand = defineCommand({
 });
 
 // =============================================================================
+// kiln bake-imposter
+// =============================================================================
+
+const bakeImposterCommand = defineCommand({
+  meta: {
+    name: 'bake-imposter',
+    description:
+      'Bake an imposter atlas (lat/lon billboard) from a GLB. Writes <out>.png + <out>.json sidecar.',
+  },
+  args: {
+    input: {
+      type: 'positional',
+      description: 'Path to the source GLB.',
+      required: true,
+    },
+    out: {
+      type: 'string',
+      description: 'Output path for the albedo PNG (no extension auto-added).',
+      required: true,
+    },
+    angles: {
+      type: 'string',
+      description: 'Total viewpoints: 8 | 16 | 32.',
+      default: '16',
+    },
+    axis: {
+      type: 'string',
+      description: "'y' (full sphere) or 'hemi-y' (upper hemi, foliage default).",
+    },
+    'tile-size': {
+      type: 'string',
+      description: 'Pixel size per tile: 128 | 256 | 512 | 1024.',
+      default: '512',
+    },
+    'aux-layers': {
+      type: 'string',
+      description: 'Comma-separated aux layers: depth,normal',
+    },
+    bg: {
+      type: 'string',
+      description: "'transparent' (default) or 'magenta'.",
+      default: 'transparent',
+    },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const angles = Number(args.angles) as 8 | 16 | 32;
+      if (![8, 16, 32].includes(angles)) {
+        throw new Error(`--angles must be 8, 16, or 32 (got ${args.angles})`);
+      }
+      const tileSize = Number(args['tile-size']) as 128 | 256 | 512 | 1024;
+      if (![128, 256, 512, 1024].includes(tileSize)) {
+        throw new Error(`--tile-size must be 128, 256, 512, or 1024 (got ${args['tile-size']})`);
+      }
+      const axis = (args.axis as 'y' | 'hemi-y' | undefined) ?? (angles === 16 ? 'y' : 'hemi-y');
+      const bg = args.bg === 'magenta' ? 'magenta' : 'transparent';
+      const auxLayers = args['aux-layers']
+        ? (args['aux-layers'] as string)
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s): s is 'depth' | 'normal' => s === 'depth' || s === 'normal')
+        : undefined;
+
+      const inputPath = resolve(args.input);
+      const outPath = resolve(args.out);
+      ensureDir(outPath);
+
+      const { kiln: kilnNs } = await import('@pixel-forge/core');
+      const result = await kilnNs.bakeImposter(inputPath, {
+        angles,
+        axis,
+        tileSize,
+        bgColor: bg,
+        ...(auxLayers ? { auxLayers } : {}),
+        sourcePath: inputPath,
+      });
+
+      writeFileSync(outPath, result.atlas);
+      const baseOut = outPath.replace(new RegExp(`${extname(outPath)}$`), '');
+      writeFileSync(`${baseOut}.json`, JSON.stringify(result.meta, null, 2), 'utf-8');
+      const auxPaths: Record<string, string> = {};
+      for (const [layer, buf] of Object.entries(result.aux)) {
+        if (!buf) continue;
+        const p = `${baseOut}.${layer}.png`;
+        writeFileSync(p, buf as Buffer);
+        auxPaths[layer] = p;
+      }
+
+      printResult(
+        {
+          ok: true,
+          albedo: outPath,
+          meta: `${baseOut}.json`,
+          aux: auxPaths,
+          angles: result.meta.angles,
+          tiles: `${result.meta.tilesX}x${result.meta.tilesY}`,
+          atlas: `${result.meta.atlasWidth}x${result.meta.atlasHeight}`,
+          worldSize: result.meta.worldSize,
+          tris: result.meta.source.tris,
+        },
+        { json: args.json },
+      );
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
 // kiln (root)
 // =============================================================================
 
@@ -238,5 +348,6 @@ export const kilnCommand = defineCommand({
     validate: validateCommand,
     inspect: inspectCommand,
     refactor: refactorCommand,
+    'bake-imposter': bakeImposterCommand,
   },
 });

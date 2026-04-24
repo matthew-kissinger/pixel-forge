@@ -62,6 +62,12 @@ pixelforge kiln list-primitives
 pixelforge kiln validate    ./code.ts
 pixelforge kiln inspect     ./code.ts
 pixelforge kiln refactor    --code ./old.ts --instruction "add a turret" --out ./new.ts
+pixelforge kiln bake-imposter ./tree.glb --out ./tree-imposter.png --angles 16 --tile-size 512
+pixelforge kiln lod         ./char.glb --out-dir ./lods --ratios 1.0,0.5,0.25,0.1
+pixelforge kiln pack-atlas  ./sprites/ --out ./atlas.png --max-size 2048
+pixelforge kiln ingest-fbx  ./prop.fbx --out ./prop.glb --scale 0.01
+pixelforge kiln retex       ./soldier.glb --diffuse ./og107.png --out ./us.glb --preset OG-107-jungle
+pixelforge kiln cleanup-photogrammetry ./scan.glb --out ./clean.glb --target-tris 8000
 ```
 
 Every command supports `--json` for machine-readable stdout. Errors print `code` + `fixHint` from the core's `PixelForgeError` taxonomy and exit non-zero. See [`packages/cli/README.md`](packages/cli/README.md).
@@ -72,7 +78,7 @@ Every command supports `--json` for machine-readable stdout. Errors print `code`
 claude mcp add pixelforge --stdio bun packages/mcp/src/index.ts
 ```
 
-Tools: `pixelforge_gen_{sprite,icon,texture,glb,soldier_set}`, `pixelforge_kiln_{inspect,validate,refactor,list_primitives}`, `pixelforge_providers_capabilities`. Binary outputs default to writing a tmp file and returning the path; pass `inline: true` for base64 or `outPath: "..."` for an explicit destination. See [`packages/mcp/README.md`](packages/mcp/README.md).
+Tools: `pixelforge_gen_{sprite,icon,texture,glb,soldier_set}`, `pixelforge_kiln_{inspect,validate,refactor,list_primitives,bake_imposter,lod,pack_atlas,ingest_fbx,retex,cleanup_photogrammetry}`, `pixelforge_providers_capabilities`. Binary outputs default to writing a tmp file and returning the path; pass `inline: true` for base64 or `outPath: "..."` for an explicit destination. See [`packages/mcp/README.md`](packages/mcp/README.md).
 
 ### Tests — run per-package, NOT from root
 
@@ -165,7 +171,7 @@ Most-used entry points:
 
 | Namespace | Entry points |
 |-----------|--------------|
-| `kiln` | `generate(prompt, opts)`, `renderGLB(code)`, `inspect(code)`, `listPrimitives()`, `validate(code)`, `refactor(instruction, code)` |
+| `kiln` | `generate(prompt, opts)`, `renderGLB(code)`, `inspect(code)`, `listPrimitives()`, `validate(code)`, `refactor(instruction, code)`, `bakeImposter(glb, opts)`, `openImposterSession()`, `generateLODChain(glb, opts)`, `packSpriteAtlas(sprites, opts)`, `ingestFbx(fbx, opts)`, `openFbxIngestSession()`, `retexCharacter(glb, opts)`, `cleanupPhotogrammetry(glb, opts)` |
 | `image` | `getDefaultImageGen()`, `chromaCleanMagenta()`, `chromaCleanFor(bg)`, `pipelines.createSpritePipeline()`, `pipelines.createIconPipeline()`, `pipelines.createTexturePipeline()`, `pipelines.createSoldierSetPipeline()`, `pipelines.createGlbPipeline()`, `pipelines.createBatchPipeline()` |
 | `providers` | `createGeminiProvider()`, `createOpenAIProvider()`, `createFalTextureProvider()`, `createFalBgRemovalProvider()`, `createAnthropicProvider()` + `ImageProvider` / `CodeGenProvider` types |
 | `capabilities` | `capabilities()`, `capabilitiesFor(id)`, `pickProviderFor({ kind, refs?, transparency? })` |

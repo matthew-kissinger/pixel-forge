@@ -87,6 +87,9 @@ pixelforge gen glb     --prompt "guard tower" --category structure --out tower.g
 
 pixelforge inspect glb ./tower.glb
 pixelforge kiln list-primitives
+pixelforge kiln bake-imposter ./tree.glb --out ./tree.png --angles 16
+pixelforge kiln lod ./char.glb --out-dir ./lods --ratios 1.0,0.5,0.25,0.1
+pixelforge kiln ingest-fbx ./prop.fbx --out ./prop.glb
 pixelforge providers list
 ```
 
@@ -103,7 +106,7 @@ claude mcp add pixelforge --stdio bun packages/mcp/src/index.ts
 Tools auto-discovered by the client:
 
 - `pixelforge_gen_{sprite, icon, texture, glb, soldier_set}`
-- `pixelforge_kiln_{inspect, validate, refactor, list_primitives}`
+- `pixelforge_kiln_{inspect, validate, refactor, list_primitives, bake_imposter, lod, pack_atlas, ingest_fbx, retex, cleanup_photogrammetry}`
 - `pixelforge_providers_capabilities`
 
 Binary outputs default to a tmp file path (lets the agent reason about the asset without blowing up context); pass `inline: true` for base64 or `outPath: "..."` for an explicit destination. Full surface: [packages/mcp/README.md](packages/mcp/README.md).

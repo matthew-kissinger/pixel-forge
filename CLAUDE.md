@@ -6,7 +6,9 @@ Node-based AI game asset generator. Substrate library `@pixel-forge/core` + four
 >
 > **Recent refactor**: see [docs/next-cycle.md](docs/next-cycle.md) for the 2026-04 cycle that landed `@pixel-forge/core` + CLI + MCP.
 >
-> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 48 primitives, 12 validation GLBs all audited clean, PBR + UV + CSG all wired. Round 1 ✅, Round 2 ✅, Round 3 ✅ (three.js 0.184 bump, door/vending/tower polish, agent-usage instrumentation surfaced as `render.meta.primitiveUsage`) — all landed 2026-04-22. Offline 6-view grid audit via `bun run audit:glb`, single-page review via `bun run audit:review`. Remaining minor polish tracked in [docs/kiln-round-3.md](docs/kiln-round-3.md) §4.
+> **Kiln cycle (active)**: see [docs/kiln-vision.md](docs/kiln-vision.md). 51 primitives (48 base + 3 billboard), 12 validation GLBs all audited clean, PBR + UV + CSG all wired. Round 1 ✅, Round 2 ✅, Round 3 ✅ (three.js 0.184 bump, door/vending/tower polish, agent-usage instrumentation surfaced as `render.meta.primitiveUsage`) — all landed 2026-04-22. Offline 6-view grid audit via `bun run audit:glb`, single-page review via `bun run audit:review`. Remaining minor polish tracked in [docs/kiln-round-3.md](docs/kiln-round-3.md) §4.
+>
+> **TIJ asset pipeline (2026-04-24)**: see [docs/tij-asset-pipeline-proposal.md](docs/tij-asset-pipeline-proposal.md). Added six kiln modules (`imposter/`, `lod/`, `sprite-atlas/`, `fbx-ingest/`, `retex/`, `photogrammetry/`) and three billboard primitives (`foliageCardGeo`, `crossedQuadsGeo`, `octaGridPlane`). Pipeline runner at [scripts/run-tij-pipeline.ts](scripts/run-tij-pipeline.ts) (`bun run tij:pipeline`) produced 103 manifest entries — 8 ranked soldiers, 7 weapons, 7 vegetation combos (30 imposters), 80 FBX-ingested props, 60-plant sprite atlas — under `packages/server/output/tij/` (gitignored). Validation gallery live at `http://localhost:3000/gallery-tij`, HTML at [packages/server/tij-gallery/index.html](packages/server/tij-gallery/index.html). 12 kiln CLI/MCP tools total now.
 
 ## Commands
 
@@ -27,6 +29,10 @@ bun run test:e2e                                                     # Playwrigh
 bun run audit:glb                                                    # 6-view grid PNGs for all validation GLBs
 bun run audit:glb gear.glb sword.glb                                 # subset
 bun run audit:review                                                 # open single-page HTML review of all grids
+
+# TIJ asset pipeline (runs via tsx, not bun — Playwright CDP + Bun-on-Windows)
+bun run tij:pipeline                                                 # full pipeline: imposters + LODs + FBX ingest + atlas
+bun run tij:pipeline -- --only vegetation                             # single category
 ```
 
 ## Stack

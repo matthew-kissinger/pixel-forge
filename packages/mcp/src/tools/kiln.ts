@@ -128,6 +128,47 @@ export function registerKilnTools(server: McpServer): void {
   );
 
   // ---------------------------------------------------------------------------
+  // pixelforge_kiln_cleanup_photogrammetry
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    'pixelforge_kiln_cleanup_photogrammetry',
+    {
+      description:
+        'Decimate + texture-compress a raw photogrammetry GLB so it is bake-ready.',
+      inputSchema: {
+        inputPath: z.string().describe('Absolute path to the source GLB.'),
+        outPath: z.string().describe('Absolute output path for the cleaned GLB.'),
+        targetTriangles: z.number().int().positive().default(10_000),
+        textureSize: z.number().int().positive().default(1024),
+        errorThreshold: z.number().positive().default(0.02),
+      },
+    },
+    async (input) => {
+      try {
+        const { writeFileSync: writeSync } = await import('node:fs');
+        const result = await kiln.cleanupPhotogrammetry(resolve(input.inputPath), {
+          targetTriangles: input.targetTriangles,
+          textureSize: input.textureSize,
+          errorThreshold: input.errorThreshold,
+        });
+        const outPath = resolve(input.outPath);
+        writeSync(outPath, result.glb);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Cleaned scan: ${result.meta.sourceTriangles} -> ${result.meta.targetTriangles} tris · ${result.meta.bytes} bytes`,
+            },
+          ],
+          structuredContent: { ok: true, glb: outPath, meta: result.meta },
+        };
+      } catch (err) {
+        return errorToToolResult(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
   // pixelforge_kiln_retex
   // ---------------------------------------------------------------------------
   server.registerTool(

@@ -225,6 +225,77 @@ const refactorCommand = defineCommand({
 });
 
 // =============================================================================
+// kiln cleanup-photogrammetry
+// =============================================================================
+
+const cleanupPhotogrammetryCommand = defineCommand({
+  meta: {
+    name: 'cleanup-photogrammetry',
+    description:
+      'Decimate + texture-compress a raw photogrammetry GLB so it is bake-ready.',
+  },
+  args: {
+    input: {
+      type: 'positional',
+      description: 'Path to the source photogrammetry GLB.',
+      required: true,
+    },
+    out: {
+      type: 'string',
+      description: 'Output path for the cleaned GLB.',
+      required: true,
+    },
+    'target-tris': {
+      type: 'string',
+      description: 'Target post-decimation triangle count. Default 10000.',
+      default: '10000',
+    },
+    'texture-size': {
+      type: 'string',
+      description: 'Max texture edge (w=h). Default 1024.',
+      default: '1024',
+    },
+    error: {
+      type: 'string',
+      description: 'Meshopt error threshold. Default 0.02.',
+      default: '0.02',
+    },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const targetTriangles = Number(args['target-tris']);
+      const textureSize = Number(args['texture-size']);
+      const errorThreshold = Number(args.error);
+      if (!Number.isInteger(targetTriangles) || targetTriangles <= 0) {
+        throw new Error(`--target-tris must be a positive integer (got "${args['target-tris']}")`);
+      }
+      if (!Number.isInteger(textureSize) || textureSize <= 0) {
+        throw new Error(`--texture-size must be a positive integer (got "${args['texture-size']}")`);
+      }
+      if (!Number.isFinite(errorThreshold) || errorThreshold <= 0) {
+        throw new Error(`--error must be positive (got "${args.error}")`);
+      }
+
+      const inputPath = resolve(args.input);
+      const outPath = resolve(args.out);
+      ensureDir(outPath);
+
+      const { kiln: kilnNs } = await import('@pixel-forge/core');
+      const result = await kilnNs.cleanupPhotogrammetry(inputPath, {
+        targetTriangles,
+        textureSize,
+        errorThreshold,
+      });
+      writeFileSync(outPath, result.glb);
+      printResult({ ok: true, glb: outPath, meta: result.meta }, { json: args.json });
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
 // kiln retex
 // =============================================================================
 
@@ -653,5 +724,6 @@ export const kilnCommand = defineCommand({
     'pack-atlas': packAtlasCommand,
     'ingest-fbx': ingestFbxCommand,
     retex: retexCommand,
+    'cleanup-photogrammetry': cleanupPhotogrammetryCommand,
   },
 });

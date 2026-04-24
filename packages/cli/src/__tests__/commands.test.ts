@@ -38,11 +38,12 @@ describe('command tree shape', () => {
     expect(Object.keys(subs!).sort()).toEqual(['list', 'pick']);
   });
 
-  test('kiln has 9 subcommands', async () => {
+  test('kiln has 10 subcommands', async () => {
     const subs = await kilnCommand.subCommands;
     expect(Object.keys(subs!).sort()).toEqual(
       [
         'bake-imposter',
+        'cleanup-photogrammetry',
         'ingest-fbx',
         'inspect',
         'list-primitives',

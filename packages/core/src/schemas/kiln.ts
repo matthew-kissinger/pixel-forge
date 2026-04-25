@@ -18,6 +18,30 @@ import {
   CodeRefactorInputSchema,
   CodeCompactInputSchema,
 } from './image';
+export {
+  ANIMATED_IMPOSTER_DEFAULT_ENVELOPE_BYTES,
+  ANIMATED_IMPOSTER_KIND,
+  ANIMATED_IMPOSTER_SCHEMA_VERSION,
+  AnimatedClipTargetSchema,
+  AnimatedImposterMetaSchema,
+  AnimatedImposterPreBakeInputSchema,
+  AnimatedImposterRuntimeAttributeSchema,
+  AnimatedImposterTextureFormatSchema,
+  AnimatedImposterTextureLayoutSchema,
+  AnimatedImposterTextureModeSchema,
+  AnimatedImposterWarningSchema,
+} from '../kiln/imposter/animated-schema';
+export type {
+  AnimatedClipTarget,
+  AnimatedImposterMeta,
+  AnimatedImposterPreBakeConfig,
+  AnimatedImposterPreBakeInput,
+  AnimatedImposterRuntimeAttribute,
+  AnimatedImposterTextureFormat,
+  AnimatedImposterTextureLayout,
+  AnimatedImposterTextureMode,
+  AnimatedImposterWarning,
+} from '../kiln/imposter/animated-schema';
 
 // =============================================================================
 // Re-exports (the code-gen schemas ARE the kiln schemas today)

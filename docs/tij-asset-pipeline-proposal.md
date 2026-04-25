@@ -1,6 +1,6 @@
-# TIJ Asset Pipeline Proposal — kiln extensions + validation gallery
+# TIJ Asset Pipeline Proposal - kiln extensions + validation gallery
 
-Status: EXECUTED 2026-04-24 — pipeline modules + runner + gallery all shipped, awaiting human validation pass.
+Status: EXECUTED 2026-04-24 - pipeline modules + runner + gallery all shipped, awaiting human validation pass.
 Date authored: 2026-04-24
 Supersedes the generation-queue framing in [terror-in-the-jungle-assets.md](terror-in-the-jungle-assets.md) (2026-02-22) for anything downstream of "we now have 375 vegetation GLBs + 74 character GLBs on disk." That older doc is still useful for engine context (art direction, in-engine integration points, HUD conventions).
 
@@ -8,49 +8,50 @@ Supersedes the generation-queue framing in [terror-in-the-jungle-assets.md](terr
 
 - **All six kiln modules landed** under `packages/core/src/kiln/{imposter,lod,sprite-atlas,fbx-ingest,retex,photogrammetry}/`. Each wired into CLI (`pixelforge kiln <sub>`) and MCP (`pixelforge_kiln_<name>`). 12 kiln MCP tools total, up from 4.
 - **Three billboard primitives** added to `packages/core/src/kiln/primitives.ts`: `foliageCardGeo`, `crossedQuadsGeo`, `octaGridPlane`. Registered in `buildSandboxGlobals` + `listPrimitives`. Total primitive count now 51.
-- **Pipeline runner** at [scripts/run-tij-pipeline.ts](../scripts/run-tij-pipeline.ts), exposed as `bun run tij:pipeline` (shells to `tsx` — Bun+Playwright CDP doesn't cooperate on Windows). Resumable via `existsSync` skip.
-- **Pipeline output**: 103 manifest entries under `packages/server/output/tij/` — 8 soldiers × (4 LODs + 16-angle imposter), 7 weapons, 7 vegetation combos across 30 variant imposters, 80 survival-kit FBXs ingested clean, 60-plant sprite atlas (4096² POT). Total 122 MB.
+- **Pipeline runner** at [scripts/run-tij-pipeline.ts](../scripts/run-tij-pipeline.ts), exposed as `bun run tij:pipeline` (shells to `tsx` - Bun+Playwright CDP doesn't cooperate on Windows). Resumable via `existsSync` skip.
+- **Pipeline output**: 103 manifest entries under `packages/server/output/tij/` - 8 soldiers × (4 LODs + 16-angle imposter), 7 weapons, 7 vegetation combos across 30 variant imposters, 80 survival-kit FBXs ingested clean, 60-plant sprite atlas (4096² POT). Total 122 MB.
 - **Validation gallery** at `/gallery-tij` served by the Hono dev server. HTML at [packages/server/tij-gallery/index.html](../packages/server/tij-gallery/index.html); route at [packages/server/src/routes/gallery-tij.ts](../packages/server/src/routes/gallery-tij.ts).
-- **Known deltas from proposal**: imposter layout is lat-lon for all angle counts (not true octahedral — deferred until TIJ consumer shader exists, meta records `layout: 'latlon'`). Retex is diffuse-swap only (region-mask LUTs deferred). Photogrammetry module wired but not run (gated on human call). All 80 FBXs came through with neutral material — their texture references point to external .png files we don't resolve; stripping them at export time lets everything convert cleanly, downstream retex can restore colors.
+- **Known deltas from proposal**: imposter layout is lat-lon for all angle counts (not true octahedral - deferred until TIJ consumer shader exists, meta records `layout: 'latlon'`). Retex is diffuse-swap only (region-mask LUTs deferred). Photogrammetry module wired but not run (gated on human call). All 80 FBXs came through with neutral material - their texture references point to external .png files we don't resolve; stripping them at export time lets everything convert cleanly, downstream retex can restore colors.
 - **Tests**: core 335 pass, server 114 pass, cli 19 pass, mcp 7 pass. Gated live tests (KILN_IMPOSTER_LIVE, KILN_FBX_LIVE) default off.
-- **Acceptance**: five sample GLBs through `bun run audit:glb` all clean under strict back-face cull. Soldier + bamboo imposter atlases visually verified — every tile non-empty.
+- **Acceptance**: five sample GLBs through `bun run audit:glb` all clean under strict back-face cull. Soldier + bamboo imposter atlases visually verified - every tile non-empty.
 
 Human validation pass pending before any assets move into TIJ proper. See §"Handoff back to human" for what's expected.
 
-## Open architectural question — animated imposters for skeletal characters
+## Animated impostor decision for skeletal characters
 
-Validation raised this gap on 2026-04-24. Current imposters are STATIC: one pose per 32-angle atlas, baked from the GLB's rest frame. The validation gallery correctly renders the atlas but the billboard never breathes, walks, or fires — while the adjacent live-3D column plays real anim clips. At TIJ's 3000-NPC aerial-gameplay scale the dissonance matters.
+Validation raised this gap on 2026-04-24. Current imposters are STATIC: one pose per 32-angle atlas, baked from the GLB's rest frame. The validation gallery correctly renders the atlas but the billboard never breathes, walks, or fires - while the adjacent live-3D column plays real anim clips. At TIJ's 3000-NPC aerial-gameplay scale the dissonance matters.
 
-Industry consensus confirms this:
+Follow-up research changed the first implementation path:
 
-- Unity Amplify Impostors and Unreal's ImpostorBaker **explicitly do not support skinned skeletal meshes**. Both ship dedicated sibling systems for the skinned case.
-- The skinned-at-distance problem is usually solved by **Vertex Animation Texture (VAT)**: per-vertex positions baked into a texture that a custom vertex shader samples at runtime. Open-source bakers exist for Unity (VatBaker), UE5 (VertexAnimSample, Vertex_Anim_Toolset), Godot (Godot_Vertex_Animation_Textures_Plugin), and Blender (OpenVAT, which exports through glTF). **None for Three.js.** The R3F community example (mikelyndon/r3f-webgl-vertex-animation-textures) just imports Houdini-baked outputs.
-- An alternative — the **flipbook impostor** (tiles = angles × time frames) — works without custom vertex shaders but explodes in storage and loses resolution at low angle/frame counts.
+- Static octahedral impostors remain useful for non-skinned far LODs, but they do not solve animated soldiers by themselves.
+- The chosen first slice is a **WebGL2 animated octahedral impostor array**: one character, one clip, a small view grid, instanced quads, `DataArrayTexture` first, and a packed 2D atlas fallback.
+- VAT proxy remains the explicit fallback if the octahedral path fails on angle snapping, overdraw, texture-array behavior, or palette/KTX2 encoding.
+- Horde is treated as runtime and asset-shape inspiration only. Pixel Forge must build its own Three.js/Playwright baker and WebGL2 consumer path.
 
-A clip-resolver utility landed at [packages/core/src/kiln/imposter/clip-resolver.ts](../packages/core/src/kiln/imposter/clip-resolver.ts) — pure, tested against real Quaternius clip lists — so whichever baker we build can share the same logical-target-to-clip-name logic.
+A clip-resolver utility landed at [packages/core/src/kiln/imposter/clip-resolver.ts](../packages/core/src/kiln/imposter/clip-resolver.ts) - pure, tested against real Quaternius clip lists - so whichever baker we build can share the same logical-target-to-clip-name logic.
 
-A dedicated design pass starts from [docs/animated-imposter-brief.md](animated-imposter-brief.md). That doc is self-contained and the work to answer it is explicitly scoped; pick it up with a fresh agent before writing any new baker code.
+The answered design pass is in [docs/animated-imposter-design.md](animated-imposter-design.md), with status in [docs/animated-imposter-worklog.md](animated-imposter-worklog.md) and the execution plan in [docs/animated-imposter-dev-cycle.md](animated-imposter-dev-cycle.md). W1 schema/validator and the first local W2/W3 review bake are implemented; the next production decision is whether the generated review artifact is visually acceptable enough to proceed to the WebGL2 runtime spike.
 
 ---
 
 ## Mission for the fresh agent
 
-Terror in the Jungle (TIJ) finished a research pass on 2026-04-24 that left **~500 GLBs and ~450 sprites on disk** under `C:/Users/Mattm/X/{soldier,vegetation}-research/`. The engine is ready to be "dressed" — but dropping raw geometry in would annihilate the perf budget (3,000 NPCs target, stable frame tails, ~30 vegetation species at dense scatter).
+Terror in the Jungle (TIJ) finished a research pass on 2026-04-24 that left **~500 GLBs and ~450 sprites on disk** under `C:/Users/Mattm/X/{soldier,vegetation}-research/`. The engine is ready to be "dressed" - but dropping raw geometry in would annihilate the perf budget (3,000 NPCs target, stable frame tails, ~30 vegetation species at dense scatter).
 
 Your job:
 
-1. **Extend kiln** with the missing pipeline stages (imposter baker, LOD decimator, sprite atlas packer, FBX ingest, character retex, photogrammetry cleanup — priority ordered below).
+1. **Extend kiln** with the missing pipeline stages (imposter baker, LOD decimator, sprite atlas packer, FBX ingest, character retex, photogrammetry cleanup - priority ordered below).
 2. **Run the pipeline** across the ranked shortlist in this doc to produce a first wave of production-ready assets.
-3. **Ship a validation gallery** — a new page under `packages/client/` (or a scripted static-HTML drop in `packages/server/output/`, your call) that renders each asset next to its imposter under rotation, plus soldier characters with animations playing and a weapon mounted to the right hand.
+3. **Ship a validation gallery** - a new page under `packages/client/` (or a scripted static-HTML drop in `packages/server/output/`, your call) that renders each asset next to its imposter under rotation, plus soldier characters with animations playing and a weapon mounted to the right hand.
 4. **Hand it back to the human for validation**. They will inspect the gallery, confirm the pipeline behaves correctly on all ranked inputs, then move select assets into TIJ proper for reskin / polish.
 
 You must not modify anything inside `C:/Users/Mattm/X/games-3d/terror-in-the-jungle/`. All changes are in `pixel-forge`. The TIJ repo is **read-only reference** for you.
 
-Use the `context7` MCP server whenever you touch a library (meshoptimizer, xatlas, @gltf-transform, manifold-3d, three.js 0.184 imposter materials, FBXLoader) — your training data is likely stale relative to the versions pinned in `packages/core/package.json`. Prefer context7 over web search for library docs.
+Use the `context7` MCP server whenever you touch a library (meshoptimizer, xatlas, @gltf-transform, manifold-3d, three.js 0.184 imposter materials, FBXLoader) - your training data is likely stale relative to the versions pinned in `packages/core/package.json`. Prefer context7 over web search for library docs.
 
 ---
 
-## Current kiln state — what exists, what doesn't
+## Current kiln state - what exists, what doesn't
 
 Source of truth: [packages/core/src/kiln/](../packages/core/src/kiln/)
 
@@ -59,8 +60,8 @@ Source of truth: [packages/core/src/kiln/](../packages/core/src/kiln/)
 - 48 Three.js primitives in 12 categories (CSG booleans via `manifold-3d`, shape-aware UV unwraps, parametric gears + blades, PBR material helpers, instancing)
 - LLM → JS → GLB generator (`generate.ts`, `render.ts`) using Claude + `@gltf-transform/core`
 - Headless 6-view audit (`bun run audit:glb`) under strict back-face culling
-- `inspect.ts` — GLB stats (tris, bones, animation tracks, bbox)
-- `list-primitives.ts` — reflection surface for agents
+- `inspect.ts` - GLB stats (tris, bones, animation tracks, bbox)
+- `list-primitives.ts` - reflection surface for agents
 - Four transports (visual editor, CLI, MCP, HTTP) that all call into the same core
 
 ### Does NOT exist (searched packages/, docs/, scripts/: zero hits)
@@ -73,7 +74,7 @@ Source of truth: [packages/core/src/kiln/](../packages/core/src/kiln/)
 - **No character retex pipeline** (region masks → swap diffuse for faction variants)
 - **No photogrammetry cleanup** (tier-C Poly Haven plants are raw, need decimate + UV repack + PBR merge before bake)
 
-Everything in this proposal builds on the existing kiln substrate — the headless Three.js renderer, the gltf-transform export, the audit infrastructure. You are not starting from zero.
+Everything in this proposal builds on the existing kiln substrate - the headless Three.js renderer, the gltf-transform export, the audit infrastructure. You are not starting from zero.
 
 ---
 
@@ -83,9 +84,9 @@ Everything in this proposal builds on the existing kiln substrate — the headle
 
 Root: `C:/Users/Mattm/X/soldier-research/`
 
-- `downloads/polypizza/` — **74 character GLBs**. Highest-value subset (Quaternius, CC-BY / CC0):
-  - `DgOCW9ZCRJ__Character_Animated_-_Free_Model_By_Quaternius.glb` — 45 anims, 13.7k tri, 53 bones (hero)
-  - `PpLF4rt4ah__Character_Soldier_-_Free_Model_By_Quaternius.glb` — 24 anims, 7.9k tri, 62 bones
+- `downloads/polypizza/` - **74 character GLBs**. Highest-value subset (Quaternius, CC-BY / CC0):
+  - `PpLF4rt4ah__Character_Soldier_-_Free_Model_By_Quaternius.glb` - active US / ARVN base, 14 clips in the current source GLB, 7.9k tri, 62 bones, has `Run` and `Run_Gun` but no true `Walk`
+  - `DgOCW9ZCRJ__Character_Animated_-_Free_Model_By_Quaternius.glb` - animation-library fixture only, 45 anims, 13.7k tri, 53 bones, not production soldier art unless repainted and manually approved
   - `Btfn3G5Xv4__SWAT_-_Free_Model_By_Quaternius.glb`
   - `5EGWBMpuXq__Adventurer_-_Free_Model_By_Quaternius.glb`
   - `BTALZymknF__Punk_-_Free_Model_By_Quaternius.glb`
@@ -93,14 +94,14 @@ Root: `C:/Users/Mattm/X/soldier-research/`
   - `UcLErL2W37__Characters_Sam_-_Free_Model_By_Quaternius.glb`
   - `75ikp7NEDx__Cube_Woman_Character_-_Free_Model_By_Quaternius.glb`
   - `DojKLcO34E__Beach_Character_-_Free_Model_By_Quaternius.glb`
-- `extracted/` — Kenney animated-characters-* (protagonists / retro / survivors), Kenney blocky + mini-characters
-- `CHARACTERS_MANIFEST.json` — 298-entry manifest with tri/bone/anim counts, license, fit flags
+- `extracted/` - Kenney animated-characters-* (protagonists / retro / survivors), Kenney blocky + mini-characters
+- `CHARACTERS_MANIFEST.json` - 298-entry manifest with tri/bone/anim counts, license, fit flags
 
 Skeleton is a Mixamo-compatible 62-bone rig on the Quaternius hero set. Same skeleton across 15+ characters = free anim sharing. Weapon grip goes on `Hand.R` / `mixamorig:RightHand`.
 
 ### Weapons & gear
 
-Root: `C:/Users/Mattm/X/soldier-research/downloads/polypizza-props/` — **59 GLBs**. Relevant subset for Vietnam era (retex or use as-is):
+Root: `C:/Users/Mattm/X/soldier-research/downloads/polypizza-props/` - **59 GLBs**. Relevant subset for Vietnam era (retex or use as-is):
 
 - `Bgvuu4CUMV__Assault_Rifle_-_Free_Model_By_Quaternius.glb` (stand-in for M16)
 - `K2lXTYFSLC__Assault_Rifle_-_Free_Model_By_Quaternius.glb`
@@ -117,25 +118,25 @@ Root: `C:/Users/Mattm/X/soldier-research/downloads/polypizza-props/` — **59 GL
 
 Root: `C:/Users/Mattm/X/vegetation-research/`
 
-- `assets/tier-a-psx/polypizza/` — **33 tropical plant GLBs**, direct species matches (see ranking table below)
-- `assets/tier-a-psx/kenney/nature-kit/` — **~409 Kenney nature GLBs** (silhouette is temperate — skip unless you verify a jungle fit; use mushrooms + rocks only)
-- `assets/tier-a-psx/quaternius/` — CC0 Quaternius packs
-- `assets/tier-c-hifi/polyhaven/` — 84 Poly Haven photogrammetry assets. **Bake-only source** — never ship as runtime geometry.
-- `MANIFEST.json` — 747-entry manifest with tier, species, license, source.
+- `assets/tier-a-psx/polypizza/` - **33 tropical plant GLBs**, direct species matches (see ranking table below)
+- `assets/tier-a-psx/kenney/nature-kit/` - **~409 Kenney nature GLBs** (silhouette is temperate - skip unless you verify a jungle fit; use mushrooms + rocks only)
+- `assets/tier-a-psx/quaternius/` - CC0 Quaternius packs
+- `assets/tier-c-hifi/polyhaven/` - 84 Poly Haven photogrammetry assets. **Bake-only source** - never ship as runtime geometry.
+- `MANIFEST.json` - 747-entry manifest with tier, species, license, source.
 
 ### Sprite / 2D (for the sprite atlas packer)
 
-Root: `C:/Users/Mattm/X/games-3d/terror-in-the-jungle/` (project root — **these three zips are the immediate input**):
+Root: `C:/Users/Mattm/X/games-3d/terror-in-the-jungle/` (project root - **these three zips are the immediate input**):
 
-- `60-free-plants.zip` — 60 PNG plant sprites (~50 MB, OpenGameArt, alpha cutouts, 1024–2048 px each). Drop-in Tier-A billboard content. Already-transparent.
-- `foliage-pack.zip` — Kenney foliage pack, 62 tiny PNGs (<5 KB each) + leaves + SVG. **UI icon candidates, not field scatter.**
-- `survival-kit.zip` — Kenney survival kit, **65 FBX models** (barrels, bedrolls, tents, tools, boxes, rocks, axes, 3 small trees). Needs FBX → GLB ingest.
+- `60-free-plants.zip` - 60 PNG plant sprites (~50 MB, OpenGameArt, alpha cutouts, 1024-2048 px each). Drop-in Tier-A billboard content. Already-transparent.
+- `foliage-pack.zip` - Kenney foliage pack, 62 tiny PNGs (<5 KB each) + leaves + SVG. **UI icon candidates, not field scatter.**
+- `survival-kit.zip` - Kenney survival kit, **65 FBX models** (barrels, bedrolls, tents, tools, boxes, rocks, axes, 3 small trees). Needs FBX → GLB ingest.
 
 Downstream target for scattered vegetation is TIJ's `GPUBillboardSystem` at `src/systems/world/billboard/GPUBillboardSystem.ts`, which today consumes one texture per species. Atlased output will let TIJ cut material + draw calls later; for this pipeline pass, produce both single-species PNGs and a combined atlas with a JSON frame table so TIJ can pick either.
 
 ### TIJ vegetation species registry (target matrix)
 
-Source: `C:/Users/Mattm/X/games-3d/terror-in-the-jungle/src/config/vegetationTypes.ts` — 13 species keyed by `id` and `textureName`, grouped into three tiers: `groundCover` (fern, elephantEar, elephantGrass, ricePaddyPlants), `midLevel` (fanPalm, coconut, areca, bambooGrove, bananaPlant, mangrove), `canopy` (dipterocarp, banyan, rubberTree). Each species needs exactly one billboard/imposter output keyed to its `textureName`. Produce files so they drop into `public/textures/vegetation/<textureName>.png` (or a KTX2 + meta when imposters land).
+Source: `C:/Users/Mattm/X/games-3d/terror-in-the-jungle/src/config/vegetationTypes.ts` - 13 species keyed by `id` and `textureName`, grouped into three tiers: `groundCover` (fern, elephantEar, elephantGrass, ricePaddyPlants), `midLevel` (fanPalm, coconut, areca, bambooGrove, bananaPlant, mangrove), `canopy` (dipterocarp, banyan, rubberTree). Each species needs exactly one billboard/imposter output keyed to its `textureName`. Produce files so they drop into `public/textures/vegetation/<textureName>.png` (or a KTX2 + meta when imposters land).
 
 ---
 
@@ -143,22 +144,22 @@ Source: `C:/Users/Mattm/X/games-3d/terror-in-the-jungle/src/config/vegetationTyp
 
 Ranking criteria, combined: silhouette fit → rig / anim fit → performance headroom → license (CC0 > CC-BY > other) → modifiability (UV layout quality, weight normalization, material simplicity).
 
-### Soldiers — rank 1 = build first
+### Soldiers - production source set
 
-| Rank | GLB (filename stem) | Role in TIJ | Why |
+| Priority | GLB (filename stem) | Role in TIJ | Decision |
 |---|---|---|---|
-| 1 | `DgOCW9ZCRJ__Character_Animated` | Hero / LOD0 reference | 45 clips covering pistol aim/fire/reload + locomotion + reactions + death + crouch + swim — single best anim library we have free |
-| 2 | `PpLF4rt4ah__Character_Soldier` | US / ARVN base | 62-bone Quaternius skeleton, reads military without retex |
-| 3 | `5EGWBMpuXq__Adventurer` | US variant | Same 62-bone rig, anim-compatible, different silhouette for squad variety |
-| 4 | `66kQ4dBBC7__Characters_Matt` | NVA base | Leaner silhouette, civilian-coded — retex into khaki + pith helmet |
-| 5 | `UcLErL2W37__Characters_Sam` | VC base | Lightest build of the set — black pajama retex + conical hat attachment |
-| 6 | `Btfn3G5Xv4__SWAT` | US heavy / LRRP variant | Tactical silhouette, helmet + body armor already modeled |
-| 7 | `75ikp7NEDx__Cube_Woman_Character` | Civilian | Same-skeleton stand-in for villagers |
-| 8 | `DojKLcO34E__Beach_Character` | Civilian male | Shorts + light-shirt silhouette for village crowd |
-| — | Kenney mini-characters (×12) | LOD2 distant fill only | 700–900 tri, 7-bone rig — cheap but NOT anim-compatible with Quaternius skeleton; handle as a separate "distant crowd" imposter pool |
-| skip | Polygonal Mind novelty (Banana / Candle / Coffee / Wine / Bunny) | — | Zero Vietnam fit |
+| 1 | `PpLF4rt4ah__Character_Soldier` | US / ARVN base | Active production-facing soldier base and default animated-impostor review source. Paint/retexture into OG-107, ERDL, tiger stripe, and ARVN variants before promotion. Use the original source GLB for animated bakes until the gallery LOD exporter preserves clips. |
+| 2 | `66kQ4dBBC7__Characters_Matt` | NVA base | Leaner silhouette, civilian-coded source that needs khaki/olive repaint, pith helmet or compatible headgear, AK mount, and shoot-clip decision. |
+| 3 | `UcLErL2W37__Characters_Sam` | VC base | Light build suited to black-pajama guerrilla repaint plus conical hat or soft cap attachment. Needs AK mount and shoot-clip decision. |
+| 4 | `5EGWBMpuXq__Adventurer` | US variant | Same 62-bone family and possible squad variety, but promote only if repaint reads as Vietnam-era soldier rather than fantasy/adventure placeholder. |
+| 5 | `Btfn3G5Xv4__SWAT` | US heavy / LRRP variant | Tactical silhouette can be useful, but body armor must be painted into a believable Vietnam-era role before use. |
+| 6 | `75ikp7NEDx__Cube_Woman_Character` | Civilian | Villager/noncombatant pool, not a combat soldier default. |
+| 7 | `DojKLcO34E__Beach_Character` | Civilian male | Villager/noncombatant pool, not a combat soldier default. |
+| fixture | `DgOCW9ZCRJ__Character_Animated` | Animation library / bake validation only | Keep for clip/rig experimentation. Do not ship as final soldier art unless it is repainted and manually approved. |
+| distant | Kenney mini-characters (x12) | LOD2 distant fill only | 700-900 tri, 7-bone rig - cheap but not animation-compatible with the Quaternius skeleton; handle as a separate distant-crowd impostor pool. |
+| skip | Polygonal Mind novelty (Banana / Candle / Coffee / Wine / Bunny) | - | Zero Vietnam fit. |
 
-### Weapons — rank 1 = mount first
+### Weapons - rank 1 = mount first
 
 | Rank | GLB (filename stem) | Stand-in for |
 |---|---|---|
@@ -170,33 +171,33 @@ Ranking criteria, combined: silhouette fit → rig / anim fit → performance he
 | 6 | `YWhHlmKOtx__Hand_Grenade` | M67 / frag |
 | 7 | `2g9Jm7kvIU__Backpack` | ALICE / rucksack attachment |
 
-All above mount to `Hand.R` via the Quaternius skeleton; pistol grip for aim anim, rifle two-hand pose for foregrip (left-hand IK deferred to TIJ — your gallery only needs right-hand mount working).
+All above mount to `Hand.R` via the Quaternius skeleton; pistol grip for aim anim, rifle two-hand pose for foregrip (left-hand IK deferred to TIJ - your gallery only needs right-hand mount working).
 
-### Vegetation combos — rank 1 = bake first
+### Vegetation combos - rank 1 = bake first
 
 Each combo targets one or more species in `vegetationTypes.ts`. Imposter bake angle count and atlas size are in the final column.
 
 | Rank | Combo | Source GLBs | TIJ species target | Bake spec |
 |---|---|---|---|---|
 | 1 | **Bamboo grove** | Poly Pizza bamboo-google 1/2/3 + bamboo-quaternius 1/2/3 (6 meshes) | `bambooGrove` | 8 angles × 512² per variant, combined 6-sprite atlas |
-| 2 | **Palm canopy (coconut/royal/queen)** | coconut-palm-google, royal-palm-google 1/2, queen-palm-google, date-palm-google | `coconut`, `fanPalm` | 16 angles × 1024² (canopy trees read silhouette at distance — more angles matter) |
+| 2 | **Palm canopy (coconut/royal/queen)** | coconut-palm-google, royal-palm-google 1/2, queen-palm-google, date-palm-google | `coconut`, `fanPalm` | 16 angles × 1024² (canopy trees read silhouette at distance - more angles matter) |
 | 3 | **Rubber tree / canopy stand-ins** | rubber-tree-google, rubber-fig-google, vine-google, vine-covered-tree, palm-tree-jarlan-perez 1/2 | `rubberTree`, `banyan` | 16 angles × 1024² |
 | 4 | **Understory ferns + elephant ear** | fern-danni-bittman, fern-quaternius, fiddlehead-google, big-leaf-plant-reyshapes + selected PNGs from `60-free-plants.zip` (plant_14, plant_17, plant_22, plant_43) | `fern`, `elephantEar` | 8 angles × 512² for GLB sources; single-quad billboards for PNGs (no imposter needed) |
 | 5 | **Banana plants** | banana-tree-google, banana-tree-sean-tarrant, plus one banana sprite from 60-free-plants | `bananaPlant` | 8 angles × 512² |
 | 6 | **Fan palms (lady / triangle / umbrella / ivory-cane / everglades)** | lady-palm-google 1/2, triangle-palm-google, umbrella-palm-google, ivory-cane-palm-google, everglades-palm-google | `fanPalm`, `areca` | 16 angles × 1024² |
 | 7 | **Dipterocarp giant** | FabinhoSC AmazonInspiredTrees (from OGA tier-A) + procedural EZ-Tree fallback | `dipterocarp` | 16 angles × 1024² |
-| 8 | **Mangrove / rice paddy** | Gap — no local high-quality GLBs. Use PNG stand-ins from 60-free-plants (plant_01, plant_03, plant_27) as billboards, flag for future photoscan | `mangrove`, `ricePaddyPlants` | PNG-only for now, no imposter |
-| skip | Kenney PSX Nature Kit trees | Temperate silhouette, wrong era — use mushrooms and rocks only if anything |
+| 8 | **Mangrove / rice paddy** | Gap - no local high-quality GLBs. Use PNG stand-ins from 60-free-plants (plant_01, plant_03, plant_27) as billboards, flag for future photoscan | `mangrove`, `ricePaddyPlants` | PNG-only for now, no imposter |
+| skip | Kenney PSX Nature Kit trees | Temperate silhouette, wrong era - use mushrooms and rocks only if anything |
 
-`elephantGrass` is handled entirely by Poly Haven `grass_medium_01/02` billboards — no GLB imposter, single quad.
+`elephantGrass` is handled entirely by Poly Haven `grass_medium_01/02` billboards - no GLB imposter, single quad.
 
 ---
 
 ## Kiln extensions to build (priority order)
 
-Each module lands under `packages/core/src/kiln/<module>/`. Write unit tests alongside in `__tests__/`. Wire into the CLI and MCP surfaces as you go — that's kiln's contract.
+Each module lands under `packages/core/src/kiln/<module>/`. Write unit tests alongside in `__tests__/`. Wire into the CLI and MCP surfaces as you go - that's kiln's contract.
 
-### P1 — `kiln/imposter/`  (blocks everything else)
+### P1 - `kiln/imposter/`  (blocks everything else)
 
 Octahedral + hemi-octahedral baker. Public API sketch:
 
@@ -217,14 +218,14 @@ bakeImposter(glb: Buffer | string, opts: {
 ```
 
 Implementation notes:
-- Reuse the existing headless Three.js renderer from `render.ts` — drive a grid of cameras over the loaded GLB, snap to an off-screen render target, pack into a single atlas.
-- Put a strict-back-face-cull pass in front of it identical to `audit:glb` — any winding bug will be visible as black tiles and should fail fast.
+- Reuse the existing headless Three.js renderer from `render.ts` - drive a grid of cameras over the loaded GLB, snap to an off-screen render target, pack into a single atlas.
+- Put a strict-back-face-cull pass in front of it identical to `audit:glb` - any winding bug will be visible as black tiles and should fail fast.
 - `ImposterMeta` lands next to the PNG as `<name>.imposter.json`. TIJ will parse it at load time; include the exact field names in the schema (`angles`, `tilesX`, `tilesY`, `worldSize`, `yOffset`, `hemi`).
 - Add a test that bakes a bamboo GLB and verifies the atlas is non-empty at all 8 tile positions.
 
-### P2 — `kiln/lod/`
+### P2 - `kiln/lod/`
 
-Wrap `meshoptimizer` (or `@gltf-transform/functions` `simplify` — check via context7 which has better quality at tri ratios ≥ 0.1). Output: one multi-LOD GLB per input, LOD levels [1.0, 0.5, 0.25, 0.1].
+Wrap `meshoptimizer` (or `@gltf-transform/functions` `simplify` - check via context7 which has better quality at tri ratios ≥ 0.1). Output: one multi-LOD GLB per input, LOD levels [1.0, 0.5, 0.25, 0.1].
 
 ```ts
 generateLODChain(glb: Buffer | string, opts?: {
@@ -237,7 +238,7 @@ generateLODChain(glb: Buffer | string, opts?: {
 
 LOD0 = original. LOD3 = the imposter card from P1. Ship as `EXT_mesh_gpu_instancing` + `KHR_draco_mesh_compression` where supported.
 
-### P3 — `kiln/sprite-atlas/`
+### P3 - `kiln/sprite-atlas/`
 
 Batch-pack PNGs into power-of-two atlases with a JSON frame table.
 
@@ -253,11 +254,11 @@ packSpriteAtlas(pngs: { name: string; data: Buffer }[], opts: {
 
 First use: ingest `60-free-plants.zip` into one or two atlases keyed by target species (`fern`, `elephantEar`, `banana`, `generic-foliage`).
 
-### P4 — `kiln/fbx-ingest/`
+### P4 - `kiln/fbx-ingest/`
 
 FBXLoader → normalize (left-handed → right-handed if needed, scale to meters, merge identical materials) → GLB via `@gltf-transform/core`. First use: unzip `survival-kit.zip` and convert all 65 FBX models.
 
-### P5 — `kiln/retex/`
+### P5 - `kiln/retex/`
 
 Character-specific diffuse retex using region masks on the Quaternius UVs. Presets:
 
@@ -269,15 +270,15 @@ Character-specific diffuse retex using region masks on the Quaternius UVs. Prese
 
 Workflow: read GLB, find the body mesh, apply UV-region-aware color LUT to its diffuse, write back. LLM can author the region map once per base character and cache it.
 
-### P6 — `kiln/photogrammetry/`
+### P6 - `kiln/photogrammetry/`
 
-Cleanup pass for Poly Haven tier-C plants before imposter bake: decimate to ≤ 10k tri, UV repack via xatlas (already a dep), merge 2K PBR to a single 1K diffuse. Only needed if tier-C quality beats the Poly Pizza shortlist in the gallery — gate on the human's validation call.
+Cleanup pass for Poly Haven tier-C plants before imposter bake: decimate to ≤ 10k tri, UV repack via xatlas (already a dep), merge 2K PBR to a single 1K diffuse. Only needed if tier-C quality beats the Poly Pizza shortlist in the gallery - gate on the human's validation call.
 
 ### Primitives to add
 
-- `foliageCardGeo({ width, height, yPivot })` — double-sided quad with proper Y pivot
-- `crossedQuadsGeo({ width, height, planes: 2 | 3 })` — cross-billboard for near-field plants
-- `octaGridPlane({ tilesX, tilesY })` — atlas-ready quad with per-instance tile UVs
+- `foliageCardGeo({ width, height, yPivot })` - double-sided quad with proper Y pivot
+- `crossedQuadsGeo({ width, height, planes: 2 | 3 })` - cross-billboard for near-field plants
+- `octaGridPlane({ tilesX, tilesY })` - atlas-ready quad with per-instance tile UVs
 
 ---
 
@@ -290,19 +291,19 @@ A self-contained page the human will click through to confirm the pipeline is co
 
 ### Sections the gallery must have
 
-1. **Soldier cards** — one per ranked character (top 8). Each card shows:
+1. **Soldier cards** - one per ranked character (top 8). Each card shows:
    - Live rotating 3D preview of the LOD0 mesh
    - Animation dropdown listing all clips; current clip auto-plays in a loop
    - Weapon dropdown listing the 5 ranked weapons; selected weapon is mounted to `Hand.R` and follows the anim
    - Side-by-side octahedral imposter card preview, camera-aligned, rotating synchronously
    - Tri count, bone count, anim count, file size, bbox (meters), retex preset applied
-2. **Vegetation combos** — one per ranked combo (top 7). Each card shows:
+2. **Vegetation combos** - one per ranked combo (top 7). Each card shows:
    - All variant GLBs in the combo in a row (live 3D)
    - The baked imposter atlas rendered as a plane with tile cycling so the human can see wraparound behavior
-   - A "billboard plausibility test" — camera orbits the card at constant radius and the imposter aligns to camera; any popping / seam is visible
+   - A "billboard plausibility test" - camera orbits the card at constant radius and the imposter aligns to camera; any popping / seam is visible
    - Tri count per variant, angles baked, atlas size, KTX2 / PNG flag
-3. **Sprite atlases** — the combined 60-plant atlas rendered with frame gridlines + labels, showing which species each tile is mapped to in the frame table
-4. **FBX ingest survey** — all 65 survival-kit meshes in a grid, flagging any that failed conversion
+3. **Sprite atlases** - the combined 60-plant atlas rendered with frame gridlines + labels, showing which species each tile is mapped to in the frame table
+4. **FBX ingest survey** - all 65 survival-kit meshes in a grid, flagging any that failed conversion
 
 Keyboard / URL controls:
 - `?asset=<stem>` deep-links to a specific card
@@ -313,14 +314,14 @@ Keyboard / URL controls:
 ### Acceptance criteria the human will check
 
 - [ ] All 8 ranked soldiers load, play at least 3 anims (idle, walk, shoot), and mount the M16 stand-in to the right hand without detachment during locomotion
-- [ ] Each of the 5 faction retex presets is visible as a swatch on the Quaternius Soldier card (even if only one is wired live — others can be stills)
+- [ ] Each of the 5 faction retex presets is visible as a swatch on the Quaternius Soldier card (even if only one is wired live - others can be stills)
 - [ ] All 7 ranked vegetation combos bake without any black tiles in their imposter atlas
 - [ ] The camera-orbit test on each imposter card shows ≤ 1 pixel of popping between adjacent angles at the configured atlas size
 - [ ] The sprite atlas renders with every one of the 60 plants visible and correctly framed in the JSON table
 - [ ] FBX ingest succeeds for ≥ 60 / 65 survival-kit models (flag the failures)
 - [ ] All pipeline output lands under `packages/server/output/tij/` with the directory layout described below
 - [ ] `bun run audit:glb` runs clean against every new GLB (no winding errors)
-- [ ] Per-card tri count, anim count, atlas size, file size are all displayed — no placeholder zeros
+- [ ] Per-card tri count, anim count, atlas size, file size are all displayed - no placeholder zeros
 
 ### Output directory layout (contract with TIJ)
 
@@ -363,10 +364,10 @@ packages/server/output/tij/
 ## Non-goals (do NOT do this)
 
 - Do not touch `C:/Users/Mattm/X/games-3d/terror-in-the-jungle/` at all. Zero writes.
-- Do not bulk-download new assets — the 500+ on disk are enough for this pass.
+- Do not bulk-download new assets - the 500+ on disk are enough for this pass.
 - Do not attempt Mixamo retargeting in this pass. Quaternius 62-bone skeleton is anim-complete for the shortlist.
 - Do not ship the Poly Haven tier-C geometry as runtime meshes. Imposter-bake only.
-- Do not add new AI-generation pipelines to kiln in this pass — only the bake / ingest / retex mechanics listed above. Generation stays on the existing Claude → primitives path.
+- Do not add new AI-generation pipelines to kiln in this pass - only the bake / ingest / retex mechanics listed above. Generation stays on the existing Claude → primitives path.
 - Do not refactor unrelated kiln code. Every change lands next to its feature directory.
 
 ---

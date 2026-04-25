@@ -22,6 +22,7 @@
     "check:bundle-size": "bun run scripts/check-bundle-size.ts",
     "audit:glb": "tsx scripts/visual-audit.ts",
     "audit:review": "bun scripts/audit-review-page.ts --open",
+    "animated-imposter:review": "tsx scripts/run-animated-imposter-review.ts",
     "tij:pipeline": "tsx scripts/run-tij-pipeline.ts"
   },
   "devDependencies": {

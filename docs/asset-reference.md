@@ -45,9 +45,9 @@ Pick a bg color that does NOT conflict with the asset's dominant colors:
 - Never say "painted", "low-poly 3D", "stylized", "realistic" (wrong aesthetic)
 - Always run chroma cleanup after BiRefNet (catches interior gaps)
 
-### Tileable Terrain Textures (separate pipeline - FLUX 2, not Gemini)
+### Tileable Terrain Textures (separate pipeline - FAL flux-lora, not Gemini)
 
-Textures do NOT use the sprite pipeline. They use FLUX 2 + Seamless Texture LoRA via FAL.
+Textures do NOT use the sprite pipeline. They currently use `fal-ai/flux-lora` + Seamless Texture LoRA via FAL. Do not switch this to `fal-ai/flux-2/lora` until a FLUX 2-compatible seamless LoRA exists.
 
 **FLUX prompt structure:**
 ```
@@ -102,7 +102,7 @@ Game UI icon [ITEM], fantasy sci-fi style, simple silhouette, high contrast, glo
 ### Key Conventions
 - **Sprites:** PNG with transparency via magenta pipeline, converted to WebP at integration
 - **3D Models:** GLB (binary glTF 2.0) via Kiln, named mesh parts for runtime animation
-- **Textures:** 512x512 PNG, seamless/tileable via FLUX 2 + Seamless LoRA, pixel art post-processed (no bg removal)
+- **Textures:** 512x512 PNG, seamless/tileable via `fal-ai/flux-lora` + Seamless LoRA, pixel art post-processed (no bg removal)
 - **Billboard sprites:** Side view, transparent background, used as InstancedMesh billboards
 - **Soldiers:** 9 sprites per faction (3 directions x 3 states: walk-frame1, walk-frame2, fire)
 
@@ -135,9 +135,9 @@ Vietnam War [FACTION] soldier, [POSE], [DIRECTION] view, [UNIFORM/EQUIPMENT DETA
 
 **Props:** sandbag wall, ammo crate, fuel barrel, bamboo watchtower, bunker entrance, concertina wire
 
-### Terrain Textures (FLUX 2 pipeline, no bg removal)
+### Terrain Textures (FAL flux-lora pipeline, no bg removal)
 
-Uses FLUX 2 + Seamless Texture LoRA, NOT Gemini. See CLAUDE.md "Tileable Terrain Texture Pipeline" for full details.
+Uses `fal-ai/flux-lora` + Seamless Texture LoRA, NOT Gemini. See AGENTS.md "Tileable Terrain Texture Pipeline" for full details. `fal-ai/flux-2/lora` remains experimental until a compatible seamless LoRA is available.
 
 **12 biome textures (all approved):** jungle-floor, mud-ground, river-bank, tall-grass, rice-paddy, rocky-highland, red-laterite, bamboo-floor, swamp, sandy-beach, defoliated-ground, firebase-ground
 

@@ -13,6 +13,9 @@ export type {
   ImageProvider,
   TextureProvider,
   BgRemovalProvider,
+  TextTo3DProvider,
+  TextTo3DGenerateOptions,
+  TextTo3DQueueUpdate,
   CodeGenProvider,
   AnyProvider,
 } from './types';
@@ -27,10 +30,12 @@ export {
   createFalTextureProvider,
   createFalBgRemovalProvider,
   createFalBriaBgRemovalProvider,
+  createFalTextTo3dProvider,
   type BirefnetV2Variant,
   type FalTextureProviderOptions,
   type FalBgRemovalProviderOptions,
   type FalBriaBgRemovalProviderOptions,
+  type FalTextTo3dProviderOptions,
 } from './fal';
 
 export {

@@ -25,7 +25,7 @@ a follow-up.
 | Provider | File | SDK landed | Notes |
 |---|---|---|---|
 | Gemini | `packages/core/src/providers/gemini.ts` | `@google/genai@^1.48.0` (resolved 1.50.1) | `createGeminiProvider(apiKey?)` factory; reads `GEMINI_API_KEY` from env. Cap-enforces `refs <= 14` (gemini-3.1-flash-image-preview) and surfaces `ProviderCapabilityMismatch` with `suggestedProvider: 'openai'`. |
-| FAL | `packages/core/src/providers/fal.ts` | `@fal-ai/client@^1.9.5` (resolved 1.9.5) | Two factories: `createFalTextureProvider` (FLUX.2 + Seamless LoRA, endpoint `fal-ai/flux-2/lora` — confirmed) and `createFalBgRemovalProvider` (BiRefNet). `.data` destructure applied. Chroma cleanup ported intact. |
+| FAL | `packages/core/src/providers/fal.ts` | `@fal-ai/client@^1.9.5` (resolved 1.9.5) | Factories: `createFalTextureProvider` (`fal-ai/flux-lora` + Seamless LoRA until a FLUX 2-compatible LoRA exists), `createFalBgRemovalProvider` (BiRefNet), and `createFalTextTo3dProvider` (Meshy text-to-3D). `.data` destructure applied. Chroma cleanup ported intact. |
 | Anthropic | `packages/core/src/providers/anthropic.ts` | `@anthropic-ai/sdk@^0.90.0` (resolved 0.90.0) | Thin adapter delegating to `@pixel-forge/core/kiln`'s `generateKilnCode`/`editKilnCode`/`compactCode`/`refactorCode`. The kiln module already runs `claude-opus-4-7` by default. |
 | OpenAI | `packages/core/src/providers/openai.ts` | `openai@^6.1.0` (resolved 6.34.0) | Dual-model internal routing per `docs/gpt-image-2-investigation.md`: text-only → `gpt-image-1.5`, refs > 0 → `gpt-image-2`. Never sends `background:'transparent'` or `input_fidelity`. 180s timeout, fallback to 1.5 on 5xx/timeout. |
 
@@ -100,7 +100,7 @@ Acceptance baselines met (server 114, client 1931, core ≥ 14).
   declarative (one row per model) without leaking OpenAI's quirks upstream.
 - **BiRefNet variant selector skipped.** The brief flagged it as optional
   if "easy" — adding it would have required a schema field and a cap-row
-  per variant. Deferred to a follow-up; current default `fal-ai/birefnet`
+  per variant. Deferred to a follow-up; current default `fal-ai/birefnet/v2`
   matches the server's behavior.
 - **Facade fallback policy is conservative.** Only fires when:
   (a) the error is retryable, (b) the caller did not pin a provider, and
@@ -123,10 +123,9 @@ behavior diff observed.
 
 ## 7. Follow-ups
 
-- Migrate `packages/server/src/services/{gemini,fal,texture}.ts` to thin
-  re-exports of `@pixel-forge/core/providers`, then drop
-  `@fal-ai/serverless-client` and the duplicate `@anthropic-ai/sdk` from
-  `packages/server/package.json`.
+- Keep `packages/server/src/services/{gemini,fal,texture}.ts` as thin
+  compatibility wrappers over `@pixel-forge/core/providers`; the deprecated
+  FAL serverless client has been dropped from active package manifests.
 - Add the BiRefNet variant selector (`'light-2k' | 'heavy' | 'dynamic'`)
   to `BgRemovalInput` once the W4 icon pipeline is ready to consume it.
 - Wire the live-gated provider tests into a nightly job so we catch SDK

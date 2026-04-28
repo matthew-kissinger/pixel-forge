@@ -132,6 +132,33 @@ export const BgRemovalOutputSchema = z
 export type BgRemovalOutput = z.infer<typeof BgRemovalOutputSchema>;
 
 // =============================================================================
+// Text-to-3D model generation
+// =============================================================================
+
+export const TextTo3DGenerateInputSchema = z
+  .object({
+    prompt: z.string().min(1).max(10_000),
+    artStyle: z.string().min(1).optional().default('low-poly'),
+    negativePrompt: z.string().min(1).optional().default('blurry, low quality'),
+  })
+  .strict();
+export type TextTo3DGenerateInput = z.input<typeof TextTo3DGenerateInputSchema>;
+export type TextTo3DGenerateConfig = z.output<typeof TextTo3DGenerateInputSchema>;
+
+export const TextTo3DGenerateOutputSchema = z
+  .object({
+    modelUrl: z.string().url().optional(),
+    thumbnailUrl: z.string().url().optional(),
+    meta: MetaSchema.extend({
+      model: z.string().min(1),
+      requestId: z.string().optional(),
+      rawStatus: z.string().optional(),
+    }).strict(),
+  })
+  .strict();
+export type TextTo3DGenerateOutput = z.infer<typeof TextTo3DGenerateOutputSchema>;
+
+// =============================================================================
 // Code-gen (Kiln / Claude)
 // =============================================================================
 

@@ -31,6 +31,7 @@ export {
   AnimatedImposterTextureModeSchema,
   AnimatedImposterWarningSchema,
 } from '../kiln/imposter/animated-schema';
+export { NpcCharacterPackManifestSchema } from '../kiln/imposter/npc-character-pack';
 export type {
   AnimatedClipTarget,
   AnimatedImposterMeta,
@@ -42,6 +43,7 @@ export type {
   AnimatedImposterTextureMode,
   AnimatedImposterWarning,
 } from '../kiln/imposter/animated-schema';
+export type { NpcCharacterPackManifest } from '../kiln/imposter/npc-character-pack';
 
 // =============================================================================
 // Re-exports (the code-gen schemas ARE the kiln schemas today)

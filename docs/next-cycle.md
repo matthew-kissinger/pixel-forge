@@ -53,7 +53,7 @@ packages/
           sprite.ts                # generic sprite + chroma cleanup
           soldier-set.ts           # T-pose + 9-pose workflow
           icon.ts                  # mono + colored variants
-          texture.ts               # FLUX 2 + seamless LoRA + quantize
+          texture.ts               # fal-ai/flux-lora + seamless LoRA + quantize
           batch.ts                 # resumable batch wrapper
       providers/
         gemini.ts                  # ImageProvider
@@ -258,9 +258,9 @@ Everything else parallelizes off the hub.
   - Model `gemini-3.1-flash-image-preview` still current; keep
 
 - [x] **3a.2 FAL → core** · deps: 2.3 · est: 4h · parallel · **MAJOR UPGRADE + BUG FIX**
-  - **`@fal-ai/serverless-client@^0.15.0` is deprecated** — migrate to `@fal-ai/client@1.9.5`
-  - Breaking change: `fal.subscribe()` now returns `{ data, requestId }` — every call site needs `.data` destructure: `result.model_url` → `result.data.model_url`, `result.image?.url` → `result.data.image?.url`
-  - ~~**Bug fix (urgent)**: `services/texture.ts` calls `fal-ai/flux-lora` (FLUX **1** endpoint!) despite CLAUDE.md documenting FLUX 2. Real regression. Switch to `fal-ai/flux-2/lora`.~~ **Fixed in commit `e7b2a8d`** (pulled forward while waiting for spike).
+  - **`@fal-ai/serverless-client@^0.15.0` migration complete** — active code uses `@fal-ai/client@1.9.5`
+  - Breaking change handled: `fal.subscribe()` now returns `{ data, requestId }` — call sites destructure through `.data`: `result.model_url` → `result.data.model_url`, `result.image?.url` → `result.data.image?.url`
+  - **Texture endpoint decision:** `fal-ai/flux-lora` is the current default because the available Seamless Texture LoRA is FLUX 1 trained. Do not switch to `fal-ai/flux-2/lora` until a FLUX 2-compatible seamless LoRA is available.
   - Optional: expose BiRefNet variant selector (Light 2K / Heavy / Dynamic) — zero cost, cleaner edges on 1024px sprites
   - Audit all scripts that use FAL directly for the same breaking change
 
@@ -452,4 +452,3 @@ The DAG means we can resume at any wave boundary without losing state. Each sess
 Plan locked at: `2026-04-21`
 Last updated: `2026-04-21`
 Next review: after W1.1 gate passes
-

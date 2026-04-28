@@ -5,8 +5,8 @@
  * file-vs-inline strategy from `gen.ts` doesn't apply.
  */
 
-import { writeFileSync } from 'node:fs';
-import { extname, resolve } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, extname, resolve } from 'node:path';
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
@@ -421,6 +421,16 @@ export function registerKilnTools(server: McpServer): void {
           .enum(['transparent', 'magenta'])
           .default('transparent')
           .describe("Background during albedo bake. 'magenta' lets downstream chroma-clean replace with alpha."),
+        colorLayer: z
+          .enum(['beauty', 'baseColor'])
+          .default('beauty')
+          .describe("'beauty' preserves the legacy lit bake; 'baseColor' emits unlit color for runtime lighting."),
+        edgeBleedPx: z
+          .number()
+          .int()
+          .nonnegative()
+          .optional()
+          .describe('Transparent RGB bleed radius in pixels. Defaults to 2 for baseColor bakes.'),
       },
     },
     async (input) => {
@@ -431,6 +441,8 @@ export function registerKilnTools(server: McpServer): void {
           axis,
           tileSize: input.tileSize,
           bgColor: input.bg,
+          colorLayer: input.colorLayer,
+          ...(input.edgeBleedPx !== undefined ? { edgeBleedPx: input.edgeBleedPx } : {}),
           ...(input.auxLayers ? { auxLayers: input.auxLayers } : {}),
           sourcePath: resolve(input.inputPath),
         });
@@ -470,7 +482,105 @@ export function registerKilnTools(server: McpServer): void {
             atlasHeight: result.meta.atlasHeight,
             worldSize: result.meta.worldSize,
             tris: result.meta.source.tris,
+            colorLayer: result.meta.colorLayer,
+            edgeBleedPx: result.meta.edgeBleedPx,
           },
+        };
+      } catch (err) {
+        return errorToToolResult(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // pixelforge_kiln_validate_npc_pack
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    'pixelforge_kiln_validate_npc_pack',
+    {
+      description:
+        'Validate an NPC character pack manifest on disk before animated imposter baking. Read-only.',
+      inputSchema: {
+        manifestPath: z.string().describe('Absolute path to npc-package-manifest.json.'),
+        rootDir: z
+          .string()
+          .optional()
+          .describe('Root directory for relative GLB paths. Defaults to manifest directory.'),
+        checkFiles: z
+          .boolean()
+          .default(true)
+          .describe('Check file existence and inspect GLBs when true.'),
+      },
+    },
+    async (input) => {
+      try {
+        const manifestPath = resolve(input.manifestPath);
+        const raw = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+        const rootDir = input.rootDir ? resolve(input.rootDir) : dirname(manifestPath);
+        const result = await kiln.validateNpcCharacterPack(raw, {
+          rootDir,
+          checkFiles: input.checkFiles,
+          inspectGlbs: input.checkFiles,
+        });
+        return {
+          content: [
+            {
+              type: 'text',
+              text:
+                `NPC pack validation: ok=${result.ok} · ${result.blockers.length} errors · ` +
+                `${result.warnings.length} warnings`,
+            },
+          ],
+          structuredContent: {
+            manifestPath,
+            rootDir,
+            ...result,
+          },
+          isError: !result.ok,
+        };
+      } catch (err) {
+        return errorToToolResult(err);
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------
+  // pixelforge_kiln_validate_animated_imposter
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    'pixelforge_kiln_validate_animated_imposter',
+    {
+      description:
+        'Validate an animated imposter v2 sidecar JSON on disk. Read-only.',
+      inputSchema: {
+        sidecarPath: z.string().describe('Absolute path to the animated imposter sidecar JSON.'),
+      },
+    },
+    async (input) => {
+      try {
+        const sidecarPath = resolve(input.sidecarPath);
+        const raw = JSON.parse(readFileSync(sidecarPath, 'utf-8'));
+        const parsed = kiln.AnimatedImposterMetaSchema.safeParse(raw);
+        const result = parsed.success
+          ? { ok: true, sidecarPath, meta: parsed.data, issues: [] }
+          : {
+              ok: false,
+              sidecarPath,
+              meta: null,
+              issues: parsed.error.issues.map((issue) => ({
+                path: issue.path.join('.'),
+                message: issue.message,
+              })),
+            };
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Animated imposter validation: ok=${result.ok} · ${result.issues.length} issues`,
+            },
+          ],
+          structuredContent: result,
+          isError: !result.ok,
         };
       } catch (err) {
         return errorToToolResult(err);

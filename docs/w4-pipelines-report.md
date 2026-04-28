@@ -15,7 +15,7 @@
 |---|---|---|
 | `sprite.ts` | 32-bit pixel-art sprite + chroma cleanup, refs-aware routing | 18 |
 | `icon.ts` | UI icons — mono silhouette + colored emblem, NO BiRefNet | 9 |
-| `texture.ts` | Tileable terrain — FLUX 2 -> pixelate -> quantize -> clean blacks -> upscale | 9 |
+| `texture.ts` | Tileable terrain — `fal-ai/flux-lora` -> pixelate -> quantize -> clean blacks -> upscale | 9 |
 | `soldier-set.ts` | T-pose + N-pose workflow with auto fire-flash detection | 9 |
 | `glb.ts` | Thin uniform wrapper around `kiln.generate` | 7 |
 | `batch.ts` | Resumable wrapper, retry, concurrency, injectable fs | 10 |

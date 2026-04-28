@@ -1,10 +1,10 @@
-# Screenshot Refresh — TODO
+# Screenshot Refresh
 
-**Status:** ⏳ Queued. Screenshots in the README + `docs/screenshots/` were captured from the pre-Round-3 build. Current pipelines produce noticeably better results (polished validation assets, updated inspector UI, tighter sprite cleanup). Before regenerating, get explicit user approval on the shot list so we don't spend tokens / time on shots that won't ship.
+**Status:** Queued. The root README intentionally does not embed showcase screenshots right now. The next screenshot pass should use neutral Pixel Forge examples, not project-specific handoff or review assets.
 
-> **Do not regenerate screenshots without user approval.** This doc is the prep list; the actual capture pass should only run once the user signs off on (a) which shots we take and (b) which assets we use as the subject in each shot.
+Get explicit subject approval before spending provider tokens or recording a new full capture set.
 
-## Shot list (draft — awaiting approval)
+## Remaining browser-capture shot list
 
 ### 1 · Editor hero — `editor-pipeline.png`
 
@@ -41,7 +41,7 @@
 ### 7 · Textures — `gallery-textures.png`
 
 - **What:** tileable terrain textures tiled 3×3 or 5×5 at `/gallery`. Show seamless edges.
-- **Why:** proves the FLUX 2 + Seamless LoRA pipeline.
+- **Why:** proves the `fal-ai/flux-lora` + Seamless LoRA pipeline.
 
 ### 8 · Kiln validation grid — NEW
 
@@ -67,14 +67,13 @@ Awaiting user direction. Rough preference:
 
 ## Capture checklist (for when we do this)
 
-- [ ] User approves shot list + subject list.
+- [ ] User approves neutral Pixel Forge subject list.
 - [ ] Editor + server on latest main; `bun install && bun run build` clean.
 - [ ] Assets regenerated from latest pipelines (no stale variants).
 - [ ] Validation GLBs + grids refreshed (`bun scripts/validate-wave2a.ts` + siblings + `bun run audit:glb`).
 - [ ] Screenshots captured at 1920×1080 or 2× Retina for crispness on GitHub.
 - [ ] Check filesizes — PNG under ~500 KB where possible, use `sharp` or `oxipng` if needed.
-- [ ] Update the inline `<!-- SCREENSHOT-REFRESH -->` comment in README once the refresh ships.
-- [ ] Add or replace entries in `docs/screenshots/`.
+- [ ] Add or replace entries in `docs/screenshots/` after the full capture pass ships.
 
 ## Demo video (stretch)
 

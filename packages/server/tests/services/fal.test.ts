@@ -12,9 +12,11 @@ const mockConfig = (...args: any[]) => {
   configCalls.push(args);
 };
 
-mock.module('@fal-ai/serverless-client', () => ({
-  config: mockConfig,
-  subscribe: mockSubscribe,
+mock.module('@fal-ai/client', () => ({
+  fal: {
+    config: mockConfig,
+    subscribe: mockSubscribe,
+  },
 }));
 
 mock.module('@pixel-forge/shared/logger', () => ({
@@ -61,7 +63,12 @@ describe('fal service', () => {
         status: 'IN_PROGRESS',
         logs: [{ message: '50% complete' }],
       });
-      return { model_url: 'https://example.com/model.glb', thumbnail_url: 'https://example.com/thumb.png' };
+      return {
+        data: {
+          model_url: 'https://example.com/model.glb',
+          thumbnail_url: 'https://example.com/thumb.png',
+        },
+      };
     };
 
     const fal = await importFal();
@@ -95,7 +102,7 @@ describe('fal service', () => {
   });
 
   it('removeBackground returns base64 image data', async () => {
-    subscribeImpl = async () => ({ image: { url: 'https://example.com/output.png' } });
+    subscribeImpl = async () => ({ data: { image: { url: 'https://example.com/output.png' } } });
     // Minimal valid 1x1 RGBA PNG (67 bytes)
     const minimalPng = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
@@ -113,10 +120,10 @@ describe('fal service', () => {
   });
 
   it('removeBackground throws when no image URL is returned', async () => {
-    subscribeImpl = async () => ({ image: {} });
+    subscribeImpl = async () => ({ data: { image: {} } });
     const fal = await importFal();
     await expect(fal.removeBackground('data:image/png;base64,abc123')).rejects.toThrow(
-      'No image in BiRefNet response'
+      'BiRefNet response contained no image URL'
     );
   });
 

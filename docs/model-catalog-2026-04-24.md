@@ -205,11 +205,12 @@
 
 | id | kind | notes |
 | --- | --- | --- |
-| `fal-ai/flux-2/lora` | image | FLUX 2 base + LoRA adapters (texture default) |
+| `fal-ai/flux-lora` | image | Current texture default while the seamless LoRA is FLUX 1 trained |
 | `fal-ai/birefnet/v2` | image | BiRefNet v2 — matting / bg removal, variants: light, light-2k, heavy, matting, portrait, dynamic |
+| `fal-ai/meshy/text-to-3d` | 3d | Meshy text-to-3D — server /api/model compatibility path |
 | `fal-ai/bria/background/remove` | image | Bria bg removal — fallback when BiRefNet flakes |
 | `fal-ai/recraft/v3/text-to-image` | image | Recraft v3 — crisp illustrations, good for UI sprites |
 | `fal-ai/hunyuan3d-v3/image-to-3d` | 3d | Hunyuan3D V3 — image→3D mesh |
 | `fal-ai/aura-sr` | image | Aura SR — 4x upscale for sprite finishing |
-| `fal-ai/flux-lora` | image | Legacy FLUX LoRA — keep as safety net; prefer flux-2/lora |
+| `fal-ai/flux-2/lora` | image | Available only for experiments with a FLUX 2-compatible seamless LoRA |
 | `fal-ai/fast-sdxl` | image | SDXL turbo — cheap liveness probe |

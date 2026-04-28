@@ -1,5 +1,5 @@
 /**
- * Texture comparison: Gemini Nano Banana vs FLUX 2 + Seamless LoRA
+ * Texture comparison: Gemini Nano Banana vs fal-ai/flux-lora + Seamless LoRA
  *
  * Reference: forestfloor.png = 512x512, 30 colors, pixel art, tileable
  * Goal: match that aesthetic for jungle floor + muddy trail
@@ -87,14 +87,14 @@ async function geminiGenerate(prompt: string): Promise<Buffer | null> {
 }
 
 // ==========================================
-// FLUX 2 + Seamless Texture LoRA (via FAL queue API)
+// fal-ai/flux-lora + Seamless Texture LoRA (via FAL queue API)
 // ==========================================
 
 async function fluxGenerate(prompt: string, size: number): Promise<Buffer | null> {
-  console.log('  Queuing FLUX 2 + Seamless LoRA...');
+  console.log('  Queuing fal-ai/flux-lora + Seamless LoRA...');
   try {
     // Submit to queue
-    const resp = await fetch('https://queue.fal.run/fal-ai/flux-2/lora', {
+    const resp = await fetch('https://queue.fal.run/fal-ai/flux-lora', {
       method: 'POST',
       headers: { 'Authorization': `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -123,7 +123,7 @@ async function fluxGenerate(prompt: string, size: number): Promise<Buffer | null
       if (statusResp.status === 200) {
         const result = await statusResp.json() as any;
         if (result.images?.length) {
-          console.log('  FLUX 2 complete');
+          console.log('  fal-ai/flux-lora complete');
           const imgResp = await fetch(result.images[0].url);
           return Buffer.from(new Uint8Array(await imgResp.arrayBuffer()));
         }
@@ -237,8 +237,8 @@ for (const tex of textures) {
     console.log(`  Processed: ${(processed.length/1024).toFixed(0)}KB, ${procColors} colors`);
   }
 
-  // --- FLUX 2 ---
-  console.log('\n[FLUX 2 + Seamless LoRA]');
+  // --- FAL texture default ---
+  console.log('\n[fal-ai/flux-lora + Seamless LoRA]');
   const fluxRaw = await fluxGenerate(tex.fluxPrompt, 512);
   if (fluxRaw) {
     await Bun.write(`${OUT_DIR}/flux-${tex.name}_raw.png`, fluxRaw);

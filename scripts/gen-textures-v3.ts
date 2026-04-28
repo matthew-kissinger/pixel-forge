@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Remaining biome terrain textures for Terror in the Jungle.
- * Recipe — uses the @pixel-forge/core texture pipeline (FLUX 2 +
+ * Recipe — uses the @pixel-forge/core texture pipeline (fal-ai/flux-lora +
  * Seamless LoRA → pixelate → quantize → clean → upscale).
  *
  *   bun scripts/gen-textures-v3.ts

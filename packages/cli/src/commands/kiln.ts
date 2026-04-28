@@ -634,6 +634,15 @@ const bakeImposterCommand = defineCommand({
       type: 'string',
       description: 'Comma-separated aux layers: depth,normal',
     },
+    'color-layer': {
+      type: 'string',
+      description: "'beauty' (legacy lit bake) or 'baseColor' (unlit color for runtime lighting).",
+      default: 'beauty',
+    },
+    'edge-bleed': {
+      type: 'string',
+      description: 'Transparent RGB bleed radius in pixels. Defaults to 2 for baseColor bakes.',
+    },
     bg: {
       type: 'string',
       description: "'transparent' (default) or 'magenta'.",
@@ -653,6 +662,11 @@ const bakeImposterCommand = defineCommand({
       }
       const axis = (args.axis as 'y' | 'hemi-y' | undefined) ?? (angles === 16 ? 'y' : 'hemi-y');
       const bg = args.bg === 'magenta' ? 'magenta' : 'transparent';
+      const colorLayer = args['color-layer'] === 'baseColor' ? 'baseColor' : 'beauty';
+      const edgeBleedPx = args['edge-bleed'] === undefined ? undefined : Number(args['edge-bleed']);
+      if (edgeBleedPx !== undefined && (!Number.isInteger(edgeBleedPx) || edgeBleedPx < 0)) {
+        throw new Error(`--edge-bleed must be a non-negative integer (got ${args['edge-bleed']})`);
+      }
       const auxLayers = args['aux-layers']
         ? (args['aux-layers'] as string)
             .split(',')
@@ -670,6 +684,8 @@ const bakeImposterCommand = defineCommand({
         axis,
         tileSize,
         bgColor: bg,
+        colorLayer,
+        ...(edgeBleedPx !== undefined ? { edgeBleedPx } : {}),
         ...(auxLayers ? { auxLayers } : {}),
         sourcePath: inputPath,
       });
@@ -696,9 +712,148 @@ const bakeImposterCommand = defineCommand({
           atlas: `${result.meta.atlasWidth}x${result.meta.atlasHeight}`,
           worldSize: result.meta.worldSize,
           tris: result.meta.source.tris,
+          colorLayer: result.meta.colorLayer,
+          edgeBleedPx: result.meta.edgeBleedPx,
         },
         { json: args.json },
       );
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
+// kiln validate-npc-pack
+// =============================================================================
+
+const validateNpcPackCommand = defineCommand({
+  meta: {
+    name: 'validate-npc-pack',
+    description:
+      'Validate an NPC character pack manifest before animated imposter baking. Read-only.',
+  },
+  args: {
+    manifest: {
+      type: 'positional',
+      description: 'Path to npc-package-manifest.json.',
+      required: true,
+    },
+    root: {
+      type: 'string',
+      description: 'Root directory used to resolve relative GLB paths. Defaults to manifest directory.',
+    },
+    'no-files': {
+      type: 'boolean',
+      description: 'Skip file existence and GLB inspection checks.',
+      default: false,
+    },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const manifestPath = resolve(args.manifest);
+      const raw = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+      const rootDir = args.root ? resolve(args.root) : dirname(manifestPath);
+      const skipFiles =
+        args['no-files'] === true || args.noFiles === true || args.files === false;
+      const checkFiles = !skipFiles;
+      const result = await kiln.validateNpcCharacterPack(raw, {
+        rootDir,
+        checkFiles,
+        inspectGlbs: checkFiles,
+      });
+
+      if (args.json) {
+        printResult(
+          {
+            manifestPath,
+            root: rootDir,
+            ...result,
+          },
+          { json: true },
+        );
+      } else {
+        const lines = [
+          `ok:       ${result.ok}`,
+          `manifest: ${manifestPath}`,
+          `root:     ${rootDir}`,
+          `errors:   ${result.blockers.length}`,
+          `warnings: ${result.warnings.length}`,
+        ];
+        for (const issue of result.blockers) {
+          lines.push(`  [error] ${issue.code}: ${issue.message}`);
+          if (issue.fixHint) lines.push(`          hint: ${issue.fixHint}`);
+        }
+        for (const issue of result.warnings) {
+          lines.push(`  [warn]  ${issue.code}: ${issue.message}`);
+        }
+        printResult(lines.join('\n'), { json: false });
+      }
+
+      if (!result.ok) process.exit(1);
+    } catch (err) {
+      printError(err);
+    }
+  },
+});
+
+// =============================================================================
+// kiln validate-animated-imposter
+// =============================================================================
+
+const validateAnimatedImposterCommand = defineCommand({
+  meta: {
+    name: 'validate-animated-imposter',
+    description:
+      'Validate an animated imposter v2 sidecar JSON. Read-only.',
+  },
+  args: {
+    sidecar: {
+      type: 'positional',
+      description: 'Path to the animated imposter sidecar JSON.',
+      required: true,
+    },
+    json: { type: 'boolean', default: false },
+  },
+  async run({ args }) {
+    try {
+      const sidecarPath = resolve(args.sidecar);
+      const raw = JSON.parse(readFileSync(sidecarPath, 'utf-8'));
+      const parsed = kiln.AnimatedImposterMetaSchema.safeParse(raw);
+
+      const result = parsed.success
+        ? {
+            ok: true,
+            sidecar: sidecarPath,
+            meta: parsed.data,
+            issues: [],
+          }
+        : {
+            ok: false,
+            sidecar: sidecarPath,
+            meta: null,
+            issues: parsed.error.issues.map((issue) => ({
+              path: issue.path.join('.'),
+              message: issue.message,
+            })),
+          };
+
+      if (args.json) {
+        printResult(result, { json: true });
+      } else {
+        const lines = [
+          `ok:      ${result.ok}`,
+          `sidecar: ${sidecarPath}`,
+          `issues:  ${result.issues.length}`,
+        ];
+        for (const issue of result.issues) {
+          lines.push(`  [error] ${issue.path || '(root)'}: ${issue.message}`);
+        }
+        printResult(lines.join('\n'), { json: false });
+      }
+
+      if (!result.ok) process.exit(1);
     } catch (err) {
       printError(err);
     }
@@ -720,6 +875,8 @@ export const kilnCommand = defineCommand({
     inspect: inspectCommand,
     refactor: refactorCommand,
     'bake-imposter': bakeImposterCommand,
+    'validate-npc-pack': validateNpcPackCommand,
+    'validate-animated-imposter': validateAnimatedImposterCommand,
     lod: lodCommand,
     'pack-atlas': packAtlasCommand,
     'ingest-fbx': ingestFbxCommand,

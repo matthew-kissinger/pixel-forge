@@ -1,5 +1,5 @@
 /**
- * FAL providers — texture generation + background removal.
+ * FAL providers — texture generation, background removal, and text-to-3D.
  *
  * Wraps `@fal-ai/client@^1.9.5`. `fal.subscribe()` returns `{ data, requestId }`
  * — every call site destructures `.data`.
@@ -18,6 +18,8 @@
  * - `createFalBriaBgRemovalProvider()` — Bria RMBG 2.0 fallback
  *   (`fal-ai/bria/background/remove`). Licensed-training-data, enterprise-safe,
  *   and cheaper than BiRefNet. Use when BiRefNet is rate-limited.
+ * - `createFalTextTo3dProvider()` — Meshy text-to-3D
+ *   (`fal-ai/meshy/text-to-3d`) for the existing server model route.
  *
  * Error translation follows the core taxonomy:
  * - 429 / "quota" / "rate limit" → {@link ProviderRateLimited}
@@ -29,21 +31,31 @@
 import { fal } from '@fal-ai/client';
 import sharp from 'sharp';
 
-import { capabilitiesFor } from '../capabilities';
+import { capabilitiesForKind } from '../capabilities';
 import {
   ProviderAuthFailed,
   ProviderCapabilityMismatch,
   ProviderNetworkError,
   ProviderRateLimited,
   ProviderTimeout,
+  SchemaValidationFailed,
 } from '../errors';
 import type {
   BgRemovalInput,
   BgRemovalOutput,
+  TextTo3DGenerateInput,
+  TextTo3DGenerateOutput,
   TextureGenerateInput,
   TextureGenerateOutput,
 } from '../schemas/image';
-import type { BgRemovalProvider, TextureProvider } from './types';
+import { TextTo3DGenerateInputSchema, TextTo3DGenerateOutputSchema } from '../schemas/image';
+import type {
+  BgRemovalProvider,
+  TextTo3DGenerateOptions,
+  TextTo3DProvider,
+  TextTo3DQueueUpdate,
+  TextureProvider,
+} from './types';
 
 // =============================================================================
 // Shared
@@ -54,6 +66,7 @@ const SEAMLESS_LORA_URL =
 
 const FLUX_TIMEOUT_MS = 60_000;
 const BG_REMOVE_TIMEOUT_MS = 30_000;
+const TEXT_TO_3D_TIMEOUT_MS = 180_000;
 const FETCH_TIMEOUT_MS = 30_000;
 
 let configured = false;
@@ -96,7 +109,7 @@ export function createFalTextureProvider(
 ): TextureProvider {
   ensureConfigured(apiKey);
 
-  const caps = capabilitiesFor('fal');
+  const caps = capabilitiesForKind('fal', 'texture');
   if (!caps) {
     throw new ProviderCapabilityMismatch({
       provider: 'fal',
@@ -244,7 +257,7 @@ export function createFalBgRemovalProvider(
 ): BgRemovalProvider {
   ensureConfigured(apiKey);
 
-  const caps = capabilitiesFor('fal');
+  const caps = capabilitiesForKind('fal', 'bg-removal');
   if (!caps) {
     throw new ProviderCapabilityMismatch({
       provider: 'fal',
@@ -340,7 +353,7 @@ export function createFalBriaBgRemovalProvider(
 ): BgRemovalProvider {
   ensureConfigured(apiKey);
 
-  const caps = capabilitiesFor('fal');
+  const caps = capabilitiesForKind('fal', 'bg-removal');
   if (!caps) {
     throw new ProviderCapabilityMismatch({
       provider: 'fal',
@@ -404,8 +417,151 @@ export function createFalBriaBgRemovalProvider(
 }
 
 // =============================================================================
+// Text-to-3D (Meshy)
+// =============================================================================
+
+export interface FalTextTo3dProviderOptions {
+  /** Override endpoint id. Default `fal-ai/meshy/text-to-3d`. */
+  endpoint?: string;
+  /** Per-call timeout in ms. Default 180_000. */
+  timeoutMs?: number;
+}
+
+interface FalTextTo3dResult {
+  data?: {
+    model_url?: string;
+    modelUrl?: string;
+    thumbnail_url?: string;
+    thumbnailUrl?: string;
+    status?: string;
+  };
+  requestId?: string;
+}
+
+interface FalQueueUpdate {
+  status?: string;
+  logs?: Array<{ message?: string }>;
+}
+
+export function createFalTextTo3dProvider(
+  apiKey?: string,
+  opts: FalTextTo3dProviderOptions = {},
+): TextTo3DProvider {
+  ensureConfigured(apiKey);
+
+  const caps = capabilitiesForKind('fal', 'model-3d');
+  if (!caps) {
+    throw new ProviderCapabilityMismatch({
+      provider: 'fal',
+      requirement: 'model-3d',
+      message: 'FAL text-to-3D capabilities are not registered.',
+    });
+  }
+
+  const endpoint = opts.endpoint ?? 'fal-ai/meshy/text-to-3d';
+  const timeoutMs = opts.timeoutMs ?? TEXT_TO_3D_TIMEOUT_MS;
+
+  return {
+    id: 'fal',
+    capabilities: caps,
+    async generate(
+      rawInput: TextTo3DGenerateInput,
+      callOpts: TextTo3DGenerateOptions = {},
+    ): Promise<TextTo3DGenerateOutput> {
+      const parsed = TextTo3DGenerateInputSchema.safeParse(rawInput);
+      if (!parsed.success) {
+        throw new SchemaValidationFailed({
+          message: `Invalid text-to-3D input: ${parsed.error.message}`,
+          issues: parsed.error.issues.map((issue) => ({
+            path: issue.path.filter(
+              (p): p is string | number => typeof p === 'string' || typeof p === 'number',
+            ),
+            message: issue.message,
+          })),
+        });
+      }
+
+      const input = parsed.data;
+      const start = Date.now();
+
+      try {
+        const result = await withTimeout(
+          fal.subscribe(endpoint, {
+            input: {
+              prompt: input.prompt,
+              art_style: input.artStyle,
+              negative_prompt: input.negativePrompt,
+            },
+            logs: true,
+            onQueueUpdate: (update: FalQueueUpdate) => {
+              callOpts.onQueueUpdate?.(normalizeQueueUpdate(update));
+            },
+          }) as Promise<FalTextTo3dResult>,
+          timeoutMs,
+          'fal',
+        );
+
+        const data = result.data ?? {};
+        const modelUrl = data.model_url ?? data.modelUrl;
+        if (!modelUrl) {
+          throw new ProviderNetworkError({
+            provider: 'fal',
+            message: 'Meshy text-to-3D response contained no model URL.',
+          });
+        }
+        const output = {
+          modelUrl,
+          thumbnailUrl: data.thumbnail_url ?? data.thumbnailUrl,
+          meta: {
+            latencyMs: Date.now() - start,
+            warnings: [],
+            model: endpoint,
+            ...(result.requestId ? { requestId: result.requestId } : {}),
+            ...(data.status ? { rawStatus: data.status } : {}),
+          },
+        };
+        const outputParsed = TextTo3DGenerateOutputSchema.safeParse(output);
+        if (!outputParsed.success) {
+          throw new SchemaValidationFailed({
+            message: `Invalid text-to-3D provider output: ${outputParsed.error.message}`,
+            issues: outputParsed.error.issues.map((issue) => ({
+              path: issue.path.filter(
+                (p): p is string | number => typeof p === 'string' || typeof p === 'number',
+              ),
+              message: issue.message,
+            })),
+          });
+        }
+        return outputParsed.data;
+      } catch (err) {
+        throw translateError(err);
+      }
+    },
+  };
+}
+
+// =============================================================================
 // Helpers
 // =============================================================================
+
+function normalizeQueueUpdate(update: FalQueueUpdate): TextTo3DQueueUpdate {
+  const lastLog = update.logs?.at(-1)?.message;
+  const progress = parseProgress(lastLog);
+  return {
+    ...(update.status ? { status: update.status } : {}),
+    ...(lastLog ? { message: lastLog } : {}),
+    ...(progress !== undefined ? { progress } : {}),
+    ...(update.logs ? { logs: update.logs } : {}),
+  };
+}
+
+function parseProgress(message: string | undefined): number | undefined {
+  if (!message) return undefined;
+  const match = message.match(/(\d+)%/);
+  if (!match?.[1]) return undefined;
+  const parsed = Number.parseInt(match[1], 10);
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : undefined;
+}
 
 function withTimeout<T>(
   promise: Promise<T>,
@@ -515,7 +671,8 @@ function translateError(err: unknown): Error {
     err instanceof ProviderAuthFailed ||
     err instanceof ProviderTimeout ||
     err instanceof ProviderNetworkError ||
-    err instanceof ProviderCapabilityMismatch
+    err instanceof ProviderCapabilityMismatch ||
+    err instanceof SchemaValidationFailed
   ) {
     return err;
   }

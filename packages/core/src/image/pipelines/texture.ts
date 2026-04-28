@@ -5,7 +5,7 @@
  *
  * Flow:
  *   1. `textureProvider.generate({ description, size, ... })`
- *      — FAL FLUX 2 + Seamless Texture LoRA at the requested size
+ *      — FAL FLUX 1 `fal-ai/flux-lora` + Seamless Texture LoRA at the requested size
  *        (default 256 to keep cost low; we downscale anyway).
  *   2. `pixelateNearest` to `pixelateTarget` (default 32) — chunky pixels.
  *   3. `quantizePalette` to `paletteColors` (default 24) — retro palette.
@@ -86,7 +86,7 @@ export function createTexturePipeline(
 ): Pipeline<TextureInput, TextureOutput> {
   const id = 'texture';
   const description =
-    'Generate a seamlessly tileable retro-palette terrain texture (FLUX.2 + Seamless LoRA + quantize).';
+    'Generate a seamlessly tileable retro-palette terrain texture (FAL flux-lora + Seamless LoRA + quantize).';
 
   return {
     id,

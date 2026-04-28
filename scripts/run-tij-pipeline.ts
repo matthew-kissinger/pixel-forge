@@ -85,72 +85,186 @@ const WEAPONS = [
 interface VegCombo {
   rank: number;
   species: string;
-  variants: string[];
+  variants: Array<string | { id: string; sourcePath: string }>;
   angles: 8 | 16 | 32;
   tileSize: 256 | 512 | 1024;
   axis: 'y' | 'hemi-y';
   tijTextureName: string;
+  tier: 'groundCover' | 'midLevel' | 'canopy';
+  representation: 'imposter';
+  atlasProfile: 'ground-compact' | 'mid-balanced' | 'canopy-balanced' | 'canopy-hero';
+  shaderProfile: 'hemisphere' | 'normal-lit';
+  productionStatus?: 'candidate' | 'blocked';
+  productionBlockers?: string[];
 }
 
 // Angle budgets:
-//  - Aerial gameplay (helicopters / planes looking down) demands near-zenith
-//    coverage. 8 and 16 angle bakes top out at elevation 75° / 85° so the
-//    top-of-canopy read from directly above would snap to the highest tile.
-//  - Canopy + mid-level species bake at 32 angles (8 az × 4 el) for smoother
-//    transitions during fly-by.
-//  - Ground cover (fern) stays at 16 — players rarely fly 5 m above a fern
-//    bed and the silhouette is symmetric under elevation change.
+//  - Every production vegetation type is GLB-sourced and runtime-imposter
+//    rendered. Legacy flat sprite textures are debug/fallback only.
+//  - Aerial gameplay still needs elevation-aware selection, but mid-tier laptop
+//    budgets rule out 32×1024 color+normal atlases for broad scatter.
+//  - Ground cover uses clump GLBs with compact atlases and cheaper lighting.
 const VEG_COMBOS: VegCombo[] = [
   {
     rank: 1,
+    species: 'fern',
+    tijTextureName: 'Fern',
+    variants: [
+      'fern-danni-bittman',
+      'fern-quaternius',
+      'fiddlehead-google',
+      'big-leaf-plant-reyshapes',
+    ],
+    angles: 8,
+    tileSize: 256,
+    axis: 'hemi-y',
+    tier: 'groundCover',
+    representation: 'imposter',
+    atlasProfile: 'ground-compact',
+    shaderProfile: 'hemisphere',
+  },
+  {
+    rank: 2,
+    species: 'elephantEar',
+    tijTextureName: 'ElephantEarPlants',
+    variants: [
+      'big-leaf-plant-reyshapes',
+    ],
+    angles: 8,
+    tileSize: 256,
+    axis: 'hemi-y',
+    tier: 'groundCover',
+    representation: 'imposter',
+    atlasProfile: 'ground-compact',
+    shaderProfile: 'hemisphere',
+  },
+  {
+    rank: 3,
+    species: 'elephantGrass',
+    tijTextureName: 'ElephantGrass',
+    variants: [
+      { id: 'nature-grass-clump-1', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/nature_pack_vol3/Grass1.glb' },
+      { id: 'nature-grass-clump-2', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/nature_pack_vol3/Grass2.glb' },
+    ],
+    angles: 8,
+    tileSize: 256,
+    axis: 'hemi-y',
+    tier: 'groundCover',
+    representation: 'imposter',
+    atlasProfile: 'ground-compact',
+    shaderProfile: 'hemisphere',
+    productionStatus: 'blocked',
+    productionBlockers: ['current_elephant_grass_candidates_bake_grey_low_chroma'],
+  },
+  {
+    rank: 4,
+    species: 'ricePaddyPlants',
+    tijTextureName: 'RicePaddyPlants',
+    variants: [
+      { id: 'nature-grass-paddy-clump', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/nature_pack_vol3/Grass3.glb' },
+    ],
+    angles: 8,
+    tileSize: 256,
+    axis: 'hemi-y',
+    tier: 'groundCover',
+    representation: 'imposter',
+    atlasProfile: 'ground-compact',
+    shaderProfile: 'hemisphere',
+    productionStatus: 'blocked',
+    productionBlockers: ['needs_dedicated_rice_paddy_clump_glb_source'],
+  },
+  {
+    rank: 5,
     species: 'bambooGrove',
     tijTextureName: 'BambooGrove',
     variants: [
       'bamboo-google-1', 'bamboo-google-2', 'bamboo-google-3',
       'bamboo-quaternius-1', 'bamboo-quaternius-2', 'bamboo-quaternius-3',
     ],
-    angles: 32,
-    tileSize: 512,
-    axis: 'hemi-y',
-  },
-  {
-    rank: 2,
-    species: 'coconutPalm',
-    tijTextureName: 'CoconutPalm',
-    variants: ['coconut-palm-google', 'royal-palm-google-1', 'royal-palm-google-2', 'queen-palm-google', 'date-palm-google'],
-    angles: 32,
-    tileSize: 1024,
-    axis: 'hemi-y',
-  },
-  {
-    rank: 3,
-    species: 'rubberTree',
-    tijTextureName: 'RubberTree',
-    variants: ['rubber-fig-google', 'palm-tree-jarlan-perez-1', 'palm-tree-jarlan-perez-2', 'vine-google'],
-    angles: 32,
-    tileSize: 1024,
-    axis: 'hemi-y',
-  },
-  {
-    rank: 4,
-    species: 'fern',
-    tijTextureName: 'Fern',
-    variants: ['fern-danni-bittman', 'fern-quaternius', 'fiddlehead-google', 'big-leaf-plant-reyshapes'],
     angles: 16,
     tileSize: 512,
     axis: 'hemi-y',
-  },
-  {
-    rank: 5,
-    species: 'bananaPlant',
-    tijTextureName: 'BananaPlant',
-    variants: ['banana-tree-google', 'banana-tree-sean-tarrant'],
-    angles: 32,
-    tileSize: 512,
-    axis: 'hemi-y',
+    tier: 'midLevel',
+    representation: 'imposter',
+    atlasProfile: 'mid-balanced',
+    shaderProfile: 'normal-lit',
   },
   {
     rank: 6,
+    species: 'coconut',
+    tijTextureName: 'CoconutPalm',
+    variants: [
+      'coconut-palm-google',
+      'royal-palm-google-1',
+      'royal-palm-google-2',
+      'queen-palm-google',
+      'date-palm-google',
+      { id: 'coconut-green-envpack', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/tropical-env-pack-v20/CoconutGreen.glb' },
+      { id: 'coconut-brown-envpack', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/tropical-env-pack-v20/CoconutBrown.glb' },
+    ],
+    angles: 16,
+    tileSize: 512,
+    axis: 'hemi-y',
+    tier: 'midLevel',
+    representation: 'imposter',
+    atlasProfile: 'mid-balanced',
+    shaderProfile: 'normal-lit',
+  },
+  {
+    rank: 7,
+    species: 'areca',
+    tijTextureName: 'ArecaPalmCluster',
+    variants: [
+      { id: 'palm-plant-cluster', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/free_palm_plant/PalmPlant.glb' },
+      { id: 'palm-plant-single', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/free_palm_plant/PalmPlant_Single.glb' },
+    ],
+    angles: 16,
+    tileSize: 512,
+    axis: 'hemi-y',
+    tier: 'midLevel',
+    representation: 'imposter',
+    atlasProfile: 'mid-balanced',
+    shaderProfile: 'normal-lit',
+    productionStatus: 'blocked',
+    productionBlockers: ['current_areca_candidates_bake_blank_materials'],
+  },
+  {
+    rank: 8,
+    species: 'bananaPlant',
+    tijTextureName: 'BananaPlant',
+    variants: [
+      'banana-tree-google',
+      'banana-tree-sean-tarrant',
+    ],
+    angles: 16,
+    tileSize: 512,
+    axis: 'hemi-y',
+    tier: 'midLevel',
+    representation: 'imposter',
+    atlasProfile: 'mid-balanced',
+    shaderProfile: 'normal-lit',
+  },
+  {
+    rank: 9,
+    species: 'mangrove',
+    tijTextureName: 'Mangrove',
+    variants: [
+      { id: 'tropical-shrub-01', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/tropical_shrubs/trop_shrub_01.glb' },
+      { id: 'tropical-shrub-02', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/tropical_shrubs/trop_shrub_02.glb' },
+      { id: 'tropical-shrub-03', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/tropical_shrubs/trop_shrub_03.glb' },
+    ],
+    angles: 16,
+    tileSize: 512,
+    axis: 'hemi-y',
+    tier: 'midLevel',
+    representation: 'imposter',
+    atlasProfile: 'mid-balanced',
+    shaderProfile: 'normal-lit',
+    productionStatus: 'blocked',
+    productionBlockers: ['needs_true_mangrove_root_canopy_source_glb'],
+  },
+  {
+    rank: 10,
     species: 'fanPalm',
     tijTextureName: 'FanPalmCluster',
     variants: [
@@ -158,18 +272,67 @@ const VEG_COMBOS: VegCombo[] = [
       'triangle-palm-google', 'umbrella-palm-google',
       'ivory-cane-palm-google', 'everglades-palm-google',
     ],
-    angles: 32,
-    tileSize: 1024,
+    angles: 16,
+    tileSize: 512,
     axis: 'hemi-y',
+    tier: 'midLevel',
+    representation: 'imposter',
+    atlasProfile: 'mid-balanced',
+    shaderProfile: 'normal-lit',
   },
   {
-    rank: 7,
-    species: 'dipterocarp',
-    tijTextureName: 'DipterocarpGiant',
-    variants: ['palm-quaternius-1', 'palm-quaternius-2', 'palm-quaternius-3', 'palm-quaternius-4', 'palm-quaternius-5'],
+    rank: 11,
+    species: 'giantPalm',
+    tijTextureName: 'GiantPalm',
+    variants: [
+      'palm-quaternius-1', 'palm-quaternius-2', 'palm-quaternius-3', 'palm-quaternius-4', 'palm-quaternius-5',
+    ],
     angles: 32,
-    tileSize: 1024,
+    tileSize: 512,
     axis: 'hemi-y',
+    tier: 'canopy',
+    representation: 'imposter',
+    atlasProfile: 'canopy-balanced',
+    shaderProfile: 'normal-lit',
+  },
+  {
+    rank: 12,
+    species: 'banyan',
+    tijTextureName: 'TwisterBanyan',
+    variants: [
+      { id: 'amazon-twisted-young', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/AmazonInspiredTrees/AmazonInpiredYoung1(Twisted).glb' },
+      { id: 'amazon-ancient-little', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/AmazonInspiredTrees/AmazonInspiredTree4(AncientLittle).glb' },
+    ],
+    angles: 32,
+    tileSize: 512,
+    axis: 'hemi-y',
+    tier: 'canopy',
+    representation: 'imposter',
+    atlasProfile: 'canopy-balanced',
+    shaderProfile: 'normal-lit',
+    productionStatus: 'blocked',
+    productionBlockers: ['needs_banyan_specific_canopy_and_root_review'],
+  },
+  {
+    rank: 13,
+    species: 'rubberTree',
+    tijTextureName: 'RubberTree',
+    variants: [
+      'palm-tree-jarlan-perez-1',
+      'palm-tree-jarlan-perez-2',
+      'vine-google',
+      { id: 'amazon-broadleaf-big-bark', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/AmazonInspiredTrees/AmazonInspiredTree1(BigBark).glb' },
+      { id: 'amazon-broadleaf-thick-base', sourcePath: 'C:/Users/Mattm/X/vegetation-research/assets/converted-glb/AmazonInspiredTrees/AmazonInpiredYoung2(ThickBase).glb' },
+    ],
+    angles: 32,
+    tileSize: 512,
+    axis: 'hemi-y',
+    tier: 'canopy',
+    representation: 'imposter',
+    atlasProfile: 'canopy-balanced',
+    shaderProfile: 'normal-lit',
+    productionStatus: 'blocked',
+    productionBlockers: ['needs_non_potted_rubber_tree_species_review'],
   },
 ];
 
@@ -227,6 +390,31 @@ function rel(p: string): string {
   return p.replace(REPO_ROOT + '\\', '').replace(REPO_ROOT + '/', '').split('\\').join('/');
 }
 
+function readJsonFile<T>(path: string): T | null {
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8')) as T;
+  } catch {
+    return null;
+  }
+}
+
+function isProductionVegetationImposter(meta: Record<string, unknown> | null, combo: VegCombo): boolean {
+  return Boolean(
+    meta
+      && meta.angles === combo.angles
+      && meta.tileSize === combo.tileSize
+      && meta.axis === combo.axis
+      && meta.colorLayer === 'baseColor'
+      && meta.textureColorSpace === 'srgb'
+      && meta.normalSpace === 'capture-view'
+      && Array.isArray(meta.auxLayers)
+      && meta.auxLayers.includes('normal')
+      && typeof meta.edgeBleedPx === 'number'
+      && meta.edgeBleedPx > 0,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Steps
 // ---------------------------------------------------------------------------
@@ -267,7 +455,7 @@ async function runSoldiers(manifest: GalleryManifest): Promise<void> {
             writeFileSync(lodPaths[l.level]!, l.glb);
           }
           meta.sourceTriangles = lodResult.source.triangles;
-          meta.lodTriangles = lodResult.lods.map((l) => l.triangles);
+          meta.lodTriangles = lodResult.lods.map((l: { triangles: number }) => l.triangles);
         } catch (err) {
           console.warn(`    LOD failed: ${(err as Error).message}`);
           meta.lodError = (err as Error).message;
@@ -342,6 +530,11 @@ async function runWeapons(manifest: GalleryManifest): Promise<void> {
 
 async function runVegetation(manifest: GalleryManifest): Promise<void> {
   console.log(`\n=== Vegetation (${VEG_COMBOS.length} combos) ===`);
+  const expectedSpecies = new Set(VEG_COMBOS.map((combo) => combo.species));
+  const before = manifest.entries.length;
+  manifest.entries = manifest.entries.filter((entry) => entry.kind !== 'vegetation' || expectedSpecies.has(entry.id));
+  if (manifest.entries.length !== before) saveManifest(manifest);
+
   const session = await openImposterSession();
   try {
     for (const combo of VEG_COMBOS) {
@@ -352,19 +545,46 @@ async function runVegetation(manifest: GalleryManifest): Promise<void> {
         id: string;
         src: string;
         variant: string;
+        representation: 'imposter';
+        tier: VegCombo['tier'];
+        atlasProfile: VegCombo['atlasProfile'];
+        shaderProfile: VegCombo['shaderProfile'];
         imposter?: string;
         imposterMeta?: string;
+        imposterNormal?: string;
+        model?: string;
+        lod0?: string;
+        lod1?: string;
+        lod2?: string;
+        lod3?: string;
         sourceBytes?: number;
         tris?: number;
+        sourceTriangles?: number;
+        lodTriangles?: number[];
         worldSize?: number;
+        colorLayer?: string;
+        auxLayers?: string[];
+        edgeBleedPx?: number;
+        normalSpace?: string;
+        textureColorSpace?: string;
         failed?: string;
       }> = [];
 
-      for (const variant of combo.variants) {
-        const srcPath = join(VEG_ROOT, variant, 'model.glb');
+      for (const variantDef of combo.variants) {
+        const variant = typeof variantDef === 'string' ? variantDef : variantDef.id;
+        const srcPath = typeof variantDef === 'string' ? join(VEG_ROOT, variantDef, 'model.glb') : variantDef.sourcePath;
         if (!existsSync(srcPath)) {
           console.warn(`  [SKIP] ${combo.species}/${variant}: source not found`);
-          variantMeta.push({ id: `${combo.species}/${variant}`, src: srcPath, variant, failed: 'source_not_found' });
+          variantMeta.push({
+            id: `${combo.species}/${variant}`,
+            src: srcPath,
+            variant,
+            representation: combo.representation,
+            tier: combo.tier,
+            atlasProfile: combo.atlasProfile,
+            shaderProfile: combo.shaderProfile,
+            failed: 'source_not_found',
+          });
           continue;
         }
         const varOutDir = join(outDir, variant);
@@ -374,27 +594,79 @@ async function runVegetation(manifest: GalleryManifest): Promise<void> {
 
         const imposterPng = join(varOutDir, 'imposter.png');
         const imposterJson = join(varOutDir, 'imposter.json');
+        const imposterNormal = join(varOutDir, 'imposter.normal.png');
+        const existingMeta = readJsonFile<Record<string, unknown>>(imposterJson);
         const recorded: (typeof variantMeta)[number] = {
           id: `${combo.species}/${variant}`, src: srcPath, variant,
-          imposter: rel(imposterPng), imposterMeta: rel(imposterJson),
+          representation: combo.representation,
+          tier: combo.tier,
+          atlasProfile: combo.atlasProfile,
+          shaderProfile: combo.shaderProfile,
+          model: rel(variantGlb), imposter: rel(imposterPng), imposterMeta: rel(imposterJson), imposterNormal: rel(imposterNormal),
         };
-        if (!existsSync(imposterPng) || !existsSync(imposterJson)) {
+        const lodPaths = [0, 1, 2, 3].map((n) => join(varOutDir, `lod${n}.glb`));
+        if (!lodPaths.every(existsSync)) {
+          try {
+            console.log(`  ${combo.species}/${variant} -> LOD chain`);
+            const lodResult = await generateLODChain(srcPath, {
+              ratios: [1.0, 0.5, 0.25, 0.1],
+            });
+            for (const l of lodResult.lods) {
+              writeFileSync(lodPaths[l.level]!, l.glb);
+            }
+            recorded.sourceTriangles = lodResult.source.triangles;
+            recorded.lodTriangles = lodResult.lods.map((l: { triangles: number }) => l.triangles);
+          } catch (err) {
+            console.warn(`    LOD failed: ${(err as Error).message}`);
+          }
+        }
+        lodPaths.forEach((p, i) => {
+          if (existsSync(p)) recorded[`lod${i}` as 'lod0' | 'lod1' | 'lod2' | 'lod3'] = rel(p);
+        });
+        if (!existsSync(imposterPng) || !existsSync(imposterJson) || !existsSync(imposterNormal) || !isProductionVegetationImposter(existingMeta, combo)) {
           try {
             console.log(`  ${combo.species}/${variant} -> imposter`);
             const r = await session.bake(srcPath, {
               angles: combo.angles, axis: combo.axis, tileSize: combo.tileSize,
               bgColor: 'transparent', sourcePath: srcPath,
+              colorLayer: 'baseColor', auxLayers: ['normal'], edgeBleedPx: 2,
             });
             writeFileSync(imposterPng, r.atlas);
+            if (r.aux.normal) writeFileSync(imposterNormal, r.aux.normal);
             writeFileSync(imposterJson, JSON.stringify(r.meta, null, 2), 'utf-8');
             recorded.sourceBytes = r.meta.source.bytes;
             recorded.tris = r.meta.source.tris;
             recorded.worldSize = r.meta.worldSize;
+            recorded.colorLayer = r.meta.colorLayer;
+            recorded.auxLayers = r.meta.auxLayers;
+            recorded.edgeBleedPx = r.meta.edgeBleedPx;
+            recorded.normalSpace = r.meta.normalSpace;
+            recorded.textureColorSpace = r.meta.textureColorSpace;
           } catch (err) {
             console.warn(`    Imposter failed: ${(err as Error).message}`);
             recorded.failed = (err as Error).message;
           }
         }
+        const finalMeta = readJsonFile<{
+          source?: { bytes?: number; tris?: number };
+          worldSize?: number;
+          colorLayer?: string;
+          auxLayers?: string[];
+          edgeBleedPx?: number;
+          normalSpace?: string;
+          textureColorSpace?: string;
+        }>(imposterJson);
+        if (finalMeta) {
+          recorded.sourceBytes ??= finalMeta.source?.bytes;
+          recorded.tris ??= finalMeta.source?.tris;
+          recorded.worldSize ??= finalMeta.worldSize;
+          recorded.colorLayer ??= finalMeta.colorLayer;
+          recorded.auxLayers ??= finalMeta.auxLayers;
+          recorded.edgeBleedPx ??= finalMeta.edgeBleedPx;
+          recorded.normalSpace ??= finalMeta.normalSpace;
+          recorded.textureColorSpace ??= finalMeta.textureColorSpace;
+        }
+        if (!existsSync(imposterNormal)) delete recorded.imposterNormal;
         variantMeta.push(recorded);
       }
 
@@ -403,6 +675,12 @@ async function runVegetation(manifest: GalleryManifest): Promise<void> {
         paths: {},
         meta: {
           tijTextureName: combo.tijTextureName,
+          representation: combo.representation,
+          tier: combo.tier,
+          atlasProfile: combo.atlasProfile,
+          shaderProfile: combo.shaderProfile,
+          productionStatus: combo.productionStatus ?? 'candidate',
+          productionBlockers: combo.productionBlockers ?? [],
           angles: combo.angles,
           tileSize: combo.tileSize,
           axis: combo.axis,

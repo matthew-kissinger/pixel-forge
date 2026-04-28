@@ -9,6 +9,10 @@
  * `live.test.ts` and are gated on `CLI_LIVE=1` — skipped by default.
  */
 
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { describe, expect, test } from 'bun:test';
 
 import { genCommand, readBooleanOption, readOption } from '../commands/gen';
@@ -17,6 +21,137 @@ import { providersCommand } from '../commands/providers';
 import { kilnCommand } from '../commands/kiln';
 import { pickProviderForLocal } from '../routing';
 import { parseCsvList } from '../output';
+
+function makeAnimatedSidecar(): unknown {
+  return {
+    version: 2,
+    kind: 'animated-octahedral-imposter',
+    source: {
+      path: 'characters/nva.glb',
+      bytes: 4200000,
+      tris: 12000,
+      skinned: true,
+      animationClips: ['Armature|Idle'],
+    },
+    bbox: {
+      min: [-0.5, 0, -0.4],
+      max: [0.5, 1.8, 0.4],
+      worldSize: 1.8,
+      yOffset: 0.9,
+    },
+    projection: 'orthographic',
+    view: {
+      layout: 'octahedral',
+      directionEncoding: 'octahedral',
+      grid: { x: 6, y: 6, count: 36 },
+      tileSize: 96,
+      framesPerClip: 8,
+    },
+    clips: [
+      {
+        target: 'idle',
+        resolved: 'Idle',
+        rawName: 'Armature|Idle',
+        matchedBy: 'exact',
+        frameCount: 8,
+        durationSec: 1,
+      },
+    ],
+    textures: {
+      layout: 'array',
+      color: {
+        uri: 'nva-albedo.ktx2',
+        format: 'r8-palette-index',
+        width: 576,
+        height: 576,
+        layers: 8,
+        bytes: 2654208,
+        colorSpace: 'srgb',
+      },
+      palette: {
+        uri: 'nva-palette.png',
+        width: 128,
+        rows: 1,
+        bytes: 512,
+      },
+    },
+    runtime: {
+      renderer: 'webgl2',
+      primitive: 'instanced-quad',
+      material: 'ShaderMaterial',
+      textureMode: 'data-array-texture',
+      attributes: ['frameOffset', 'clip', 'variant', 'yaw', 'paletteRow'],
+    },
+    storage: {
+      colorBytes: 2654208,
+      paletteBytes: 512,
+      totalRawBytes: 2654720,
+      envelopeBytes: 31457280,
+      fitsEnvelope: true,
+    },
+    validation: { warnings: [] },
+  };
+}
+
+function makeNpcPackManifest(): unknown {
+  const clips = [
+    ['idle', ['idle']],
+    ['patrol_walk', ['patrolling']],
+    ['traverse_run', ['seeking_cover']],
+    ['walk_fight_forward', ['engaging', 'advancing']],
+    ['death_fall_back', ['dead']],
+  ] as const;
+
+  return {
+    id: 'test-pack',
+    createdFrom: { base: 'test' },
+    policy: {
+      promoteToWarAssets: false,
+      recoil: 'Runtime procedural.',
+      excludedClips: [{ id: 'walk_forward_while_shooting', reason: 'Rejected in review.' }],
+    },
+    socketContract: {
+      characterForward: '+Z',
+      weaponForward: '+X',
+      rightHandBone: 'RightHand',
+      leftHandBone: 'LeftHand',
+      runtimeNotes: ['Attach weapon at runtime.'],
+    },
+    factions: {
+      nva: { label: 'NVA regular', headgear: 'pith-cap', primaryWeapon: 'ak47' },
+    },
+    clips: clips.map(([id, states]) => ({
+      id,
+      label: id,
+      tijStates: states,
+      status: 'candidate',
+      note: 'Test clip.',
+    })),
+    outputs: clips.map(([id, states]) => ({
+      faction: 'nva',
+      clip: id,
+      label: `nva ${id}`,
+      path: `tmp/${id}.glb`,
+      bytes: 1000,
+      tijStates: states,
+      status: 'candidate',
+      primaryWeapon: 'ak47',
+    })),
+  };
+}
+
+async function runCli(args: string[]): Promise<{ exitCode: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn(['bun', 'src/index.ts', ...args], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { exitCode, stdout, stderr };
+}
 
 describe('command tree shape', () => {
   test('gen has all 5 subcommands', async () => {
@@ -38,7 +173,7 @@ describe('command tree shape', () => {
     expect(Object.keys(subs!).sort()).toEqual(['list', 'pick']);
   });
 
-  test('kiln has 10 subcommands', async () => {
+  test('kiln has 12 subcommands', async () => {
     const subs = await kilnCommand.subCommands;
     expect(Object.keys(subs!).sort()).toEqual(
       [
@@ -51,6 +186,8 @@ describe('command tree shape', () => {
         'pack-atlas',
         'refactor',
         'retex',
+        'validate-animated-imposter',
+        'validate-npc-pack',
         'validate',
       ].sort(),
     );
@@ -86,10 +223,10 @@ describe('routing helper', () => {
     expect(result.model).toBe('gpt-image-2');
   });
 
-  test('texture → fal flux-2/lora', () => {
+  test('texture → fal flux-lora', () => {
     const result = pickProviderForLocal({ kind: 'texture' });
     expect(result.provider).toBe('fal');
-    expect(result.model).toBe('fal-ai/flux-2/lora');
+    expect(result.model).toBe('fal-ai/flux-lora');
   });
 
   test('code-gen → anthropic opus 4.7 by default', () => {
@@ -119,7 +256,13 @@ describe('routing helper', () => {
   test('bg-removal → fal birefnet', () => {
     const result = pickProviderForLocal({ kind: 'bg-removal' });
     expect(result.provider).toBe('fal');
-    expect(result.model).toBe('fal-ai/birefnet');
+    expect(result.model).toBe('fal-ai/birefnet/v2');
+  });
+
+  test('model-3d → fal meshy text-to-3d', () => {
+    const result = pickProviderForLocal({ kind: 'model-3d' });
+    expect(result.provider).toBe('fal');
+    expect(result.model).toBe('fal-ai/meshy/text-to-3d');
   });
 });
 
@@ -171,5 +314,58 @@ describe('CLI option aliases', () => {
         'no-animation',
       ),
     ).toBe(true);
+  });
+});
+
+describe('validator subcommands', () => {
+  test('validate-animated-imposter reads a local sidecar and emits JSON', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pf-cli-imposter-'));
+    const sidecarPath = join(dir, 'nva.sidecar.json');
+    writeFileSync(sidecarPath, JSON.stringify(makeAnimatedSidecar()), 'utf-8');
+
+    const result = await runCli([
+      'kiln',
+      'validate-animated-imposter',
+      sidecarPath,
+      '--json',
+    ]);
+    expect(result.stderr).toBe('');
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout) as {
+      ok: boolean;
+      sidecar: string;
+      issues: unknown[];
+    };
+    expect(parsed.ok).toBe(true);
+    expect(parsed.sidecar).toBe(sidecarPath);
+    expect(parsed.issues).toEqual([]);
+  });
+
+  test('validate-npc-pack reads a local manifest and emits JSON', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pf-cli-npc-pack-'));
+    const manifestPath = join(dir, 'npc-package-manifest.json');
+    writeFileSync(manifestPath, JSON.stringify(makeNpcPackManifest()), 'utf-8');
+
+    const result = await runCli([
+      'kiln',
+      'validate-npc-pack',
+      manifestPath,
+      '--root',
+      dir,
+      '--no-files',
+      '--json',
+    ]);
+    expect(result.stderr).toBe('');
+    expect(result.exitCode).toBe(0);
+    const parsed = JSON.parse(result.stdout) as {
+      ok: boolean;
+      manifestPath: string;
+      root: string;
+      blockers: unknown[];
+    };
+    expect(parsed.ok).toBe(true);
+    expect(parsed.manifestPath).toBe(manifestPath);
+    expect(parsed.root).toBe(dir);
+    expect(parsed.blockers).toEqual([]);
   });
 });

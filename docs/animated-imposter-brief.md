@@ -1,6 +1,6 @@
 # Animated-imposter architecture - research brief
 
-Status: ANSWERED 2026-04-24 - see [animated-imposter-design.md](animated-imposter-design.md), [animated-imposter-worklog.md](animated-imposter-worklog.md), and [animated-imposter-dev-cycle.md](animated-imposter-dev-cycle.md). W1 schema/validator and the first W2/W3 review bake spike now exist.
+Status: ANSWERED 2026-04-24 - see [animated-imposter-design.md](animated-imposter-design.md), [animated-imposter-worklog.md](animated-imposter-worklog.md), [animated-imposter-dev-cycle.md](animated-imposter-dev-cycle.md), and the active NPC lane in [tij-npc-asset-cycle.md](tij-npc-asset-cycle.md). W1 schema/validator and the first W2/W3 review bake spike now exist.
 Date authored: 2026-04-24.
 Parent: [tij-asset-pipeline-proposal.md](tij-asset-pipeline-proposal.md).
 

@@ -1,6 +1,6 @@
 # Dependency Upgrade Audit — April 2026
 
-_Audit date: 2026-04-21. Scope: every `package.json` in the monorepo (root + 4 packages). Purpose: catalog outdated deps, classify bump severity, call out breaking changes, and propose an upgrade sequence. **No package.json was modified.**_
+_Audit date: 2026-04-21. Scope: every `package.json` in the monorepo (root + 4 packages). Purpose: catalog outdated deps, classify bump severity, call out breaking changes, and propose an upgrade sequence. **No package.json was modified during the audit.**_
 
 Companion reference: `docs/model-catalog-2026-04-24.md` captures provider/model routing snapshot. This audit focuses on dependency upgrades.
 
@@ -14,12 +14,12 @@ Across the 5 `package.json` files (`/`, `packages/client`, `packages/server`, `p
 |---|---|---|
 | **Patch** | 5 | All safe drive-by bumps (`@xyflow/react`, `konva`, `react`, `react-dom`, `@types/react`) |
 | **Minor** | 8 | Safe with quick smoke test (`@types/three`, `three`, `zustand`, `@tailwindcss/vite`, `tailwindcss`, `@playwright/test`, `msw`, `@google/genai`, `hono`, `@anthropic-ai/claude-agent-sdk`, `tailwind-merge`, `globals`) |
-| **Major** | 15 | Needs migration plan (see §3). Biggest: Vite 7→8, Vitest 3→4, TypeScript 5.9→6.0, ESLint 9→10, jsdom 27→29, lucide-react 0→1, @vitejs/plugin-react 5→6, @vitest/coverage-v8 matches Vitest, @types/node 24→25, happy-dom (no bump), `@fal-ai/serverless-client` → `@fal-ai/client`, `@anthropic-ai/sdk` 0.71→0.90, plus "not-yet-installed" deps (`@modelcontextprotocol/sdk`, `citty`, `openai`) that need adding per `docs/next-cycle.md`. |
+| **Major** | 15 | Needs migration plan (see §3). Biggest: Vite 7→8, Vitest 3→4, TypeScript 5.9→6.0, ESLint 9→10, jsdom 27→29, lucide-react 0→1, @vitejs/plugin-react 5→6, @vitest/coverage-v8 matches Vitest, @types/node 24→25, happy-dom (no bump), completed `@fal-ai/serverless-client` → `@fal-ai/client` migration, `@anthropic-ai/sdk` 0.71→0.90, plus "not-yet-installed" deps (`@modelcontextprotocol/sdk`, `citty`, `openai`) that need adding per `docs/next-cycle.md`. |
 | **Already current** | ~13 | Radix UI, lots of small utility libs, `zod`, `@hono/zod-validator`, `@testing-library/*`, `clsx`, `class-variance-authority`, `jszip`, `sharp`, `@gltf-transform/core`, `eslint-plugin-react-refresh` |
 
 **Top 5 priority upgrades** (greatest value / lowest risk ratio):
 
-1. **`@fal-ai/serverless-client` → `@fal-ai/client`** — the old package is deprecated; blocking future endpoint-schema updates. Already documented in model audit §2.2. **Major but mandatory.**
+1. **`@fal-ai/serverless-client` → `@fal-ai/client`** — completed after this audit; active code now uses the maintained client and `{ data, requestId }` response shape.
 2. **`@anthropic-ai/sdk` 0.71 → 0.90** — covered in model audit §2.3; enables Opus 4.7 migration.
 3. **`@google/genai` 1.38 → 1.50** — covered in model audit §2.1; unlocks 14-ref-image cap + Pro image tier.
 4. **`lucide-react` 0.563 → 1.8** — a huge version jump (0.x → 1.0) but the icon set is largely additive; breaking changes are mostly icon renames and tree-shake-only imports. ~30 min to test.
@@ -118,7 +118,7 @@ Across the 5 `package.json` files (`/`, `packages/client`, `packages/server`, `p
 |---|---|---|---|---|
 | `@anthropic-ai/claude-agent-sdk` | `^0.2.50` | `0.2.116` | **minor-shaped major (0.x)** | Covered in model audit. Bump in same wave as `@anthropic-ai/sdk`. |
 | `@anthropic-ai/sdk` | `^0.71.2` | `0.90.0` | **major (0.x)** | See model audit §2.3. |
-| `@fal-ai/serverless-client` | `^0.15.0` | `0.15.0` | — (deprecated) | **Replace with `@fal-ai/client@1.9.5`.** See model audit §2.2. |
+| `@fal-ai/client` | `^1.9.5` | `1.9.5` | — | **Current FAL SDK.** Replaced deprecated `@fal-ai/serverless-client`. |
 | `@google/genai` | `^1.38.0` | `1.50.1` | minor | See model audit §2.1. |
 | `@hono/zod-validator` | `^0.7.6` | `0.7.6` | — | Current |
 | `@pixel-forge/shared` | workspace | — | — | — |
@@ -226,7 +226,7 @@ Clarification: the file has `^4.0.18` which already resolves to 4.1.5 under norm
 
 ### 6.8 `@fal-ai/serverless-client` → `@fal-ai/client`
 
-Covered in model audit §2.2. Three call sites in `packages/server/src/services/fal.ts`. `Result<T>` destructuring change.
+Completed after this audit. Server and scripts now use `@fal-ai/client`; `fal.subscribe()` results are read from `.data`.
 
 ### 6.9 `@anthropic-ai/sdk` 0.71 → 0.90 + `claude-agent-sdk` 0.2.50 → 0.2.116
 
@@ -274,7 +274,7 @@ Bump all packages classified "patch" in §2. Includes `@xyflow/react`, `konva`, 
 Isolated because it's an icon library rename risk. Grep imports, bump, smoke-test the client.
 
 **Wave D-3 — AI SDK wave (already planned)**
-Per the current provider snapshot (`docs/model-catalog-2026-04-24.md`) and implemented wiring. `@google/genai`, `@anthropic-ai/sdk`, `@anthropic-ai/claude-agent-sdk`, `@fal-ai/serverless-client` → `@fal-ai/client`. Plus new `openai` install.
+Per the current provider snapshot (`docs/model-catalog-2026-04-24.md`) and implemented wiring. `@google/genai`, `@anthropic-ai/sdk`, `@anthropic-ai/claude-agent-sdk`, the completed FAL client migration, plus new `openai` install.
 
 **Wave D-4 — Tooling refresh (2–3h)**
 TypeScript 5.9 → 6.0, ESLint 9 → 10 (+ `@eslint/js`, `globals` 16 → 17, `@types/node` 24 → 25). All touch the same "strict typecheck + lint" surface. One merged wave minimises churn.

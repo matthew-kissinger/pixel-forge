@@ -168,13 +168,14 @@ async function probeFal(): Promise<ProviderResult> {
   if (!k) return { ok: true, live: false, models: [], reason: 'no-key' };
 
   const models: ModelEntry[] = [
-    { id: 'fal-ai/flux-2/lora', kind: 'image', notes: 'FLUX 2 base + LoRA adapters (texture default)' },
+    { id: 'fal-ai/flux-lora', kind: 'image', notes: 'Current texture default while the seamless LoRA is FLUX 1 trained' },
     { id: 'fal-ai/birefnet/v2', kind: 'image', notes: 'BiRefNet v2 — matting / bg removal, variants: light, light-2k, heavy, matting, portrait, dynamic' },
+    { id: 'fal-ai/meshy/text-to-3d', kind: '3d', notes: 'Meshy text-to-3D — server /api/model compatibility path' },
     { id: 'fal-ai/bria/background/remove', kind: 'image', notes: 'Bria bg removal — fallback when BiRefNet flakes' },
     { id: 'fal-ai/recraft/v3/text-to-image', kind: 'image', notes: 'Recraft v3 — crisp illustrations, good for UI sprites' },
     { id: 'fal-ai/hunyuan3d-v3/image-to-3d', kind: '3d', notes: 'Hunyuan3D V3 — image→3D mesh' },
     { id: 'fal-ai/aura-sr', kind: 'image', notes: 'Aura SR — 4x upscale for sprite finishing' },
-    { id: 'fal-ai/flux-lora', kind: 'image', notes: 'Legacy FLUX LoRA — keep as safety net; prefer flux-2/lora' },
+    { id: 'fal-ai/flux-2/lora', kind: 'image', notes: 'Available only for experiments with a FLUX 2-compatible seamless LoRA' },
     { id: 'fal-ai/fast-sdxl', kind: 'image', notes: 'SDXL turbo — cheap liveness probe' },
   ];
 

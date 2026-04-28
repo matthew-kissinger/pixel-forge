@@ -284,7 +284,7 @@ Generate assets 1-6, 10 from prompts. Visual inspect in gallery. Iterate on fail
 
 **Tasks:**
 1. New primitive: `generateTexture(prompt, { style, refs?, seamless? })` — returns a Texture.
-2. Router: `seamless: true` → existing FLUX 2 + Seamless LoRA pipeline (from `war-assets/textures/` flow); `seamless: false` → FLUX 2 standard; PBR maps → FLUX + separate normal/roughness gen.
+2. Router: `seamless: true` → existing `fal-ai/flux-lora` + Seamless LoRA pipeline (from `war-assets/textures/` flow); `seamless: false` → standard FAL texture route; PBR maps → FLUX + separate normal/roughness gen. Do not switch the seamless path to FLUX 2 until a compatible seamless LoRA exists.
 3. Cache by prompt+params hash in `.kiln-cache/textures/` to avoid regenerating.
 4. Surface budget/cost per call for logging.
 

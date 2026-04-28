@@ -64,7 +64,7 @@ POST /api/kiln/generate
 # Returns: { "code": "// Three.js code...", "model": "sonnet" }
 ```
 
-### Texture Generation (FLUX 2 + Seamless LoRA)
+### Texture Generation (FAL flux-lora + Seamless LoRA)
 
 ```bash
 POST /api/image/generate-texture
@@ -180,11 +180,11 @@ Pick bg color based on asset colors - maximize contrast, avoid conflicts:
 - **Always** run chroma cleanup after BiRefNet
 - Aspect ratio in prompt is a size hint only - do not resize after generation
 
-### Tileable Terrain Textures (FLUX 2 pipeline - NOT Gemini)
+### Tileable Terrain Textures (FAL flux-lora pipeline - NOT Gemini)
 
 Textures use a **separate pipeline** from sprites. Do NOT use Gemini for terrain textures.
 
-**Pipeline:** FLUX 2 + Seamless Texture LoRA (FAL) -> 32px nearest-neighbor downscale -> 24 color quantize (no dither) -> black pixel cleanup -> 512px upscale
+**Pipeline:** `fal-ai/flux-lora` + Seamless Texture LoRA (FAL) -> 32px nearest-neighbor downscale -> 24 color quantize (no dither) -> black pixel cleanup -> 512px upscale. `fal-ai/flux-2/lora` is not the default until a FLUX 2-compatible seamless LoRA exists.
 
 **FLUX prompt structure:**
 ```

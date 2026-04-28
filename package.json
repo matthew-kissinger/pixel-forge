@@ -23,7 +23,9 @@
     "audit:glb": "tsx scripts/visual-audit.ts",
     "audit:review": "bun scripts/audit-review-page.ts --open",
     "animated-imposter:review": "tsx scripts/run-animated-imposter-review.ts",
-    "tij:pipeline": "tsx scripts/run-tij-pipeline.ts"
+    "tij:npc-package": "tsx scripts/package-tij-npc-assets.ts",
+    "tij:pipeline": "tsx scripts/run-tij-pipeline.ts",
+    "tij:vegetation-validate": "tsx scripts/validate-tij-vegetation-package.ts"
   },
   "devDependencies": {
     "playwright": "^1.59.1",

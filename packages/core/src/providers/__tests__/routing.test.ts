@@ -11,6 +11,7 @@ import { describe, expect, test } from 'bun:test';
 import {
   capabilities,
   capabilitiesFor,
+  capabilitiesForKind,
   pickProviderFor,
 } from '../../capabilities';
 
@@ -31,10 +32,11 @@ describe('pickProviderFor — code-gen', () => {
 });
 
 describe('pickProviderFor — texture', () => {
-  test('returns FAL flux-2/lora as the only registered model', () => {
+  test('returns FAL flux-lora as the current Seamless LoRA-compatible default', () => {
     const r = pickProviderFor({ kind: 'texture' });
     expect(r.provider).toBe('fal');
-    expect(r.model).toBe('fal-ai/flux-2/lora');
+    expect(r.model).toBe('fal-ai/flux-lora');
+    expect(r.reason).toContain('FLUX 2 compatible');
   });
 });
 
@@ -42,13 +44,21 @@ describe('pickProviderFor — bg-removal', () => {
   test('returns FAL BiRefNet as the only registered model', () => {
     const r = pickProviderFor({ kind: 'bg-removal' });
     expect(r.provider).toBe('fal');
-    expect(r.model).toBe('fal-ai/birefnet');
+    expect(r.model).toBe('fal-ai/birefnet/v2');
   });
 
   test('refs > 0 is unsupported for bg-removal', () => {
     const r = pickProviderFor({ kind: 'bg-removal', refs: 1 });
     expect(r.provider).toBe('none');
     expect(r.reason.toLowerCase()).toContain('refs');
+  });
+});
+
+describe('pickProviderFor — model-3d', () => {
+  test('returns FAL Meshy text-to-3D', () => {
+    const r = pickProviderFor({ kind: 'model-3d' });
+    expect(r.provider).toBe('fal');
+    expect(r.model).toBe('fal-ai/meshy/text-to-3d');
   });
 });
 
@@ -137,5 +147,11 @@ describe('capabilities matrix invariants', () => {
     const ids = caps!.models.map((m) => m.id);
     expect(ids).toContain('gpt-image-2');
     expect(ids).toContain('gpt-image-1.5');
+  });
+
+  test('capabilitiesForKind returns distinct FAL rows by kind', () => {
+    expect(capabilitiesForKind('fal', 'texture')?.models[0]?.id).toBe('fal-ai/flux-lora');
+    expect(capabilitiesForKind('fal', 'bg-removal')?.models[0]?.id).toBe('fal-ai/birefnet/v2');
+    expect(capabilitiesForKind('fal', 'model-3d')?.models[0]?.id).toBe('fal-ai/meshy/text-to-3d');
   });
 });

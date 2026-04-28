@@ -1,10 +1,9 @@
 /**
  * Local mirror of `@pixel-forge/core`'s `pickProviderFor()`.
  *
- * Why duplicated? Core only re-exports `capabilities()` from its public
- * index — `pickProviderFor` lives inside `capabilities.ts` but isn't on
- * the namespace. Rather than reach through internal source paths (which
- * the package's `exports` map blocks), we walk the public matrix.
+ * Kept as a small local mirror for CLI tests and backwards-compatible
+ * routing output. The core package now exports `pickProviderFor`; new CLI
+ * feature work should prefer core directly.
  *
  * The logic mirrors `packages/core/src/capabilities.ts:pickProviderFor`
  * one-for-one. Keep the two in sync; tests in this package assert routing
@@ -14,7 +13,7 @@
 import { capabilities } from '@pixel-forge/core';
 
 export type ProviderId = 'gemini' | 'openai' | 'fal' | 'anthropic';
-export type CapabilityKind = 'image' | 'texture' | 'bg-removal' | 'code-gen';
+export type CapabilityKind = 'image' | 'texture' | 'bg-removal' | 'model-3d' | 'code-gen';
 
 export interface PickProviderRequirements {
   kind: CapabilityKind;
@@ -104,7 +103,7 @@ export function pickProviderForLocal(
       return {
         provider: 'fal',
         model: model.id,
-        reason: 'Texture pipeline requires FLUX 2 + Seamless LoRA on FAL.',
+        reason: 'Texture pipeline uses FAL flux-lora until a FLUX 2 compatible Seamless LoRA exists.',
       };
     }
 
@@ -129,6 +128,26 @@ export function pickProviderForLocal(
         provider: 'fal',
         model: model.id,
         reason: 'BiRefNet is the only registered bg-removal model.',
+      };
+    }
+
+    case 'model-3d': {
+      const fal = matrix.find((p) => p.id === 'fal' && p.kind === 'model-3d');
+      const model = fal?.models.find((m) => m.default) ?? fal?.models[0];
+      if (!fal || !model) {
+        return { provider: 'none', model: 'none', reason: 'No text-to-3D provider registered.' };
+      }
+      if (req.refs && req.refs > 0) {
+        return {
+          provider: 'none',
+          model: 'none',
+          reason: 'No provider in the matrix supports text-to-3D with refs.',
+        };
+      }
+      return {
+        provider: 'fal',
+        model: model.id,
+        reason: 'Model route compatibility: FAL Meshy text-to-3D.',
       };
     }
 

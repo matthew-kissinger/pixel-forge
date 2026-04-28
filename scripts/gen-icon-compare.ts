@@ -10,7 +10,7 @@
  *   bun scripts/gen-icon-compare.ts
  */
 
-import * as fal from '@fal-ai/serverless-client';
+import { fal } from '@fal-ai/client';
 import sharp from 'sharp';
 import { existsSync, mkdirSync } from 'fs';
 
@@ -107,10 +107,10 @@ async function generateRecraftPixelArt(icon: TestIcon): Promise<void> {
         image_size: 'square',
         ...(icon.recraftColors ? { colors: icon.recraftColors } : {}),
       },
-    }) as { images?: Array<{ url: string }> };
+    }) as { data?: { images?: Array<{ url: string }> } };
 
-    if (!result.images?.[0]?.url) { console.error('    No image'); return; }
-    const resp = await fetch(result.images[0].url);
+    if (!result.data?.images?.[0]?.url) { console.error('    No image'); return; }
+    const resp = await fetch(result.data.images[0].url);
     const buf = Buffer.from(new Uint8Array(await resp.arrayBuffer()));
     await Bun.write(outPath, buf);
     console.log(`    OK: ${(buf.length / 1024).toFixed(1)}KB`);
@@ -135,10 +135,10 @@ async function generateRecraftFlat(icon: TestIcon): Promise<void> {
         style: 'vector_illustration/emotional_flat',
         image_size: 'square',
       },
-    }) as { images?: Array<{ url: string }> };
+    }) as { data?: { images?: Array<{ url: string }> } };
 
-    if (!result.images?.[0]?.url) { console.error('    No image'); return; }
-    const resp = await fetch(result.images[0].url);
+    if (!result.data?.images?.[0]?.url) { console.error('    No image'); return; }
+    const resp = await fetch(result.data.images[0].url);
     const buf = Buffer.from(new Uint8Array(await resp.arrayBuffer()));
     await Bun.write(outPath, buf);
     console.log(`    OK: ${(buf.length / 1024).toFixed(1)}KB`);

@@ -20,6 +20,8 @@ import type {
   TextureGenerateOutput,
   BgRemovalInput,
   BgRemovalOutput,
+  TextTo3DGenerateInput,
+  TextTo3DGenerateOutput,
   CodeGenInput,
   CodeGenOutput,
   CodeRefactorInput,
@@ -62,7 +64,7 @@ export interface ImageProvider {
 
 /**
  * Providers of tileable terrain texture generation. Currently FAL-only
- * (FLUX.2 + Seamless Texture LoRA).
+ * (`fal-ai/flux-lora` + Seamless Texture LoRA until a FLUX 2-compatible LoRA exists).
  */
 export interface TextureProvider {
   readonly id: 'fal';
@@ -83,6 +85,36 @@ export interface BgRemovalProvider {
   readonly capabilities: ProviderCapabilities;
 
   remove(input: BgRemovalInput): Promise<BgRemovalOutput>;
+}
+
+// =============================================================================
+// Text-to-3D model generation
+// =============================================================================
+
+export interface TextTo3DQueueUpdate {
+  status?: string;
+  message?: string;
+  progress?: number;
+  logs?: Array<{ message?: string }>;
+}
+
+export interface TextTo3DGenerateOptions {
+  onQueueUpdate?: (update: TextTo3DQueueUpdate) => void;
+}
+
+/**
+ * Providers of direct text-to-3D model generation. This is separate from
+ * Kiln code-gen: outputs are provider-hosted model URLs, not core-validated
+ * primitive source.
+ */
+export interface TextTo3DProvider {
+  readonly id: 'fal';
+  readonly capabilities: ProviderCapabilities;
+
+  generate(
+    input: TextTo3DGenerateInput,
+    opts?: TextTo3DGenerateOptions,
+  ): Promise<TextTo3DGenerateOutput>;
 }
 
 // =============================================================================
@@ -115,4 +147,5 @@ export type AnyProvider =
   | ImageProvider
   | TextureProvider
   | BgRemovalProvider
+  | TextTo3DProvider
   | CodeGenProvider;

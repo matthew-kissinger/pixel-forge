@@ -5,7 +5,7 @@
  * Playwright imposter harness is more reliable there on Windows.
  */
 
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,18 +14,54 @@ import sharp from 'sharp';
 import { kiln } from '@pixel-forge/core';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT_DIR = resolve(REPO_ROOT, 'tmp/animated-imposter-review');
-const SOURCE_GLB = resolve(
+const DEFAULT_OUT_DIR = resolve(REPO_ROOT, 'tmp/animated-imposter-review/tij-character-pack-v1/nva/walk_fight_forward');
+const DEFAULT_SOURCE_GLB = resolve(
   REPO_ROOT,
-  '../../soldier-research/downloads/polypizza/PpLF4rt4ah__Character_Soldier_-_Free_Model_By_Quaternius.glb',
+  'tmp/source-glb-selection/derived/tij-character-pack-v1/factions/nva/walk_fight_forward.glb',
 );
+const DEFAULT_WEAPON_ID = 'ak47';
+const DEFAULT_WEAPON_GLB = resolve(REPO_ROOT, 'tmp/weapon-rig-lab/weapons/ak47.glb');
+const DEFAULT_FALLBACK_RAW_CLIP = 'Armature|Walk_Fight_Forward|baselayer';
 
 const ATLAS_NAME = 'animated-albedo-packed.png';
 const META_NAME = 'animated-imposter.json';
 const FRAME_STRIP_NAME = 'animated-frame-strip.png';
+const SOURCE_COPY_NAME = 'source.glb';
+const WEAPON_COPY_NAME = 'weapon-ak47.glb';
+const CLIP_TARGETS = ['idle', 'walking', 'running', 'shoot', 'death'] as const;
+type ClipTarget = (typeof CLIP_TARGETS)[number];
+
+const AK47_ATTACHMENT = {
+  id: DEFAULT_WEAPON_ID,
+  kind: 'weapon' as const,
+  glb: DEFAULT_WEAPON_GLB,
+  sourcePath: toPortablePath(relative(REPO_ROOT, DEFAULT_WEAPON_GLB)),
+  lengthMeters: 0.9,
+  gripNames: ['Mesh_PistolGrip', 'Mesh_TriggerGuardBot', 'Mesh_Receiver'],
+  supportNames: ['Mesh_LowerHandguard', 'Mesh_UpperHandguard', 'Mesh_GasTube', 'Mesh_Barrel'],
+  muzzleNames: ['Mesh_MuzzleBrake', 'Mesh_FrontSightPost', 'Mesh_Barrel'],
+  stockNames: ['Mesh_ButtPad', 'Mesh_Stock', 'Mesh_StockComb'],
+  pitchTrimDeg: 5,
+  forwardHold: 0.11,
+  gripOffset: 0,
+  socketMode: 'shouldered-forward' as const,
+};
+
+const args = parseArgs(process.argv.slice(2));
+const SOURCE_GLB = resolveFromRepo(args.source ?? DEFAULT_SOURCE_GLB);
+const OUT_DIR = resolveFromRepo(args.outDir ?? DEFAULT_OUT_DIR);
+const clipTarget = parseClipTarget(args.clip ?? 'shoot');
+const fallbackRawName = args.fallback ?? DEFAULT_FALLBACK_RAW_CLIP;
+const viewGrid = parseGrid(args.grid ?? '7x7');
+const tileSize = parsePositiveInt(args.tileSize ?? '96', 'tile-size');
+const framesPerClip = parsePositiveInt(args.frames ?? '8', 'frames');
+const includeWeapon = args.weapon !== 'none';
 
 if (!existsSync(SOURCE_GLB)) {
   throw new Error(`Source GLB not found: ${SOURCE_GLB}`);
+}
+if (includeWeapon && !existsSync(DEFAULT_WEAPON_GLB)) {
+  throw new Error(`Weapon GLB not found: ${DEFAULT_WEAPON_GLB}`);
 }
 
 if (!OUT_DIR.startsWith(resolve(REPO_ROOT, 'tmp'))) {
@@ -34,6 +70,8 @@ if (!OUT_DIR.startsWith(resolve(REPO_ROOT, 'tmp'))) {
 
 rmSync(OUT_DIR, { recursive: true, force: true });
 mkdirSync(OUT_DIR, { recursive: true });
+copyFileSync(SOURCE_GLB, resolve(OUT_DIR, SOURCE_COPY_NAME));
+if (includeWeapon) copyFileSync(DEFAULT_WEAPON_GLB, resolve(OUT_DIR, WEAPON_COPY_NAME));
 
 const sourceRel = toPortablePath(relative(REPO_ROOT, SOURCE_GLB));
 const outRel = toPortablePath(relative(REPO_ROOT, OUT_DIR));
@@ -41,15 +79,19 @@ const outRel = toPortablePath(relative(REPO_ROOT, OUT_DIR));
 console.log('Animated imposter review bake');
 console.log(`source: ${sourceRel}`);
 console.log(`out: ${outRel}`);
+console.log(`clip: ${clipTarget}${fallbackRawName ? ` via ${fallbackRawName}` : ''}`);
+console.log(`weapon: ${includeWeapon ? DEFAULT_WEAPON_ID : 'none'}`);
 
 const bakeOptions = {
-  clipTargets: ['running'] as const,
-  viewGrid: { x: 6, y: 6 },
-  tileSize: 96,
-  framesPerClip: 8,
+  clipTargets: [clipTarget],
+  clipFallbacks: fallbackRawName ? [{ target: clipTarget, rawName: fallbackRawName }] : [],
+  viewGrid,
+  tileSize,
+  framesPerClip,
   textureLayout: 'atlas' as const,
   colorUri: ATLAS_NAME,
   sourcePath: sourceRel,
+  attachments: includeWeapon ? [AK47_ATTACHMENT] : [],
 };
 
 const first = await kiln.bakeAnimatedImposter(SOURCE_GLB, bakeOptions);
@@ -73,7 +115,26 @@ const alpha = await alphaCoverage(first.frameAtlases);
 const sidecar = kiln.AnimatedImposterMetaSchema.safeParse(first.meta);
 const summary = {
   source: sourceRel,
+  sourceGlb: SOURCE_COPY_NAME,
+  weapon: includeWeapon
+    ? {
+        id: DEFAULT_WEAPON_ID,
+        source: AK47_ATTACHMENT.sourcePath,
+        glb: WEAPON_COPY_NAME,
+        lengthMeters: AK47_ATTACHMENT.lengthMeters,
+        socketMode: AK47_ATTACHMENT.socketMode,
+        gripNames: AK47_ATTACHMENT.gripNames,
+        supportNames: AK47_ATTACHMENT.supportNames,
+        muzzleNames: AK47_ATTACHMENT.muzzleNames,
+        stockNames: AK47_ATTACHMENT.stockNames,
+        pitchTrimDeg: AK47_ATTACHMENT.pitchTrimDeg,
+        forwardHold: AK47_ATTACHMENT.forwardHold,
+        gripOffset: AK47_ATTACHMENT.gripOffset,
+      }
+    : null,
   outputDir: outRel,
+  clipTarget,
+  fallbackRawName,
   atlas: ATLAS_NAME,
   sidecar: META_NAME,
   frameStrip: FRAME_STRIP_NAME,
@@ -85,6 +146,7 @@ const summary = {
   frameAtlas: first.frameAtlas,
   viewGrid: first.meta.view.grid,
   tileSize: first.meta.view.tileSize,
+  sourceClipRawName: first.meta.clips[0]?.rawName ?? null,
   alphaCoverage: alpha,
   storage: first.meta.storage,
   warnings: first.meta.validation.warnings,
@@ -109,6 +171,50 @@ console.log(`review: ${toPortablePath(relative(REPO_ROOT, resolve(OUT_DIR, 'inde
 console.log(`frames: ${summary.frameCount}`);
 console.log(`deterministic: ${summary.deterministic}`);
 console.log(`min alpha coverage: ${alpha.min.toFixed(4)}`);
+
+function parseArgs(argv: string[]): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {};
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!;
+    if (!arg.startsWith('--')) continue;
+    const eq = arg.indexOf('=');
+    if (eq >= 0) {
+      out[toCamel(arg.slice(2, eq))] = arg.slice(eq + 1);
+    } else {
+      out[toCamel(arg.slice(2))] = argv[i + 1];
+      i++;
+    }
+  }
+  return out;
+}
+
+function toCamel(input: string): string {
+  return input.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+}
+
+function resolveFromRepo(input: string): string {
+  return resolve(REPO_ROOT, input);
+}
+
+function parseClipTarget(input: string): ClipTarget {
+  if ((CLIP_TARGETS as readonly string[]).includes(input)) return input as ClipTarget;
+  throw new Error(`Invalid --clip=${input}. Expected one of ${CLIP_TARGETS.join(', ')}.`);
+}
+
+function parseGrid(input: string): { x: number; y: number } {
+  const [xRaw, yRaw] = input.toLowerCase().split('x');
+  const x = parsePositiveInt(xRaw ?? '', 'grid x');
+  const y = parsePositiveInt(yRaw ?? '', 'grid y');
+  return { x, y };
+}
+
+function parsePositiveInt(input: string, label: string): number {
+  const value = Number(input);
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`Invalid ${label}: ${input}`);
+  }
+  return value;
+}
 
 function sha256(buf: Buffer): string {
   return createHash('sha256').update(buf).digest('hex');
@@ -164,6 +270,23 @@ async function alphaCoverage(frames: Buffer[]): Promise<{ min: number; max: numb
 
 function buildReviewHtml(summary: {
   source: string;
+  sourceGlb: string;
+  weapon: {
+    id: string;
+    source: string;
+    glb: string;
+    lengthMeters: number;
+    socketMode: string;
+    gripNames: string[];
+    supportNames: string[];
+    muzzleNames: string[];
+    stockNames: string[];
+    pitchTrimDeg: number;
+    forwardHold: number;
+    gripOffset: number;
+  } | null;
+  clipTarget: string;
+  fallbackRawName?: string;
   atlas: string;
   sidecar: string;
   frameStrip: string;
@@ -174,6 +297,7 @@ function buildReviewHtml(summary: {
   frameAtlas: { width: number; height: number; framesX: number; framesY: number };
   viewGrid: { x: number; y: number; count: number };
   tileSize: number;
+  sourceClipRawName: string | null;
   alphaCoverage: { min: number; max: number; perFrame: number[] };
   storage: { totalRawBytes: number; envelopeBytes: number; fitsEnvelope: boolean };
   warnings: unknown[];
@@ -184,6 +308,14 @@ function buildReviewHtml(summary: {
 <head>
   <meta charset="utf-8">
   <title>Animated Imposter Review</title>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.184.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.184.0/examples/jsm/"
+    }
+  }
+  </script>
   <style>
     body { margin: 24px; font-family: ui-sans-serif, system-ui, sans-serif; background: #101214; color: #e8ecef; }
     main { max-width: 1180px; margin: 0 auto; }
@@ -194,9 +326,13 @@ function buildReviewHtml(summary: {
     dd { margin: 0; overflow-wrap: anywhere; }
     .ok { color: #7bd88f; }
     .bad { color: #ff7b72; }
-    .stage { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+    .stage, .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+    figure { margin: 0; }
+    figcaption { color: #9aa7b3; font-size: 12px; margin-top: 8px; }
+    .note { margin: 14px 0 0; color: #c7d0d9; background: #15191d; border: 1px solid #2b333a; padding: 12px 14px; }
     canvas, img { max-width: 100%; background: #050607; border: 1px solid #2b333a; image-rendering: auto; }
     #scene { width: 100%; aspect-ratio: 16 / 9; }
+    #sourceScene, #imposterCompare { width: 100%; aspect-ratio: 1 / 1; }
     pre { white-space: pre-wrap; background: #181c20; padding: 16px; border: 1px solid #2b333a; overflow: auto; }
   </style>
 </head>
@@ -205,6 +341,10 @@ function buildReviewHtml(summary: {
   <h1>Animated Imposter Review</h1>
   <dl>
     <dt>Source</dt><dd>${summary.source}</dd>
+    <dt>Weapon</dt><dd>${summary.weapon ? `${summary.weapon.id} (${summary.weapon.source})` : 'none'}</dd>
+    <dt>Clip Target</dt><dd>${summary.clipTarget}</dd>
+    <dt>Source Clip</dt><dd>${summary.sourceClipRawName ?? 'unresolved'}</dd>
+    <dt>Raw Fallback</dt><dd>${summary.fallbackRawName ?? 'none'}</dd>
     <dt>Sidecar</dt><dd>${summary.sidecar}</dd>
     <dt>Frames</dt><dd>${summary.frameCount} packed as ${summary.frameAtlas.framesX}x${summary.frameAtlas.framesY}</dd>
     <dt>Deterministic</dt><dd class="${summary.deterministic ? 'ok' : 'bad'}">${summary.deterministic}</dd>
@@ -213,6 +353,19 @@ function buildReviewHtml(summary: {
     <dt>Alpha Coverage</dt><dd>${summary.alphaCoverage.min.toFixed(4)} min, ${summary.alphaCoverage.max.toFixed(4)} max</dd>
     <dt>Atlas Hash</dt><dd>${summary.atlasHash}</dd>
   </dl>
+  <p class="note">This review intentionally magnifies a ${summary.tileSize}px debug tile in the close comparison. The source panel is frame-locked to the same bake frame and weapon/arm solve. The pixelated look is expected at this proof setting; gameplay inspection should focus on the moving camera probe and the storage/readability tradeoff before increasing tile size. This proof uses a 7x7 grid so head-on reads have a centered front column without crossfading duplicate silhouettes.</p>
+
+  <h2>Source vs Impostor</h2>
+  <div class="compare">
+    <figure>
+      <canvas id="sourceScene" width="540" height="540"></canvas>
+      <figcaption>Source GLB playing the resolved source clip${summary.weapon ? ' with the review weapon attached' : ''}.</figcaption>
+    </figure>
+    <figure>
+      <canvas id="imposterCompare" width="540" height="540"></canvas>
+      <figcaption>Single ${summary.tileSize}px impostor view tile magnified from the packed atlas.</figcaption>
+    </figure>
+  </div>
 
   <h2>Moving Camera Scene Probe</h2>
   <canvas id="scene" width="960" height="540"></canvas>
@@ -234,6 +387,8 @@ const img = new Image();
 img.src = '${summary.atlas}';
 const animCanvas = document.getElementById('anim');
 const animCtx = animCanvas.getContext('2d');
+const impostorCompareCanvas = document.getElementById('imposterCompare');
+const impostorCompareCtx = impostorCompareCanvas.getContext('2d');
 const sceneCanvas = document.getElementById('scene');
 const sceneCtx = sceneCanvas.getContext('2d');
 const layerWidth = ${width};
@@ -253,6 +408,7 @@ let camera = { x: -18, y: 9.5, z: -26, targetX: 0, targetZ: 0, nextRetarget: 0 }
 function animate(now) {
   if (!img.complete) return requestAnimationFrame(animate);
   drawAnimatedFrame(now);
+  drawImpostorCompare(now);
   drawScene(now / 1000);
   requestAnimationFrame(animate);
 }
@@ -262,7 +418,23 @@ function drawAnimatedFrame(now) {
     reviewFrame = (reviewFrame + 1) % frameCount;
     lastReviewTick = now;
   }
+  window.__animatedImposterReviewFrame = reviewFrame;
   drawLayer(animCtx, reviewFrame, 0, 0, animCanvas.width, animCanvas.height);
+}
+
+function drawImpostorCompare(now) {
+  if (now - lastReviewTick > 120) return;
+  impostorCompareCtx.clearRect(0, 0, impostorCompareCanvas.width, impostorCompareCanvas.height);
+  const tile = bestTileForDirection([0, 0, 1]);
+  drawTile(
+    impostorCompareCtx,
+    reviewFrame,
+    tile,
+    impostorCompareCanvas.width * 0.2,
+    impostorCompareCanvas.height * 0.08,
+    impostorCompareCanvas.width * 0.6,
+    impostorCompareCanvas.height * 0.78,
+  );
 }
 
 function drawScene(t) {
@@ -376,7 +548,7 @@ function chooseViewTile(cameraPos, agent, mode) {
   const view = sample.vector;
   const len = Math.hypot(view.x, view.y, view.z) || 1;
   const dir = [view.x / len, view.y / len, view.z / len];
-  const candidates = mode === 'candidate' && sample.release < 0.5 ? horizonViewDirs : viewDirs;
+  const candidates = mode === 'candidate' && sample.release < 0.5 && horizonViewDirs.length ? horizonViewDirs : viewDirs;
   let best = candidates[0];
   let bestDot = -Infinity;
   for (const candidate of candidates) {
@@ -461,6 +633,21 @@ function buildViewDirs(xCount, yCount) {
   return out;
 }
 
+function bestTileForDirection(dir) {
+  const len = Math.hypot(dir[0], dir[1], dir[2]) || 1;
+  const norm = [dir[0] / len, dir[1] / len, dir[2] / len];
+  let best = viewDirs[0];
+  let bestDot = -Infinity;
+  for (const candidate of viewDirs) {
+    const dot = candidate.dir[0] * norm[0] + candidate.dir[1] * norm[1] + candidate.dir[2] * norm[2];
+    if (dot > bestDot) {
+      bestDot = dot;
+      best = candidate;
+    }
+  }
+  return best;
+}
+
 function octaDecode(u, v) {
   let x = u;
   const y = 1 - Math.abs(u) - Math.abs(v);
@@ -475,6 +662,277 @@ function octaDecode(u, v) {
 }
 
 requestAnimationFrame(animate);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const sourceCanvas = document.getElementById('sourceScene');
+const sourceRenderer = new THREE.WebGLRenderer({ canvas: sourceCanvas, antialias: true, alpha: true });
+sourceRenderer.setClearColor(0x050607, 1);
+const sourceScene = new THREE.Scene();
+const sourceCamera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+sourceCamera.position.set(0, 1.35, 4.2);
+sourceScene.add(new THREE.HemisphereLight(0xdde8d5, 0x263026, 2.2));
+const key = new THREE.DirectionalLight(0xffffff, 1.2);
+key.position.set(2.2, 3.2, 3.6);
+sourceScene.add(key);
+const loader = new GLTFLoader();
+const sourceWeaponConfig = ${JSON.stringify(summary.weapon)};
+const sourceWeaponPivot = new THREE.Group();
+sourceScene.add(sourceWeaponPivot);
+let sourceMixer = null;
+let sourceClip = null;
+let sourceClipDuration = 1;
+let sourceRoot = null;
+let sourceWeapon = null;
+let sourceBones = {};
+let sourceRootMotionBase = null;
+
+loader.load('${summary.sourceGlb}', (gltf) => {
+  sourceRoot = gltf.scene;
+  sourceScene.add(sourceRoot);
+  collectSourceBones(sourceRoot);
+  const box = new THREE.Box3().setFromObject(sourceRoot);
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  box.getCenter(center);
+  box.getSize(size);
+  sourceRoot.position.sub(center);
+  sourceRoot.position.y += size.y * 0.5;
+  sourceRoot.rotation.y = 0;
+  sourceCamera.position.set(0, Math.max(1.1, size.y * 0.72), Math.max(3.1, size.y * 2.35));
+  sourceCamera.lookAt(0, size.y * 0.52, 0);
+  const sourceClipRawName = ${JSON.stringify(summary.sourceClipRawName)};
+  const clip = gltf.animations.find((candidate) => candidate.name === sourceClipRawName) ?? gltf.animations[0];
+  if (clip) {
+    sourceClip = clip;
+    sourceClipDuration = clip.duration || 1;
+    sourceMixer = new THREE.AnimationMixer(sourceRoot);
+    const action = sourceMixer.clipAction(clip);
+    action.reset();
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.play();
+    sourceMixer.setTime(0);
+    sourceRoot.updateMatrixWorld(true);
+    sourceRootMotionBase = sourceBones.Hips ? sourceBones.Hips.position.clone() : null;
+  }
+  if (sourceWeaponConfig) {
+    loader.load(sourceWeaponConfig.glb, (weaponGltf) => {
+      sourceWeapon = weaponGltf.scene;
+      normalizeSourceWeapon(sourceWeapon, sourceWeaponConfig);
+      sourceWeaponPivot.add(sourceWeapon);
+      updateSourceWeaponSocket();
+    });
+  }
+});
+
+function renderSource() {
+  const frame = window.__animatedImposterReviewFrame || 0;
+  if (sourceMixer && sourceClip) {
+    sourceMixer.setTime((sourceClipDuration * (frame / ${summary.frameCount})) % sourceClipDuration);
+    lockSourceRootMotion();
+    sourceRoot.updateMatrixWorld(true);
+    updateSourceWeaponSocket();
+  }
+  sourceRenderer.render(sourceScene, sourceCamera);
+  requestAnimationFrame(renderSource);
+}
+requestAnimationFrame(renderSource);
+
+function collectSourceBones(root) {
+  sourceBones = {};
+  root.traverse((node) => {
+    if (node.isBone) sourceBones[node.name] = node;
+  });
+}
+
+function sourceWorldPosition(name) {
+  const bone = sourceBones[name];
+  if (!bone) return null;
+  return bone.getWorldPosition(new THREE.Vector3());
+}
+
+function findSourceNamed(root, names = []) {
+  for (const name of names) {
+    let found = null;
+    root.traverse((node) => {
+      if (!found && node.name === name) found = node;
+    });
+    if (found) return found;
+  }
+  return null;
+}
+
+function sourceCenterOfObject(root, object) {
+  if (!object) return null;
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(object);
+  if (box.isEmpty()) return null;
+  const center = box.getCenter(new THREE.Vector3());
+  return root.worldToLocal(center.clone());
+}
+
+function normalizeSourceWeapon(root, weapon) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  const long = Math.max(size.x, size.y, size.z) || 1;
+  const scale = (weapon.lengthMeters || 0.9) / long;
+  root.scale.setScalar(scale);
+  const gripObject = findSourceNamed(root, weapon.gripNames || []);
+  const supportObject = findSourceNamed(root, weapon.supportNames || []);
+  const muzzleObject = findSourceNamed(root, weapon.muzzleNames || []);
+  const stockObject = findSourceNamed(root, weapon.stockNames || []);
+  const grip = sourceCenterOfObject(root, gripObject) || new THREE.Vector3(0, 0, 0);
+  const support = sourceCenterOfObject(root, supportObject);
+  const muzzle = sourceCenterOfObject(root, muzzleObject);
+  const stock = sourceCenterOfObject(root, stockObject);
+  const muzzleDirection = muzzle ? muzzle.clone().sub(grip) : new THREE.Vector3(1, 0, 0);
+  const alignment = muzzleDirection.lengthSq() > 0.0001
+    ? new THREE.Quaternion().setFromUnitVectors(muzzleDirection.normalize(), new THREE.Vector3(1, 0, 0))
+    : new THREE.Quaternion();
+  root.quaternion.copy(alignment);
+  const transformLocal = (point) => point.clone().multiplyScalar(scale).applyQuaternion(root.quaternion);
+  const transformedGrip = transformLocal(grip);
+  root.position.copy(transformedGrip.multiplyScalar(-1));
+  root.userData.stockOffset = stock
+    ? transformLocal(stock).sub(transformLocal(grip))
+    : new THREE.Vector3(-0.28, 0.04, 0);
+  root.userData.supportOffset = support
+    ? transformLocal(support).sub(transformLocal(grip))
+    : new THREE.Vector3(0.28, 0.02, 0);
+  root.updateMatrixWorld(true);
+}
+
+function sourceRootForward() {
+  const q = sourceRoot.getWorldQuaternion(new THREE.Quaternion());
+  return new THREE.Vector3(0, 0, 1).applyQuaternion(q).normalize();
+}
+
+function sourceBodyForward() {
+  const hips = sourceBones.Hips || sourceBones.Spine || sourceRoot;
+  const q = hips.getWorldQuaternion(new THREE.Quaternion());
+  return new THREE.Vector3(0, 0, 1).applyQuaternion(q).normalize();
+}
+
+function lockSourceRootMotion() {
+  if (!sourceRootMotionBase || !sourceBones.Hips) return;
+  sourceBones.Hips.position.x = sourceRootMotionBase.x;
+  sourceBones.Hips.position.z = sourceRootMotionBase.z;
+}
+
+const sourceBoneUp = new THREE.Vector3(0, 1, 0);
+
+function setSourceBoneDirectionWorld(bone, directionWorld) {
+  if (!bone?.parent) return;
+  const direction = directionWorld.clone().normalize();
+  if (direction.lengthSq() < 0.0001) return;
+  const parentInv = bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert();
+  const targetLocal = direction.applyQuaternion(parentInv).normalize();
+  bone.quaternion.setFromUnitVectors(sourceBoneUp, targetLocal);
+  bone.updateMatrixWorld(true);
+}
+
+function solveSourceArmToTarget(side, target, axes) {
+  const upper = sourceBones[side + 'Arm'];
+  const fore = sourceBones[side + 'ForeArm'];
+  const hand = sourceBones[side + 'Hand'];
+  if (!upper || !fore || !hand || !target) return;
+
+  sourceRoot.updateMatrixWorld(true);
+  const shoulder = upper.getWorldPosition(new THREE.Vector3());
+  const elbowNow = fore.getWorldPosition(new THREE.Vector3());
+  const handNow = hand.getWorldPosition(new THREE.Vector3());
+  const upperLength = Math.max(0.001, shoulder.distanceTo(elbowNow));
+  const foreLength = Math.max(0.001, elbowNow.distanceTo(handNow));
+  const reach = Math.max(0.08, upperLength + foreLength - 0.025);
+  const targetVector = target.clone().sub(shoulder);
+  const distance = targetVector.length();
+  if (distance < 0.001) return;
+
+  const direction = targetVector.clone().normalize();
+  const clampedTarget = distance > reach
+    ? shoulder.clone().add(direction.clone().multiplyScalar(reach))
+    : target.clone();
+  const clampedDistance = Math.min(distance, reach);
+  const sideSign = side === 'Right' ? 1 : -1;
+  const pole = shoulder.clone()
+    .add(axes.cleanUp.clone().multiplyScalar(-0.24))
+    .add(axes.actorRight.clone().multiplyScalar(0.22 * sideSign))
+    .add(axes.forward.clone().multiplyScalar(0.04));
+  let planeNormal = direction.clone().cross(pole.clone().sub(shoulder)).normalize();
+  if (planeNormal.lengthSq() < 0.0001) planeNormal = axes.actorRight.clone().multiplyScalar(sideSign);
+  const bendDirection = planeNormal.clone().cross(direction).normalize();
+  const along = (upperLength * upperLength - foreLength * foreLength + clampedDistance * clampedDistance) / (2 * clampedDistance);
+  const height = Math.sqrt(Math.max(0, upperLength * upperLength - along * along));
+  const elbow = shoulder.clone()
+    .add(direction.clone().multiplyScalar(along))
+    .add(bendDirection.multiplyScalar(height));
+
+  setSourceBoneDirectionWorld(upper, elbow.clone().sub(shoulder));
+  sourceRoot.updateMatrixWorld(true);
+  const elbowWorld = fore.getWorldPosition(new THREE.Vector3());
+  setSourceBoneDirectionWorld(fore, clampedTarget.clone().sub(elbowWorld));
+  sourceRoot.updateMatrixWorld(true);
+}
+
+function updateSourceWeaponSocket() {
+  if (!sourceRoot || !sourceWeapon || !sourceWeaponConfig) return;
+  const right = sourceWorldPosition('RightHand');
+  const leftShoulder = sourceWorldPosition('LeftArm') || sourceWorldPosition('LeftShoulder');
+  const rightShoulder = sourceWorldPosition('RightArm') || sourceWorldPosition('RightShoulder');
+  if (!right) return;
+  const up = new THREE.Vector3(0, 1, 0);
+  const travelForward = sourceRootForward();
+  travelForward.y = 0;
+  if (travelForward.lengthSq() < 0.0001) travelForward.set(0, 0, 1);
+  travelForward.normalize();
+  const torsoForward = sourceBodyForward();
+  torsoForward.y = 0;
+  if (torsoForward.lengthSq() < 0.0001) torsoForward.set(0, 0, 1);
+  torsoForward.normalize();
+  const forward = sourceWeaponConfig.socketMode === 'shouldered-forward' ? travelForward : torsoForward;
+  forward.y = 0;
+  let actorRight = new THREE.Vector3().crossVectors(forward, up).normalize();
+  if (leftShoulder && rightShoulder) {
+    const shoulderSpan = rightShoulder.clone().sub(leftShoulder);
+    shoulderSpan.y = 0;
+    if (shoulderSpan.lengthSq() > 0.0001) {
+      shoulderSpan.normalize();
+      if (shoulderSpan.dot(actorRight) < 0) shoulderSpan.multiplyScalar(-1);
+      actorRight = shoulderSpan;
+    }
+  }
+  const cleanUp = new THREE.Vector3().crossVectors(actorRight, forward).normalize();
+  sourceWeaponPivot.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(forward, cleanUp, actorRight));
+  if (sourceWeaponConfig.pitchTrimDeg) sourceWeaponPivot.rotateZ(THREE.MathUtils.degToRad(sourceWeaponConfig.pitchTrimDeg));
+  const shoulder = rightShoulder || right;
+  const shoulderCenter = leftShoulder && rightShoulder
+    ? leftShoulder.clone().lerp(rightShoulder, 0.5)
+    : shoulder.clone().sub(actorRight.clone().multiplyScalar(0.12));
+  const shoulderPocket = shoulder.clone()
+    .lerp(shoulderCenter, 0.42)
+    .add(cleanUp.clone().multiplyScalar(-0.035));
+  const stockOffset = sourceWeapon.userData.stockOffset instanceof THREE.Vector3
+    ? sourceWeapon.userData.stockOffset.clone()
+    : new THREE.Vector3(-0.28, 0.04, 0);
+  const stockWorldOffset = stockOffset.applyQuaternion(sourceWeaponPivot.quaternion);
+  const stockAnchoredGrip = shoulderPocket.clone()
+    .add(forward.clone().multiplyScalar((sourceWeaponConfig.forwardHold ?? 0.06) + (sourceWeaponConfig.gripOffset || 0)))
+    .sub(stockWorldOffset);
+  sourceWeaponPivot.position.copy(stockAnchoredGrip).add(actorRight.clone().multiplyScalar(0.006));
+
+  const supportOffset = sourceWeapon.userData.supportOffset instanceof THREE.Vector3
+    ? sourceWeapon.userData.supportOffset.clone()
+    : new THREE.Vector3(0.28, 0.02, 0);
+  const supportTarget = sourceWeaponPivot.position.clone().add(supportOffset.applyQuaternion(sourceWeaponPivot.quaternion));
+  const gripTarget = sourceWeaponPivot.position.clone();
+  const axes = { forward, cleanUp, actorRight };
+  solveSourceArmToTarget('Right', gripTarget, axes);
+  solveSourceArmToTarget('Left', supportTarget, axes);
+  sourceRoot.updateMatrixWorld(true);
+}
 </script>
 </body>
 </html>`;

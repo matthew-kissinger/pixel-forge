@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import sharp from 'sharp';
+import { image as coreImage, isPixelForgeError, providers as coreProviders } from '@pixel-forge/core';
 import { logger } from '@pixel-forge/shared/logger';
 import { ServiceUnavailableError, BadRequestError } from '../lib/errors';
 
@@ -188,6 +189,24 @@ export interface ImageGenConfig {
   referenceImages?: string[]; // up to 6 reference images
   aspectRatio?: string;
   imageSize?: string; // '1K' | '2K' | '4K'
+}
+
+function decodeReferenceImage(ref: string): Buffer {
+  const base64Match = ref.match(/^data:image\/\w+;base64,(.+)$/);
+  return Buffer.from(base64Match?.[1] ?? ref, 'base64');
+}
+
+function dimensionsFromConfig(config?: ImageGenConfig): { width: number; height: number } | undefined {
+  if (!config?.aspectRatio) return undefined;
+  const [wRaw, hRaw] = config.aspectRatio.split(':');
+  const w = Number(wRaw);
+  const h = Number(hRaw);
+  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return undefined;
+  const longEdge = config.imageSize === '4K' ? 4096 : config.imageSize === '2K' ? 2048 : 1024;
+  if (w >= h) {
+    return { width: longEdge, height: Math.max(1, Math.round((longEdge * h) / w)) };
+  }
+  return { width: Math.max(1, Math.round((longEdge * w) / h)), height: longEdge };
 }
 
 async function generateRawImage(prompt: string, config?: ImageGenConfig): Promise<Buffer> {
@@ -386,12 +405,57 @@ export async function generateTileableBackground(
  * Simple image generation (backwards compatible)
  */
 export async function generateImage(prompt: string, config?: ImageGenConfig): Promise<GenerateImageResult> {
-  const rawBuffer = await generateRawImage(prompt, config);
-  const base64 = rawBuffer.toString('base64');
+  if (!prompt || prompt.trim().length === 0) {
+    throw new BadRequestError('Prompt cannot be empty');
+  }
+  if (prompt.length > 10000) {
+    throw new BadRequestError('Prompt exceeds maximum length of 10000 characters');
+  }
 
-  return {
-    image: `data:image/png;base64,${base64}`,
-  };
+  const refs = (config?.referenceImages ?? (config?.referenceImage ? [config.referenceImage] : []))
+    .map(decodeReferenceImage);
+
+  try {
+    const facade = coreImage.createImageGen({
+      providers: { gemini: coreProviders.createGeminiProvider() },
+      allowFallback: false,
+    });
+    const dimensions = dimensionsFromConfig(config);
+    const output = await facade.generate({
+      prompt,
+      provider: 'gemini',
+      ...(refs.length > 0 ? { refs } : {}),
+      ...(dimensions ? { dimensions } : {}),
+    });
+    return {
+      image: `data:image/png;base64,${output.image.toString('base64')}`,
+    };
+  } catch (error) {
+    if (error instanceof BadRequestError || error instanceof ServiceUnavailableError) {
+      throw error;
+    }
+    if (isPixelForgeError(error)) {
+      if (error.message.includes('Gemini returned no candidate content parts')) {
+        throw new ServiceUnavailableError('No response from Gemini');
+      }
+      const provider =
+        'provider' in error && typeof error.provider === 'string'
+          ? error.provider.toUpperCase()
+          : 'PROVIDER';
+      if (error.code === 'PROVIDER_RATE_LIMITED') {
+        throw new ServiceUnavailableError(`${provider} API rate limit exceeded`);
+      }
+      if (error.code === 'PROVIDER_AUTH_FAILED') {
+        throw new ServiceUnavailableError(`${provider} API authentication failed`);
+      }
+      throw new ServiceUnavailableError(`${provider} API error: ${error.message}`);
+    }
+    throw new ServiceUnavailableError(
+      error instanceof Error
+        ? `Image generation failed: ${error.message}`
+        : 'Unknown error occurred during image generation',
+    );
+  }
 }
 
 // ===========================================

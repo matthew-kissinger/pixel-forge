@@ -63,6 +63,15 @@
       border-radius: 4px; padding: 4px 8px; font: inherit; font-size: 12px; }
     .controls button { cursor: pointer; }
     .controls button:hover { background: var(--accent-dim); border-color: var(--accent); }
+    .review-controls { display: flex; align-items: center; gap: 12px; margin: -8px 0 16px; color: var(--fg-dim); font-size: 12px; }
+    .review-controls label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    .status-pill { border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; font-size: 11px; color: var(--fg-dim); }
+    .status-pill.blocked { color: var(--warn); border-color: var(--warn); }
+    .blocked-note { border: 1px solid rgba(255, 179, 71, 0.45); background: rgba(255, 179, 71, 0.08); color: var(--warn); padding: 8px 10px; border-radius: 6px; margin-bottom: 16px; font-size: 12px; }
+    .billboard-tools { position: absolute; top: 6px; left: 6px; right: 6px; display: flex; gap: 4px; flex-wrap: wrap; z-index: 2; }
+    .billboard-tools button, .billboard-tools select { background: rgba(14,15,18,0.82); color: var(--fg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 3px 6px; font: inherit; font-size: 10px; cursor: pointer; }
+    .billboard-tools button.active { background: var(--accent-dim); border-color: var(--accent); }
     .fail { color: var(--err); font-size: 12px; }
     .warn { color: var(--warn); font-size: 12px; }
 
@@ -116,6 +125,11 @@
         Per combo: live LOD0 of the first variant on the left, baked imposter atlas on the right with tile
         cycling. All variants in the combo share the species's TIJ textureName target.
       </p>
+      <div class="review-controls">
+        <label><input type="checkbox" id="show-blocked-vegetation"> Show blocked / failed candidates</label>
+        <span>Blocked cards are review evidence only and must not be imported into TIJ.</span>
+      </div>
+      <div id="vegetation-blocked-note" class="blocked-note"></div>
       <div id="vegetation-cards" class="cards"></div>
     </section>
 
@@ -161,6 +175,7 @@
       manifest: null,
       tab: 'soldiers',
       strictCull: false,
+      showBlockedVegetation: false,
       viewers: new Map(),  // cardKey -> { renderer, dispose }
     };
 
@@ -194,6 +209,10 @@
     document.querySelector('nav').addEventListener('click', (e) => {
       if (e.target.dataset && e.target.dataset.tab) activateTab(e.target.dataset.tab);
     });
+    document.getElementById('show-blocked-vegetation')?.addEventListener('change', (e) => {
+      state.showBlockedVegetation = Boolean(e.target.checked);
+      renderVegetation();
+    });
     const hash = window.location.hash.slice(1);
     if (hash && document.querySelector(`[data-tab="${hash}"]`)) activateTab(hash);
 
@@ -212,7 +231,7 @@
           const bbHost = el.querySelector('[data-billboard]');
           if (bbHost && !bbHost.__mounted && bbHost.dataset.atlas && bbHost.dataset.meta) {
             bbHost.__mounted = true;
-            makeImposterBillboard(bbHost, bbHost.dataset.atlas, bbHost.dataset.meta);
+            makeImposterBillboard(bbHost, bbHost.dataset.atlas, bbHost.dataset.meta, bbHost.dataset.normal);
           }
           io.unobserve(el);
         }
@@ -304,7 +323,35 @@
     // is the "does the baked atlas hold up under movement" test.
     const BILLBOARD_MAX_AZ = 16;
     const BILLBOARD_MAX_EL = 8;
-    function makeImposterBillboard(host, atlasUrl, metaUrl) {
+    function createFallbackNormalTexture() {
+      const data = new Uint8Array([128, 128, 255, 255]);
+      const tex = new THREE.DataTexture(data, 1, 1, THREE.RGBAFormat);
+      tex.colorSpace = THREE.NoColorSpace;
+      tex.needsUpdate = true;
+      return tex;
+    }
+    const LIGHTING_PRESETS = {
+      noon: {
+        label: 'Noon',
+        sun: [1.0, 0.96, 0.86],
+        sky: [0.72, 0.84, 1.0],
+        ground: [0.23, 0.28, 0.18],
+      },
+      dusk: {
+        label: 'Dusk',
+        sun: [1.0, 0.56, 0.26],
+        sky: [0.18, 0.24, 0.42],
+        ground: [0.12, 0.10, 0.06],
+      },
+      jungle: {
+        label: 'Dim jungle',
+        sun: [0.58, 0.72, 0.44],
+        sky: [0.30, 0.42, 0.32],
+        ground: [0.10, 0.14, 0.08],
+      },
+    };
+
+    function makeImposterBillboard(host, atlasUrl, metaUrl, normalUrl) {
       host.innerHTML = '';
       const spinner = document.createElement('div');
       spinner.className = 'card-sub';
@@ -333,10 +380,15 @@
         grid.position.y = -meta.worldSize * 0.5 + meta.yOffset;
         scene.add(grid);
 
-        const tex = new THREE.TextureLoader().load(atlasUrl);
+        const textureLoader = new THREE.TextureLoader();
+        const tex = textureLoader.load(atlasUrl);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.magFilter = THREE.LinearFilter;
         tex.minFilter = THREE.LinearFilter;
+        const normalTex = normalUrl ? textureLoader.load(normalUrl) : createFallbackNormalTexture();
+        normalTex.colorSpace = THREE.NoColorSpace;
+        normalTex.magFilter = THREE.LinearFilter;
+        normalTex.minFilter = THREE.LinearFilter;
 
         // Pad arrays to shader max length; shader reads only the first N based on counts.
         const azPadded = new Float32Array(BILLBOARD_MAX_AZ);
@@ -353,6 +405,12 @@
           numAzimuths: { value: meta.azimuths.length },
           numElevations: { value: meta.elevations.length },
           viewDir: { value: new THREE.Vector3(1, 0, 0) },
+          normalAtlas: { value: normalTex },
+          hasNormalAtlas: { value: Boolean(normalUrl) },
+          previewMode: { value: 1 },
+          sunColor: { value: new THREE.Color(1.0, 0.96, 0.86) },
+          skyColor: { value: new THREE.Color(0.72, 0.84, 1.0) },
+          groundColor: { value: new THREE.Color(0.23, 0.28, 0.18) },
         };
 
         const mat = new THREE.ShaderMaterial({
@@ -368,6 +426,7 @@
           fragmentShader: `
             precision highp float;
             uniform sampler2D atlas;
+            uniform sampler2D normalAtlas;
             uniform int tilesX;
             uniform int tilesY;
             uniform float azimuths[${BILLBOARD_MAX_AZ}];
@@ -375,7 +434,13 @@
             uniform int numAzimuths;
             uniform int numElevations;
             uniform vec3 viewDir;
+            uniform bool hasNormalAtlas;
+            uniform int previewMode;
+            uniform vec3 sunColor;
+            uniform vec3 skyColor;
+            uniform vec3 groundColor;
             varying vec2 vUv;
+
             void main() {
               float az = atan(viewDir.z, viewDir.x);
               if (az < 0.0) az += 6.2831853;
@@ -403,8 +468,50 @@
               vec2 uv = vec2(tileU + vUv.x * invX, tileV + vUv.y * invY);
               vec4 c = texture2D(atlas, uv);
               if (c.a < 0.1) discard;
-              gl_FragColor = c;
+
+              vec3 base = c.rgb;
+              vec4 outColor = c;
+              if (previewMode == 2) {
+                outColor = vec4(base * 1.65 + vec3(0.08), c.a);
+              } else if (previewMode == 1) {
+                vec3 n = hasNormalAtlas
+                  ? normalize(texture2D(normalAtlas, uv).xyz * 2.0 - 1.0)
+                  : vec3(0.0, 0.0, 1.0);
+                float canopy = clamp(vUv.y, 0.0, 1.0);
+                vec3 ambient = mix(groundColor, skyColor, clamp(0.25 + 0.75 * canopy, 0.0, 1.0));
+                float ndotl = max(dot(n, normalize(vec3(0.25, 0.5, 0.82))), 0.0);
+                vec3 light = max(ambient + sunColor * (0.25 + 0.55 * ndotl), vec3(0.34));
+                outColor = vec4(base * light, c.a);
+              }
+              gl_FragColor = outColor;
+              #include <colorspace_fragment>
             }`,
+        });
+
+        const tools = document.createElement('div');
+        tools.className = 'billboard-tools';
+        tools.innerHTML = `
+          <button type="button" data-mode="0">Raw Atlas</button>
+          <button type="button" data-mode="1" class="active">Runtime Lit</button>
+          <button type="button" data-mode="2">Overbright</button>
+          <select data-lighting>
+            ${Object.entries(LIGHTING_PRESETS).map(([id, p]) => `<option value="${id}">${p.label}</option>`).join('')}
+          </select>
+        `;
+        host.appendChild(tools);
+        tools.addEventListener('click', (event) => {
+          if (!(event.target instanceof Element)) return;
+          const button = event.target.closest('button[data-mode]');
+          if (!button) return;
+          uniforms.previewMode.value = Number(button.dataset.mode);
+          for (const b of tools.querySelectorAll('button[data-mode]')) b.classList.toggle('active', b === button);
+        });
+        const lightingSelect = tools.querySelector('select[data-lighting]');
+        lightingSelect?.addEventListener('change', () => {
+          const preset = LIGHTING_PRESETS[lightingSelect.value] ?? LIGHTING_PRESETS.noon;
+          uniforms.sunColor.value.setRGB(...preset.sun);
+          uniforms.skyColor.value.setRGB(...preset.sky);
+          uniforms.groundColor.value.setRGB(...preset.ground);
         });
 
         // Quad billboards to face camera each frame so it always has visible
@@ -462,6 +569,7 @@
         host.__dispose = () => {
           disposed = true;
           tex.dispose();
+          normalTex.dispose();
           mat.dispose();
           renderer.dispose();
           renderer.forceContextLoss();
@@ -530,7 +638,7 @@
             <div class="preview">
               ${s.paths.imposter ? `<img src="${ASSET_BASE}${s.paths.imposter}"><div class="caption">atlas · ${m.imposterTiles ?? ''}</div>` : '<div class="fail">no imposter</div>'}
             </div>
-            <div class="preview" ${s.paths.imposter && s.paths.imposterMeta ? `data-billboard data-atlas="${ASSET_BASE}${s.paths.imposter}" data-meta="${ASSET_BASE}${s.paths.imposterMeta}"` : ''}>
+            <div class="preview" ${s.paths.imposter && s.paths.imposterMeta ? `data-billboard data-atlas="${ASSET_BASE}${s.paths.imposter}" data-meta="${ASSET_BASE}${s.paths.imposterMeta}" ${s.paths.imposterNormal ? `data-normal="${ASSET_BASE}${s.paths.imposterNormal}"` : ''}` : ''}>
               ${s.paths.imposter && s.paths.imposterMeta ? '<div class="caption">billboard (live)</div>' : ''}
             </div>
           </div>
@@ -625,12 +733,23 @@
     }
 
     function renderVegetation() {
-      const combos = state.manifest.entries.filter(e => e.kind === 'vegetation').sort((a,b)=>a.rank-b.rank);
+      const allCombos = state.manifest.entries.filter(e => e.kind === 'vegetation').sort((a,b)=>a.rank-b.rank);
+      const blockedCombos = allCombos.filter(e => e.meta?.productionStatus === 'blocked');
+      const combos = state.showBlockedVegetation
+        ? allCombos
+        : allCombos.filter(e => e.meta?.productionStatus !== 'blocked');
       const host = document.getElementById('vegetation-cards');
+      const note = document.getElementById('vegetation-blocked-note');
+      note.textContent = blockedCombos.length
+        ? `${blockedCombos.length} blocked vegetation species hidden: ${blockedCombos.map(e => e.id).join(', ')}. Enable the checkbox to inspect failed source candidates.`
+        : '';
+      note.style.display = blockedCombos.length ? 'block' : 'none';
       host.innerHTML = '';
       for (const c of combos) {
         const variants = c.meta?.variants ?? [];
         const primary = variants.find(v => v.imposter) ?? variants[0];
+        const isBlocked = c.meta?.productionStatus === 'blocked';
+        const blockers = c.meta?.productionBlockers ?? [];
         const card = document.createElement('div');
         card.className = 'card';
         card.dataset.key = 'veg:' + c.id;
@@ -638,15 +757,16 @@
         card.dataset.lazy = '1';
         card.innerHTML = `
           <div class="card-head">
-            <div class="card-title">#${c.rank} · ${c.id}</div>
+            <div class="card-title">#${c.rank} · ${c.id} ${isBlocked ? '<span class="status-pill blocked">blocked</span>' : '<span class="status-pill">candidate</span>'}</div>
             <div class="card-sub">TIJ texture: ${c.meta?.tijTextureName ?? '—'} · ${c.meta?.angles ?? '?'} angles @ ${c.meta?.tileSize ?? '?'}px</div>
           </div>
+          ${isBlocked ? `<div class="warn">Review-only: ${blockers.join(', ')}</div>` : ''}
           <div class="card-row-3">
             <div class="preview" data-viewer></div>
             <div class="preview">
               ${primary?.imposter ? `<img src="${ASSET_BASE}${primary.imposter}"><div class="caption">atlas · ${primary.variant}</div>` : '<div class="fail">no imposter</div>'}
             </div>
-            <div class="preview" ${primary?.imposter && primary?.imposterMeta ? `data-billboard data-atlas="${ASSET_BASE}${primary.imposter}" data-meta="${ASSET_BASE}${primary.imposterMeta}"` : ''}>
+            <div class="preview" ${primary?.imposter && primary?.imposterMeta ? `data-billboard data-atlas="${ASSET_BASE}${primary.imposter}" data-meta="${ASSET_BASE}${primary.imposterMeta}" ${primary.imposterNormal ? `data-normal="${ASSET_BASE}${primary.imposterNormal}"` : ''}` : ''}>
               ${primary?.imposter && primary?.imposterMeta ? '<div class="caption">billboard (live)</div>' : ''}
             </div>
           </div>
@@ -654,6 +774,7 @@
             <dt>Variants</dt><dd>${variants.map(v => v.failed ? `<span class="fail">${v.variant}</span>` : v.variant).join(', ')}</dd>
             <dt>Axis / angles</dt><dd>${c.meta?.axis ?? '—'} · ${c.meta?.angles ?? '—'}</dd>
             <dt>Source tri</dt><dd>${variants.map(v => v.tris ?? '?').join(' / ')}</dd>
+            <dt>Lighting</dt><dd>${primary?.colorLayer ?? 'legacy beauty'} · normal ${primary?.imposterNormal ? 'yes' : 'missing'} · bleed ${primary?.edgeBleedPx ?? 0}px</dd>
           </dl>
         `;
         host.appendChild(card);

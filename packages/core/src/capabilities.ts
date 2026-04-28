@@ -17,7 +17,7 @@
 
 export type ProviderId = 'gemini' | 'openai' | 'fal' | 'anthropic';
 
-export type CapabilityKind = 'image' | 'texture' | 'bg-removal' | 'code-gen';
+export type CapabilityKind = 'image' | 'texture' | 'bg-removal' | 'model-3d' | 'code-gen';
 
 export interface ModelCapability {
   /** Provider-native model ID (e.g. `'gpt-image-2'`). */
@@ -136,15 +136,16 @@ const MATRIX: ProviderCapabilities[] = [
     kind: 'texture',
     models: [
       {
-        id: 'fal-ai/flux-2/lora',
+        id: 'fal-ai/flux-lora',
         default: true,
         supportsRefs: false,
         supportsTransparency: false,
-        // FLUX.2 LoRA: ~$0.021 per megapixel. A 256x256 generation is ~$0.0014.
+        // FLUX 1 LoRA remains the current default because the available
+        // Seamless Texture LoRA is FLUX-1-trained. FLUX 2 rejects it (422).
         pricePerImage: 0.002,
         avgLatencyMs: 25_000,
         strengths: ['seamless tiles via Seamless-Texture-LoRA', 'retro palette compatible'],
-        weaknesses: ['not for sprites', 'textures only'],
+        weaknesses: ['not for sprites', 'textures only', 'requires FLUX-2-compatible LoRA before endpoint upgrade'],
       },
     ],
   },
@@ -153,7 +154,7 @@ const MATRIX: ProviderCapabilities[] = [
     kind: 'bg-removal',
     models: [
       {
-        id: 'fal-ai/birefnet',
+        id: 'fal-ai/birefnet/v2',
         default: true,
         supportsRefs: false,
         supportsTransparency: true,
@@ -161,6 +162,22 @@ const MATRIX: ProviderCapabilities[] = [
         avgLatencyMs: 8_000,
         strengths: ['clean edges on solid-bg subjects', 'BiRefNet v2 Heavy variant cleaner on fine edges'],
         weaknesses: ['eats into solid white fills (icons)', 'destroys colored emblems'],
+      },
+    ],
+  },
+  {
+    id: 'fal',
+    kind: 'model-3d',
+    models: [
+      {
+        id: 'fal-ai/meshy/text-to-3d',
+        default: true,
+        supportsRefs: false,
+        supportsTransparency: false,
+        pricePerImage: 0.05,
+        avgLatencyMs: 120_000,
+        strengths: ['text-to-3d', 'thumbnail preview', 'server model route compatibility'],
+        weaknesses: ['review-only output', 'not Kiln contract validated', 'provider schema can drift'],
       },
     ],
   },
@@ -220,6 +237,17 @@ export function capabilitiesFor(provider: string): ProviderCapabilities | undefi
 }
 
 /**
+ * Return the capability entry for a specific provider/kind pair.
+ * Use this for multi-kind providers such as FAL.
+ */
+export function capabilitiesForKind(
+  provider: string,
+  kind: CapabilityKind,
+): ProviderCapabilities | undefined {
+  return MATRIX.find((p) => p.id === provider && p.kind === kind);
+}
+
+/**
  * Return all capability entries matching `provider` across every kind.
  * Useful for FAL which has both `texture` and `bg-removal` rows.
  */
@@ -257,8 +285,9 @@ export interface PickProviderResult {
  *
  * Routing rules (from docs/next-cycle.md W3a.5):
  * - Code-gen → anthropic opus by default, sonnet if `preferCheap`.
- * - Texture → FAL flux-2/lora (only option).
+ * - Texture → FAL flux-lora (current Seamless LoRA-compatible default).
  * - BG-removal → FAL birefnet (only option).
+ * - Model-3D → FAL Meshy text-to-3D (server route compatibility).
  * - Image + `refs > 0` → gpt-image-2 (best multi-ref fidelity).
  * - Image + `transparency: true` → gpt-image-1.5 (only model with native alpha).
  * - Image text-only → gemini flash (cheapest, bulk-friendly).
@@ -344,7 +373,7 @@ export function pickProviderFor(
       return {
         provider: 'fal',
         model: model.id,
-        reason: 'Texture pipeline requires FLUX 2 + Seamless LoRA on FAL.',
+        reason: 'Texture pipeline uses FAL flux-lora until a FLUX 2 compatible Seamless LoRA exists.',
       };
     }
 
@@ -369,6 +398,30 @@ export function pickProviderFor(
         provider: 'fal',
         model: model.id,
         reason: 'BiRefNet is the only registered bg-removal model.',
+      };
+    }
+
+    case 'model-3d': {
+      const fal = MATRIX.find((p) => p.id === 'fal' && p.kind === 'model-3d');
+      const model = fal?.models.find((m) => m.default) ?? fal?.models[0];
+      if (!fal || !model) {
+        return {
+          provider: 'none',
+          model: 'none',
+          reason: 'No text-to-3D provider registered.',
+        };
+      }
+      if (req.refs && req.refs > 0) {
+        return {
+          provider: 'none',
+          model: 'none',
+          reason: 'No provider in the matrix supports text-to-3D with refs.',
+        };
+      }
+      return {
+        provider: 'fal',
+        model: model.id,
+        reason: 'Model route compatibility: FAL Meshy text-to-3D.',
       };
     }
 

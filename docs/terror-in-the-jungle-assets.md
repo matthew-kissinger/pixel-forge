@@ -685,10 +685,10 @@ These replace the current procedural box geometry. Should look accurate from fir
 
 ---
 
-## 8. TERRAIN TEXTURES (FLUX 2 + Seamless Texture LoRA)
+## 8. TERRAIN TEXTURES (fal-ai/flux-lora + Seamless Texture LoRA)
 
 All textures are seamless/tileable. 512x512 PNG, ~24 colors, pixel art post-processed.
-Pipeline: FLUX 2 at 256px -> 32px nearest-neighbor downscale -> 24 color quantize (no dither) -> 512px upscale.
+Pipeline: `fal-ai/flux-lora` at 256px -> 32px nearest-neighbor downscale -> 24 color quantize (no dither) -> 512px upscale.
 Generated via scripts in `scripts/gen-textures-*.ts`, output to `war-assets/textures/`.
 
 ### 8.1 Dense Jungle Floor - DONE

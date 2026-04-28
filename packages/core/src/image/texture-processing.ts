@@ -1,7 +1,7 @@
 /**
  * Tileable texture post-processing.
  *
- * The texture pipeline lowers a FLUX.2 generation through three
+ * The texture pipeline lowers a FAL flux-lora generation through three
  * retro-game transformations:
  *
  *   1. `pixelateNearest`  — downscale to `target` px with nearest filter

@@ -32,25 +32,6 @@ All four wrap **one library**: [`@pixel-forge/core`](packages/core/). No duplica
 
 > **Why this is different:** the 3D path is LLM-authored, not image-to-mesh. Claude writes small TypeScript programs against a library of **48 Three.js primitives** (CSG booleans, shape-aware UV unwraps, parametric gears + blades, PBR, instancing) and they render straight to GLB via `@gltf-transform/core`. No Blender, no photogrammetry, no hallucinated meshes. See [docs/kiln-vision.md](docs/kiln-vision.md).
 
-<!-- SCREENSHOT-REFRESH: the screenshots below are from the pre-Round-3 build.
-     Plan to regenerate the full set (editor, gallery, soldiers, vegetation,
-     vehicles, textures, Kiln validation grid) once the user approves the
-     shot list. See docs/screenshot-refresh.md. -->
-
-### Gallery
-
-| | |
-|---|---|
-| **Visual editor** — node-based asset pipelines | ![Node Editor](docs/screenshots/editor-pipeline.png) |
-| **Asset gallery** — compare, inspect, export | ![Asset Gallery](docs/screenshots/gallery-weapons.png) |
-| **2D sprites** — faction soldiers, 32-bit pixel art | ![Soldiers](docs/screenshots/gallery-soldiers.png) |
-| **3D GLBs** — LLM-authored via Kiln primitives | ![Vehicles](docs/screenshots/gallery-vehicles.png) |
-| **Tileable terrain** — FLUX 2 + Seamless LoRA | ![Textures](docs/screenshots/gallery-textures.png) |
-
-> 📸 **These screenshots are due for a refresh** — current pipelines produce better results than what's shown. Tracking in [docs/screenshot-refresh.md](docs/screenshot-refresh.md). Contributions welcome.
-
----
-
 ## What's in the box
 
 | | |
@@ -130,7 +111,7 @@ Routes mirror the CLI surface. Validation via Zod, responses typed, same error t
 |---|---|---|---|
 | **2D sprites** | Gemini 3.1 Flash Image | Prompt + style preset | Transparent PNG |
 | **Background cleanup** | FAL BiRefNet + chroma key | Any image | Clean transparency |
-| **Tileable textures** | FAL FLUX 2 + Seamless LoRA | Terrain description | Seamless pixel-art tile |
+| **Tileable textures** | FAL `fal-ai/flux-lora` + Seamless LoRA | Terrain description | Seamless pixel-art tile |
 | **3D models (Kiln)** | Anthropic Claude → Three.js → GLB | Object description | GLB via primitives, no Blender |
 | **Image → 3D** | FAL Meshy (optional) | Reference image | Textured GLB |
 
@@ -285,7 +266,7 @@ bun run audit:review                          # open single-page HTML review
                         ┌───────────────────────┼──────────────────────┐
                         │                       │                      │
                    Gemini / OpenAI           FAL (BiRefNet,        Anthropic Claude
-                    (2D sprites)         FLUX 2, Meshy, LoRA)      (Kiln primitives)
+                    (2D sprites)        flux-lora, Meshy, LoRA)    (Kiln primitives)
 ```
 
 Editor runs a **dataflow execution model**: nodes define ops, edges form a DAG, the executor topo-sorts and runs independent nodes in parallel waves. 28 complex node components are lazy-loaded; Three.js (~380 KB gzip) only loads when a 3D node is used. Main bundle is **~103 KB gzip**.
@@ -300,7 +281,7 @@ Agent adapters (CLI, MCP, HTTP) are thin — they translate `(args) → core fun
 - **Next (Round 4):** `planeUnwrapSingle`, `cylinderUnwrap({ capMode })`, gallery UI surface for `primitiveUsage`, `pickProviderFor` on public namespace
 - **Later:** Wave 3C (FAL-generated textures for validation assets), Wave 3D (projection bake), Wave 4 (image-to-3D integration), Wave 2.5b gallery rearchitect
 
-Fresh screenshots + a demo video are on the list too — see [docs/screenshot-refresh.md](docs/screenshot-refresh.md).
+README showcase images are refreshed. A full browser-capture set and demo video remain on the list; see [docs/screenshot-refresh.md](docs/screenshot-refresh.md).
 
 ---
 
@@ -310,7 +291,7 @@ We welcome PRs, issues, and ideas. A few low-friction ways to help:
 
 - **New primitive** in `packages/core/src/kiln/` — add a unit test alongside, run `bun run audit:glb` on a validation GLB that uses it. See the [winding-bug lesson](docs/kiln-round-3.md#winding-bug-lesson-for-any-new-primitive) before shipping geometry.
 - **New pipeline** — add it in `@pixel-forge/core`, the CLI / MCP / API surface inherits it automatically.
-- **Screenshots + demos** — we're rebuilding the gallery. See [docs/screenshot-refresh.md](docs/screenshot-refresh.md) for the shot list.
+- **Screenshots + demos** — help keep the gallery current. See [docs/screenshot-refresh.md](docs/screenshot-refresh.md) for the remaining browser-capture shot list.
 - **Bugs / rough edges** — open an issue; include `bun run typecheck` + per-package test output so we can reproduce.
 
 ### Local development loop
@@ -349,7 +330,7 @@ More in [AGENTS.md](AGENTS.md) (the canonical agent-facing reference — archite
 | **Frontend** | React 19 · Vite 7 · React Flow 12 · Zustand · Tailwind CSS |
 | **Backend** | Hono · Bun |
 | **3D** | Three.js 0.184 · @gltf-transform/core · manifold-3d (CSG) · xatlas (UV) |
-| **AI** | Gemini 3.1 Flash Image · FAL (BiRefNet, FLUX 2, Meshy) · Claude Opus 4.7 · OpenAI |
+| **AI** | Gemini 3.1 Flash Image · FAL (BiRefNet, flux-lora, Meshy) · Claude Opus 4.7 · OpenAI |
 | **Testing** | Vitest · bun:test · Playwright |
 | **CI** | GitHub Actions |
 

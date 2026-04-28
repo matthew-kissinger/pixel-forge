@@ -1,4 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 let generateContentImpl: (args: any) => Promise<any> = async () => ({
   candidates: [
@@ -37,12 +39,24 @@ const sharpCalls = {
   resizeArgs: [] as any[],
 };
 
-mock.module('@google/genai', () => ({
+const googleGenAiStub = () => ({
   GoogleGenAI: class {
     models = { generateContent: mockGenerateContent };
     constructor(_opts: any) {}
   },
-}));
+});
+
+mock.module('@google/genai', googleGenAiStub);
+
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+mock.module(
+  path.resolve(testDir, '../../node_modules/@google/genai/dist/node/index.mjs'),
+  googleGenAiStub,
+);
+mock.module(
+  path.resolve(testDir, '../../../../node_modules/@google/genai/dist/node/index.mjs'),
+  googleGenAiStub,
+);
 
 mock.module('sharp', () => ({
   default: (input: any, options?: any) => {

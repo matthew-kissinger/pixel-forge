@@ -252,7 +252,7 @@ const textureCommand = defineCommand({
   meta: {
     name: 'texture',
     description:
-      'Generate a tileable terrain texture (FLUX 2 + Seamless LoRA + quantize).',
+      'Generate a tileable terrain texture (FAL flux-lora + Seamless LoRA + quantize).',
   },
   args: {
     description: {
@@ -288,7 +288,7 @@ const textureCommand = defineCommand({
       writeProvenance(resolve(args.out), {
         pipeline: 'texture',
         provider: result.meta.provider,
-        model: 'fal-ai/flux-2/lora',
+        model: 'fal-ai/flux-lora',
         prompt: args.description,
         latencyMs: result.meta.latencyMs,
         ...(result.meta.costUsd !== undefined

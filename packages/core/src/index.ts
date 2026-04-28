@@ -17,7 +17,21 @@ export * as kiln from './kiln';
 export * as image from './image';
 export * as providers from './providers';
 export * as schemas from './schemas';
-export { capabilities } from './capabilities';
+export {
+  capabilities,
+  capabilitiesFor,
+  capabilitiesForAll,
+  capabilitiesForKind,
+  pickProviderFor,
+} from './capabilities';
+export type {
+  CapabilityKind,
+  ModelCapability,
+  PickProviderRequirements,
+  PickProviderResult,
+  ProviderCapabilities,
+  ProviderId,
+} from './capabilities';
 export * from './errors';
 export {
   writeProvenance,

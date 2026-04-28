@@ -186,7 +186,7 @@ export function registerGenTools(server: McpServer): void {
     'pixelforge_gen_texture',
     {
       description:
-        'Generate a tileable terrain texture (FLUX 2 + Seamless LoRA + quantize).',
+        'Generate a tileable terrain texture (fal-ai/flux-lora + Seamless LoRA + quantize).',
       inputSchema: {
         description: z.string().describe('Terrain / material description.'),
         size: z

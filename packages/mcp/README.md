@@ -19,7 +19,7 @@ Or wire it into any other MCP-aware client by pointing at
 |------|---------|
 | `pixelforge_gen_sprite` | Generate a 32-bit pixel-art sprite (image gen + chroma + optional BiRefNet). |
 | `pixelforge_gen_icon` | Generate a UI icon (mono silhouette or colored emblem). |
-| `pixelforge_gen_texture` | Generate a tileable terrain texture (FLUX 2 + Seamless LoRA). |
+| `pixelforge_gen_texture` | Generate a tileable terrain texture (`fal-ai/flux-lora` + Seamless LoRA). |
 | `pixelforge_gen_glb` | Generate a GLB via Kiln (Claude codegen + headless render). |
 | `pixelforge_gen_soldier_set` | T-pose + N pose sprites for a faction. |
 | `pixelforge_kiln_inspect` | Run Kiln source headlessly: tris, bounds, named parts, animations. |

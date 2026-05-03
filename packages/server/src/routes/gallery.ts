@@ -138,6 +138,8 @@ galleryRouter.get('/file/*', async (c) => {
     '.webp': 'image/webp',
     '.glb': 'model/gltf-binary',
     '.gltf': 'model/gltf+json',
+    '.html': 'text/html; charset=UTF-8',
+    '.json': 'application/json',
   };
 
   const file = Bun.file(fullPath);
@@ -376,16 +378,65 @@ else customElements.whenDefined('model-viewer').then(function() { applyPreset('t
 
 // ---------------------------------------------------------------------------
 // Toggles
+//
+// Wireframe is rendered as a pre-baked LineSegments overlay (built from
+// EdgesGeometry once on model load) sitting alongside each solid mesh.
+// Toggling = flipping .visible on the overlay group. No material mutation,
+// no shader recompile, no force-render nudge. Pattern adapted from chili3d's
+// solid/wireframe Three.js layer split — adapted for model-viewer (which
+// hides its renderer) by using a separate Three.js ES module import for the
+// overlay classes.
 // ---------------------------------------------------------------------------
 let wireframeOn = false;
-function toggleWireframe() {
+let _edgeOverlayBuilt = false;
+let _threePromise = null;
+
+function loadThree() {
+  if (!_threePromise) {
+    _threePromise = import('https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js');
+  }
+  return _threePromise;
+}
+
+async function buildEdgeOverlay() {
+  if (_edgeOverlayBuilt) return true;
+  const scene = getScene(mv);
+  if (!scene) return false;
+  let T;
+  try { T = await loadThree(); } catch (e) { console.warn('three.js load failed:', e); return false; }
+  const mat = new T.LineBasicMaterial({ color: 0xffd54a });
+  scene.traverse(function(n) {
+    if (!n.isMesh || !n.geometry) return;
+    if (n.userData.kilnEdgeOverlayHost) return;
+    const edges = new T.EdgesGeometry(n.geometry, 30);
+    const seg = new T.LineSegments(edges, mat);
+    seg.userData.kilnEdgeOverlay = true;
+    seg.visible = false;
+    seg.renderOrder = 999;
+    n.userData.kilnEdgeOverlayHost = true;
+    n.add(seg);
+  });
+  _edgeOverlayBuilt = true;
+  return true;
+}
+
+async function toggleWireframe() {
   const scene = getScene(mv);
   if (!scene) return;
   wireframeOn = !wireframeOn;
   document.getElementById('btn-wire').classList.toggle('active', wireframeOn);
-  // Model-viewer's renderer caches a lot of state. Setting wireframe alone
-  // doesn't re-trigger a draw call, so we also flip needsUpdate and nudge
-  // the camera to force a render. Both are cheap.
+
+  const ok = await buildEdgeOverlay();
+  if (ok) {
+    scene.traverse(function(n) {
+      if (n.userData && n.userData.kilnEdgeOverlay) n.visible = wireframeOn;
+    });
+    return;
+  }
+
+  // Fallback if the Three.js dynamic import failed (e.g. CDN unreachable):
+  // mutate material.wireframe directly. Same behavior as the legacy
+  // implementation.
   scene.traverse(function(n) {
     if (n.isMesh) {
       const mats = Array.isArray(n.material) ? n.material : [n.material];
@@ -396,12 +447,6 @@ function toggleWireframe() {
       });
     }
   });
-  // Nudge model-viewer to redraw.
-  if (typeof scene.queueRender === 'function') scene.queueRender();
-  if (mv.renderer && typeof mv.renderer.render === 'function' && mv.renderer.threeRenderer) {
-    // nothing — mv auto-renders on prop change
-  }
-  // Fallback: trigger a no-op camera target update to force a frame.
   const orbit = mv.getCameraOrbit();
   mv.cameraOrbit = orbit.theta + 'rad ' + orbit.phi + 'rad ' + orbit.radius + 'm';
 }
@@ -696,17 +741,30 @@ async function loadAssets() {
 }
 
 function buildFilters() {
-  // Pin 'all' first, then 'validation' (our frozen Wave-gate benchmark set),
-  // then the rest alphabetical. Makes the 12 validation assets easy to find.
+  // Pin 'all' first, then 'vehicles' (combined virtual filter), then the
+  // vehicle subcategories, then 'validation', then the rest alphabetical.
+  // The 'vehicles' pill is virtual — it matches any category starting
+  // with 'vehicles/'.
   const raw = [...new Set(allAssets.map(a => a.category).filter(Boolean))];
-  const priority = ['all', 'validation'];
-  const rest = raw.filter(c => !priority.includes(c)).sort();
-  const cats = ['all', ...(raw.includes('validation') ? ['validation'] : []), ...rest];
+  const vehicleSubs = raw.filter(c => c && c.startsWith('vehicles/')).sort();
+  const hasVehicles = vehicleSubs.length > 0;
+  const hasValidation = raw.includes('validation');
+  const pinnedSet = new Set([...vehicleSubs, 'validation', 'vehicles']);
+  const rest = raw.filter(c => c && !pinnedSet.has(c)).sort();
+  const cats = [
+    'all',
+    ...(hasVehicles ? ['vehicles'] : []),
+    ...vehicleSubs,
+    ...(hasValidation ? ['validation'] : []),
+    ...rest,
+  ];
   const container = document.getElementById('filters');
   container.innerHTML = '';
   for (const cat of cats) {
     const btn = document.createElement('button');
-    btn.textContent = cat === 'all' ? 'All' : cat;
+    if (cat === 'all') btn.textContent = 'All';
+    else if (cat === 'vehicles') btn.textContent = 'Vehicles (all)';
+    else btn.textContent = cat;
     btn.className = cat === activeFilter ? 'active' : '';
     btn.onclick = () => { activeFilter = cat; buildFilters(); renderGrid(); };
     container.appendChild(btn);
@@ -784,12 +842,53 @@ function onGlbLoad(mv, badgeId) {
   }
 }
 
-function toggleWireframe(btnEl, mvSelector) {
+// Pre-baked LineSegments edge overlays: built once per model on first toggle,
+// flipped via .visible thereafter. See the inspector page for the same
+// pattern. Avoids material.wireframe mutation cost.
+let _galleryThreePromise = null;
+function loadGalleryThree() {
+  if (!_galleryThreePromise) {
+    _galleryThreePromise = import('https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js');
+  }
+  return _galleryThreePromise;
+}
+
+async function buildGridEdgeOverlay(mv) {
+  if (!mv || !mv.model || mv.model.userData.kilnEdgeOverlayBuilt) return true;
+  let T;
+  try { T = await loadGalleryThree(); } catch (e) { console.warn('three.js load failed:', e); return false; }
+  const mat = new T.LineBasicMaterial({ color: 0xffd54a });
+  mv.model.traverse(function(n) {
+    if (!n.isMesh || !n.geometry) return;
+    if (n.userData.kilnEdgeOverlayHost) return;
+    const edges = new T.EdgesGeometry(n.geometry, 30);
+    const seg = new T.LineSegments(edges, mat);
+    seg.userData.kilnEdgeOverlay = true;
+    seg.visible = false;
+    seg.renderOrder = 999;
+    n.userData.kilnEdgeOverlayHost = true;
+    n.add(seg);
+  });
+  mv.model.userData.kilnEdgeOverlayBuilt = true;
+  return true;
+}
+
+async function toggleWireframe(btnEl, mvSelector) {
   const mv = document.querySelector(mvSelector);
   if (!mv || !mv.model) return;
   const on = !btnEl.classList.contains('active');
   btnEl.classList.toggle('active', on);
   btnEl.textContent = on ? 'Wireframe ON' : 'Wireframe';
+
+  const ok = await buildGridEdgeOverlay(mv);
+  if (ok) {
+    mv.model.traverse(function(n) {
+      if (n.userData && n.userData.kilnEdgeOverlay) n.visible = on;
+    });
+    return;
+  }
+
+  // Fallback to legacy material.wireframe mutation.
   mv.model.traverse(function(node) {
     if (node && node.isMesh) {
       const mats = Array.isArray(node.material) ? node.material : [node.material];
@@ -822,13 +921,20 @@ function closeModal(e) {
   document.getElementById('modal-body').innerHTML = '';
 }
 
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', async function(e) {
   if (e.key === 'Escape') closeModal();
   // 'w' toggles wireframe on the fullscreen model, if any.
   if ((e.key === 'w' || e.key === 'W') && document.getElementById('modal').classList.contains('active')) {
     const mv = document.getElementById('modal-mv');
     if (!mv || !mv.model) return;
     modalWireframe = !modalWireframe;
+    const ok = await buildGridEdgeOverlay(mv);
+    if (ok) {
+      mv.model.traverse(function(n) {
+        if (n.userData && n.userData.kilnEdgeOverlay) n.visible = modalWireframe;
+      });
+      return;
+    }
     mv.model.traverse(function(node) {
       if (node && node.isMesh) {
         const mats = Array.isArray(node.material) ? node.material : [node.material];
@@ -842,7 +948,22 @@ var texId = 0;
 
 function renderGrid() {
   var container = document.getElementById('grid');
-  var filtered = activeFilter === 'all' ? allAssets : allAssets.filter(function(a) { return a.category === activeFilter; });
+  var filtered;
+  if (activeFilter === 'all') {
+    filtered = allAssets;
+  } else if (activeFilter === 'vehicles') {
+    // Virtual category: match any subcategory starting with 'vehicles/',
+    // but exclude underscore-prefixed siblings (e.g. '_bonus-aircraft')
+    // so the in-game review fleet stays clean. Bonus content is reachable
+    // via its own pinned pill.
+    filtered = allAssets.filter(function(a) {
+      if (!a.category || a.category.indexOf('vehicles/') !== 0) return false;
+      var sub = a.category.slice('vehicles/'.length);
+      return sub.length > 0 && sub.charAt(0) !== '_';
+    });
+  } else {
+    filtered = allAssets.filter(function(a) { return a.category === activeFilter; });
+  }
 
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty">No assets found. Generate some with the API or scripts.</div>';

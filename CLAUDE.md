@@ -11,6 +11,8 @@ Node-based AI game asset generator. Substrate library `@pixel-forge/core` + four
 > **TIJ asset pipeline (2026-04-24)**: see [docs/tij-asset-pipeline-proposal.md](docs/tij-asset-pipeline-proposal.md). Added six kiln modules (`imposter/`, `lod/`, `sprite-atlas/`, `fbx-ingest/`, `retex/`, `photogrammetry/`) and three billboard primitives (`foliageCardGeo`, `crossedQuadsGeo`, `octaGridPlane`). Pipeline runner at [scripts/run-tij-pipeline.ts](scripts/run-tij-pipeline.ts) (`bun run tij:pipeline`) produced 103 manifest entries — 8 ranked soldiers, 7 weapons, 7 vegetation combos (30 imposters), 80 FBX-ingested props, 60-plant sprite atlas — under `packages/server/output/tij/` (gitignored). Validation gallery live at `http://localhost:3000/gallery-tij`, HTML at [packages/server/tij-gallery/index.html](packages/server/tij-gallery/index.html). 12 kiln CLI/MCP tools total now.
 >
 > **Open: animated-imposter architecture.** Current imposters are static single-pose — fine for vegetation, dissonant for skinned soldier characters. Octahedral imposters (Unity Amplify, UE ImpostorBaker) explicitly do not cover skinned meshes. Research brief at [docs/animated-imposter-brief.md](docs/animated-imposter-brief.md); the clip-resolver utility at [packages/core/src/kiln/imposter/clip-resolver.ts](packages/core/src/kiln/imposter/clip-resolver.ts) is ready to feed whichever baker we land on. Do NOT write baker code until the design pass in that brief produces `docs/animated-imposter-design.md`.
+>
+> **Textured-aircraft cycle (2026-05-03, ABANDONED)**: tried to swap mesh-window inserts for UV-baked albedo textures. Substrate fixes that LANDED (keep them — they harden the kiln pipeline regardless): cross-module THREE bridge fix in render.ts/inspect.ts/solids.ts/primitives.ts/textures.ts (`instanceof THREE.X` → `.isX` duck-typing), `panelRemapV` primitive in [uv-shapes.ts](packages/core/src/kiln/uv-shapes.ts), `<glb>.code.js` dump alongside every GLB in [_direct-batch.ts](scripts/_direct-batch.ts), HTML/JSON content-types on `/gallery/file/*`, `sandbox-three-bridge.test.ts` regression test. The cycle was abandoned because LLM-regen geometry was lower-quality than the polished mesh-window batch. See [docs/textured-aircraft-postmortem.md](docs/textured-aircraft-postmortem.md). The polished mesh-window batch is canonical: `war-assets/vehicles/aircraft/<slug>.glb` × 6.
 
 ## Commands
 
@@ -214,6 +216,14 @@ Practical implications for Kiln codegen:
 - If an error mentions `cylinderYGeo` / `capsuleYGeo` / `coneYGeo` not defined, update your mental model — those aliases are registered now.
 - If you see a stray-plane warning, replace `planeGeo` with `decalBox` or position the plane against the target surface.
 - If you see a floating-part warning, extend geometry into contact (≥ `0.02` overlap) or delete the dangling piece.
+
+## Kiln substrate invariants (durable rules)
+
+These are the load-bearing pieces of the kiln pipeline that every consumer depends on. Touching them needs care; the regression tests in `packages/core/src/kiln/__tests__/sandbox-three-bridge.test.ts` cover the critical paths.
+
+- **Cross-module THREE — never use `instanceof THREE.X` against sandbox-created objects.** The kiln executor uses `new Function(...)` which creates an isolated module realm under bun. `new THREE.Mesh()` inside the sandbox produces objects whose constructor is a different class instance from the THREE imported by `render.ts` / `inspect.ts` / `solids.ts`. Use the `.isMesh`, `.isObject3D`, `.isTexture`, `.isMeshStandardMaterial` etc. duck-typing flags Three.js sets on every prototype. They survive across module realms.
+- **Texture sharing — never `texture.clone()` a `loadTexture()` result.** Three.js `Texture.clone()` runs `JSON.parse(JSON.stringify(userData))`, which converts the encoded PNG `Uint8Array` into a plain object and breaks the GLB texture export. To sample a sub-region of a shared texture from a smaller mesh, use `panelRemapV(geo, vScale)` (rescales UV.y on the geometry) — same Texture object, different sampling. See [packages/core/src/kiln/uv-shapes.ts](packages/core/src/kiln/uv-shapes.ts).
+- **`<glb>.code.js` dump is on by default.** Every kiln-generated GLB writes its source code next to it (~5 KB overhead per asset). Saved hours during the textured-aircraft cycle by letting hand-edits + re-render happen without API calls. Don't disable it.
 
 ## Review artifacts agents can consume
 

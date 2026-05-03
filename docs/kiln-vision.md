@@ -488,17 +488,57 @@ Full brief: see conversation history 2026-04-22.
 
     Task 4 (minor polish: `planeUnwrapSingle`, `cylinderUnwrap capMode`, `pickProviderFor` on public ns, `createSoldierSetPipeline` partial regen) + the gallery UI surface for `primitiveUsage` deferred to the next round.
 
-### Totals after Round 1 + Round 2 + Round 3
+13. **Round 4 (chili3d-inspired) landed (2026-05-02)**. Full DAG executed in one session. Recon agents read `examples/chili3d` (xiangechen/chili3d, AGPL — patterns only, no verbatim copy), surfaced a "shape-with-frame" pattern that drove four primitive additions plus three architecture moves. See [docs/kiln-round-4.md](kiln-round-4.md).
+
+    - **Primitives** — `cylinderOnAxis(center, normal, ...)` for non-cardinal axis cylinders; `taperConeGeo(rBottom, rTop, height, axis)` for frustums; `revolveGeo(profile, { angle, axis })` for partial sweeps + non-Y revolutions; `pipeAlongPath(points, radius, { bendRadius })` for cables/hoses with corner smoothing.
+    - **Render layer** — Edge-overlay wireframe toggle in the gallery viewer (LineSegments + EdgesGeometry, dynamic Three.js import — zero shader-recompile cost vs. legacy material.wireframe approach). Lazy per-sandbox geometry cache: `wrapGeo` memoises pure-geometry primitives on stringified args. `userData.kilnRanges` metadata stamped on every cached geometry + propagated through CSG ops as a weight-partitioned input list — preparatory for future click-to-edit interaction in the inspector.
+    - **App / editor** — Typed PubSub event bus at `@pixel-forge/shared/pubsub`. Operation-based undo/redo records (`AddNodeRecord` / `DeleteNodeRecord` / `ParameterChangeRecord` / `SnapshotRecord`) at `packages/client/src/lib/history.ts` — the workflow store now carries typed records instead of full snapshots.
+    - **Prompt + catalog** — System prompt teaches the new helpers and when to reach for each over the legacy *XGeo / lathe / curveToMesh helpers.
+    - **Validation** — All 70 audit-grid PNGs regenerated clean (visual audit, no GLB regen — additive primitives don't change existing assets). Full GLB regen with the updated prompt deferred (would require 12 Claude API calls × ~12min each).
+
+    Catalog: **48 → 53 primitives** (4 geometry, 1 ops). Monorepo: 424 core / 1944 client / 114 server / 22 cli / 9 mcp / 11 shared = **2524 pass / 8 skip / 0 fail**. Typecheck clean across all packages.
+
+14. **Round 4 follow-on (2026-05-02): full vehicle fleet regen + gallery curation.**
+
+    Regenerated 21 vehicle GLBs end-to-end through Round 4 tooling: 10 aircraft (existing fleet) + 4 bonus aircraft (B-52, HH-3E, C-130, A-37) + 5 ground (M151, M35, M113, M48, PT-76) + 2 watercraft (PBR, Sampan), via 4 parallel scripts in ~11 min wall-clock. Wrote two new gen scripts: `gen-vehicles-ground.ts` and `gen-vehicles-watercraft.ts`.
+
+    Surfaced and fixed two real ambiguities: (a) `wingGeo`'s `dihedral` parameter is a tip Y-offset in world units, not an angle in degrees — was producing 45° gull-wing aircraft when Opus picked values like 2 with span=4. JSDoc fix landed in [primitives.ts](../packages/core/src/kiln/primitives.ts) plus FRAME-constant rephrasings in the gen scripts. (b) Claude Code child shells export `ANTHROPIC_API_KEY=""` (empty), shadowing `.env.local`. Workaround documented: `unset ANTHROPIC_API_KEY GEMINI_API_KEY OPENAI_API_KEY` before any `bun scripts/gen-*.ts`.
+
+    Of the 21 regenerated vehicles, only **13 are registered in TIJ's `modelPaths.ts`** (6 aircraft + 5 ground + 2 watercraft). The 8 bonus aircraft were moved to `war-assets/vehicles/_bonus-aircraft/` so they don't clutter focused TIJ review in `/gallery`. Gallery filter UI gained `Vehicles (all)` virtual pill + pinned subcategory pills. No primitives added; no test count changes. Full writeup: [docs/kiln-round-4.md §Round 4 follow-on](kiln-round-4.md).
+
+15. **Round 4 polish iteration (2026-05-02 evening, post-compact).**
+
+    Multi-pass cleanup of the 6 TIJ-registered aircraft based on per-vehicle visual issues — F4 Phantom missing vertical stabilizer, Huey + Gunship decorative red/white squares, Spooky window panels too small, etc. Tightened the gen-aircraft.ts FRAME prompt with three new rules: (a) **no decorative geometry** — `decalBox` banned, no insignia/star/stripe boxes, no small "paint" boxGeos; (b) **vertical-fin orientation** — `boxGeo(chord, height, thickness)` with Y as height, never an unrotated `wingGeo`; (c) **window + open-doorway insert exception** in two sizing tiers (≤ 0.5m × 0.4m for window panes, ≤ 1.5m × 0.9m for open cargo doorways on Huey transport). Glass canopy now must be a distinct `glassMaterial` mesh — fixed the Gunship invisible-cockpit issue.
+
+    Added `--slugs=foo,bar` CLI filter to gen-aircraft.ts so a single vehicle can be re-rolled without the full batch. Final tris across the 6 TIJ aircraft: 1184 / 1512 / 2100 / 2128 / 2076 / 2144 — leaner than first-pass output (decorative-mesh removal alone saved ~1200 tris on Huey + ~1200 on Gunship). Audit grids (`bun run audit:glb`) repeatedly caught issues that gallery's `<model-viewer>` masked. Full writeup: [docs/kiln-round-4.md §Round 4 polish iteration](kiln-round-4.md).
+
+    Texture-baked albedo path (UV-unwrap + per-vehicle pixel-art texture via Gemini Nano Banana Pro) remains as next cycle — `autoUnwrap`, `loadTexture`, `pbrMaterial` are already wired into the kiln sandbox; we just haven't taught the gen prompt to use them for vehicle generation yet. User has greenlit the pipeline build for a future cycle.
+
+16. **Textured-aircraft cycle attempt (2026-05-03, abandoned — substrate fixes kept).**
+
+    Tried to swap the polished mesh-window inserts for UV-baked albedo textures. Generated 24 albedo PNGs across 4 strategies (V0 hand-painted procedural / gpt-image-2 multi-ref edit / gpt-image-1.5 text-only / Gemini Nano Banana Pro multi-image) on 6 aircraft. Total spend ~$1.55. The texture work itself was acceptable; **the blocker was geometry quality** — every textured GLB needed a fresh `cylinderUnwrap` + `pbrMaterial` regen via Claude Opus, and the new geometry was lower quality than the polished mesh-window batch (smaller cabins, weaker silhouettes). User reviewed all 24 variants and said *"those are the right textures but all the wrong glbs from a bad batch"*, pointing at the polished backup as the canonical set.
+
+    **Substrate fixes that LANDED and stay live** (these harden the kiln pipeline regardless of the texture goal):
+
+    - **Cross-module THREE bridge fix.** The kiln executor uses `new Function(...)` which under bun creates an isolated module realm — `new THREE.Mesh()` inside the sandbox produced objects whose constructor was *different* from the THREE imported by `render.ts` / `inspect.ts` / `solids.ts` / `primitives.ts` / `textures.ts`, so `instanceof THREE.X` returned false and meshes/textures were silently dropped at the GLB bridge. Switched all such checks to Three.js's `.isMesh` / `.isObject3D` / `.isTexture` / `.isMeshStandardMaterial` duck-typing flags, which survive across module realms. Regression test in [packages/core/src/kiln/__tests__/sandbox-three-bridge.test.ts](../packages/core/src/kiln/__tests__/sandbox-three-bridge.test.ts) covers both `new THREE.Mesh()` and the textured-mesh path.
+    - **`panelRemapV(geo, vScale, vOffset, uScale, uOffset)`** — new primitive in [packages/core/src/kiln/uv-shapes.ts](../packages/core/src/kiln/uv-shapes.ts), exposed in the kiln sandbox + LLM prompt. Lets a small mesh sample a sub-region of a SHARED texture without `Texture.clone()` (which corrupts userData via `JSON.parse(JSON.stringify(...))`). Useful for any multi-zone albedo workflow.
+    - **`<glb>.code.js` dump alongside every kiln-generated GLB** in [scripts/_direct-batch.ts](../scripts/_direct-batch.ts). ~5 KB overhead, lets you inspect the LLM's output and hand-edit + re-render via `renderGLB(code)` without API calls.
+    - **HTML + JSON content-types on `/gallery/file/*`** in [packages/server/src/routes/gallery.ts](../packages/server/src/routes/gallery.ts) — review pages and provenance sidecars now render in-browser instead of downloading.
+    - **CLAUDE.md "Kiln substrate invariants" section** documents the cross-module THREE rule + texture-clone trap so future agents don't reintroduce them.
+
+    Postmortem: [docs/textured-aircraft-postmortem.md](textured-aircraft-postmortem.md). All cycle scripts archived under `scripts/_archive/` with manifest entries; A/B comparison set preserved at `war-assets/_review/_archive-texture-ab-2026-05-03/`. The 6 polished mesh-window aircraft remain canonical at `war-assets/vehicles/aircraft/<slug>.glb`.
+
+### Totals after Round 1 + Round 2 + Round 3 + Round 4
 
 | Metric | Count |
 |---|---:|
-| Primitives exposed to agents | **48** (was 42 after Wave 3B, 25 at start) |
+| Primitives exposed to agents | **53** (was 48 after Round 3, 42 after Wave 3B, 25 at start) |
 | Primitive categories | 12 |
-| Core tests | 284 pass / 6 skip / 0 fail |
-| Validation GLBs | **12 / 12** audited clean (all re-authored with Round 1 primitives) |
+| Core tests | 424 pass / 8 skip / 0 fail |
+| Total monorepo tests | **2524 pass / 8 skip / 0 fail** |
+| Validation GLBs | **12 / 12** audited clean (Round 3 GLBs render clean under Round 4 surface; full regen with new prompt deferred) |
 | Monorepo typecheck | clean across 5 packages |
-| New Kiln modules | solids.ts, ops.ts, uv.ts, textures.ts, gears.ts, uv-shapes.ts |
-| New tooling | visual-audit.ts (offline 6-view grid renderer) |
+| New Round 4 surface | `cylinderOnAxis`, `taperConeGeo`, `revolveGeo`, `pipeAlongPath`, lazy mesh cache, `kilnRanges` metadata, `@pixel-forge/shared/pubsub`, op-based undo/redo records, edge-overlay wireframe toggle |
 
 ### Progress summary (updated)
 

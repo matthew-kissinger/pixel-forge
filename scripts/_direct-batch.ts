@@ -86,6 +86,7 @@ async function runOne(
         continue;
       }
       writeFileSync(item.outPath, result.glb);
+      writeFileSync(`${item.outPath}.code.js`, result.code);
       if (item.auditPath) writeFileSync(item.auditPath, result.glb);
       const elapsed = Date.now() - t0;
       const modelUsed =

@@ -73,3 +73,22 @@ audit ran:
 - `patch-fixes.py` — Patches generated JSON code (towers, M60 bipod, NVA bunker, ammo-bunker, perimeter-berm) then re-exports GLBs. Status: one-shot.
 - `patch-fixes2.py` — Round-2 patches for guard-tower ladder tilt + comms-tower wires. Status: one-shot.
 
+---
+
+## Textured-aircraft cycle (2026-05-03, abandoned)
+
+The textured-aircraft cycle attempted to swap mesh-window inserts for UV-baked albedo textures on the 6 TIJ aircraft. **Abandoned** because LLM-regen geometry was lower quality than the polished mesh-window batch from the previous cycle. Substrate fixes that landed (cross-module THREE bridge, `panelRemapV` primitive, `<glb>.code.js` dump, gallery HTML content-type) are preserved in `packages/core/src/kiln/` and stay live. See [docs/textured-aircraft-postmortem.md](../../docs/textured-aircraft-postmortem.md) for full details.
+
+Scripts archived from this cycle:
+
+- `bake-aircraft-albedo.ts` — Procedural V0 hand-painted albedo PNGs for 6 aircraft (sharp-based). Useful template for any future texture work; refined `WINDOW_GLASS` / `DOORWAY_INTERIOR` color constants worth referencing.
+- `gen-aircraft-textured.ts` — LLM batch that emits UV-unwrapped + textured kiln GLBs. Outputs structurally fine but geometry quality lower than canonical mesh-window batch.
+- `gen-aircraft-albedo.ts` — Single-strategy gpt-image-2 albedo bake (V1).
+- `gen-aircraft-albedo-ab.ts` — Multi-strategy A/B batch (gpt-edit / gpt-text / gemini-edit). Demonstrates `editWithRefs` calling pattern for OpenAI gpt-image-2 + Gemini Nano Banana Pro side-by-side.
+- `retex-aircraft-variants.ts` — Drives `retexCharacter` to swap textures on existing GLBs without API calls.
+- `audit-aircraft-variants.ts` — Renders 6-view audit grids for variant GLBs by temp-copying into `validation/`.
+- `build-aircraft-review.ts` — Builds a 4×6 comparison HTML page across strategies.
+- `_debug-gen.ts` — One-shot debug helper that dumped LLM code + warnings during the cycle.
+
+The full A/B comparison set (24 GLB variants, audit grids, comparison HTML, all 4 albedo PNG sets) is preserved at `war-assets/_review/_archive-texture-ab-2026-05-03/`. The retired V0 albedo PNGs remain at `war-assets/textures/aircraft/<slug>-albedo.png`.
+

@@ -322,4 +322,178 @@ describe('Workflow Store', () => {
       expect(() => store.importWorkflow(invalidWorkflow)).toThrow(/Invalid workflow format/);
     });
   });
+
+  // -----------------------------------------------------------------------
+  // Op-based undo/redo records (Round 4 / C2)
+  // -----------------------------------------------------------------------
+
+  describe('Op-based undo/redo records', () => {
+    it('AddNodeRecord — undo removes the node, redo restores it', () => {
+      const store = useWorkflowStore.getState();
+      store.addNode({
+        id: 'n1',
+        type: 'textPrompt',
+        position: { x: 10, y: 20 },
+        data: { label: 'A', prompt: 'p' },
+      });
+
+      // Record was pushed
+      expect(useWorkflowStore.getState().undoStack[0]?.kind).toBe('addNode');
+      expect(useWorkflowStore.getState().nodes).toHaveLength(1);
+
+      store.undo();
+      expect(useWorkflowStore.getState().nodes).toHaveLength(0);
+      expect(useWorkflowStore.getState().nodeStatus['n1']).toBeUndefined();
+      expect(useWorkflowStore.getState().redoStack[0]?.kind).toBe('addNode');
+
+      store.redo();
+      expect(useWorkflowStore.getState().nodes).toHaveLength(1);
+      expect(useWorkflowStore.getState().nodes[0]!.id).toBe('n1');
+      expect(useWorkflowStore.getState().nodeStatus['n1']).toBe('idle');
+    });
+
+    it('DeleteNodeRecord — undo restores the node and its adjacent edges', () => {
+      const store = useWorkflowStore.getState();
+      store.addNode({
+        id: 'n1',
+        type: 'textPrompt',
+        position: { x: 0, y: 0 },
+        data: { label: 'A', prompt: '' },
+      });
+      store.addNode({
+        id: 'n2',
+        type: 'textPrompt',
+        position: { x: 100, y: 0 },
+        data: { label: 'B', prompt: '' },
+      });
+      store.onConnect({ source: 'n1', target: 'n2', sourceHandle: null, targetHandle: null });
+
+      expect(useWorkflowStore.getState().edges).toHaveLength(1);
+
+      // Delete n1 — record captures the node + the edge
+      store.onNodesChange([{ id: 'n1', type: 'remove' }]);
+      const top = useWorkflowStore.getState().undoStack[0];
+      expect(top?.kind).toBe('deleteNode');
+
+      // Walk back: undo (deleteNode) then undo (snapshot of onConnect) — only
+      // the deleteNode part should restore the node + edge.
+      store.undo();
+      const after = useWorkflowStore.getState();
+      expect(after.nodes.find((n) => n.id === 'n1')).toBeDefined();
+      expect(after.edges.find((e) => e.source === 'n1')).toBeDefined();
+
+      // Redo deletes again
+      store.redo();
+      const after2 = useWorkflowStore.getState();
+      expect(after2.nodes.find((n) => n.id === 'n1')).toBeUndefined();
+    });
+
+    it('SnapshotRecord — onConnect undo removes the edge, redo restores it', () => {
+      const store = useWorkflowStore.getState();
+      store.addNode({
+        id: 'n1',
+        type: 'textPrompt',
+        position: { x: 0, y: 0 },
+        data: { label: 'A', prompt: '' },
+      });
+      store.addNode({
+        id: 'n2',
+        type: 'textPrompt',
+        position: { x: 100, y: 0 },
+        data: { label: 'B', prompt: '' },
+      });
+      store.onConnect({ source: 'n1', target: 'n2', sourceHandle: null, targetHandle: null });
+
+      expect(useWorkflowStore.getState().undoStack[0]?.kind).toBe('snapshot');
+      expect(useWorkflowStore.getState().edges).toHaveLength(1);
+
+      store.undo();
+      expect(useWorkflowStore.getState().edges).toHaveLength(0);
+
+      store.redo();
+      expect(useWorkflowStore.getState().edges).toHaveLength(1);
+    });
+
+    it('record memory shape: a single addNode is O(1) records, not a full snapshot', () => {
+      const store = useWorkflowStore.getState();
+      store.addNode({
+        id: 'n1',
+        type: 'textPrompt',
+        position: { x: 0, y: 0 },
+        data: { label: 'A', prompt: '' },
+      });
+      const top = useWorkflowStore.getState().undoStack[0];
+      expect(top?.kind).toBe('addNode');
+      // A typed addNode record carries only the added node — not a deep
+      // clone of the whole graph.
+      if (top?.kind === 'addNode') {
+        expect(top.node.id).toBe('n1');
+        expect((top as { before?: unknown }).before).toBeUndefined();
+        expect((top as { after?: unknown }).after).toBeUndefined();
+      }
+    });
+
+    it('mixed sequence: addNode → onConnect → delete → undo×3 walks back to empty', () => {
+      const store = useWorkflowStore.getState();
+      // Clear pre-existing stacks (cross-test reset() chain pollutes them).
+      useWorkflowStore.setState({ undoStack: [], redoStack: [] });
+
+      store.addNode({
+        id: 'n1',
+        type: 'textPrompt',
+        position: { x: 0, y: 0 },
+        data: { label: 'A', prompt: '' },
+      });
+      store.addNode({
+        id: 'n2',
+        type: 'textPrompt',
+        position: { x: 100, y: 0 },
+        data: { label: 'B', prompt: '' },
+      });
+      store.onConnect({ source: 'n1', target: 'n2', sourceHandle: null, targetHandle: null });
+      store.onNodesChange([{ id: 'n2', type: 'remove' }]);
+
+      // 4 records on the undo stack now.
+      expect(useWorkflowStore.getState().undoStack).toHaveLength(4);
+
+      store.undo(); // undo delete → n2 back
+      expect(useWorkflowStore.getState().nodes).toHaveLength(2);
+      store.undo(); // undo connect → no edge
+      expect(useWorkflowStore.getState().edges).toHaveLength(0);
+      store.undo(); // undo addNode n2 → 1 node
+      expect(useWorkflowStore.getState().nodes).toHaveLength(1);
+      store.undo(); // undo addNode n1 → 0 nodes
+      expect(useWorkflowStore.getState().nodes).toHaveLength(0);
+
+      // Redo brings us right back through every record. The final
+      // record was the delete, so state ends at 1 node, 0 (live) edges.
+      store.redo();
+      store.redo();
+      store.redo();
+      store.redo();
+      expect(useWorkflowStore.getState().nodes).toHaveLength(1);
+      expect(useWorkflowStore.getState().nodes[0]!.id).toBe('n1');
+    });
+
+    it('a fresh action clears the redo stack', () => {
+      const store = useWorkflowStore.getState();
+      store.addNode({
+        id: 'n1',
+        type: 'textPrompt',
+        position: { x: 0, y: 0 },
+        data: { label: 'A', prompt: '' },
+      });
+      store.undo();
+      expect(useWorkflowStore.getState().redoStack).toHaveLength(1);
+
+      // New action — redo stack should clear.
+      store.addNode({
+        id: 'n2',
+        type: 'textPrompt',
+        position: { x: 100, y: 0 },
+        data: { label: 'B', prompt: '' },
+      });
+      expect(useWorkflowStore.getState().redoStack).toHaveLength(0);
+    });
+  });
 });

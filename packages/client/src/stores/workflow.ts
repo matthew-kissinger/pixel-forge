@@ -11,6 +11,11 @@ import {
   addEdge,
 } from '@xyflow/react';
 import type { WorkflowData } from '../types/workflow';
+import {
+  type HistoryRecord,
+  type WorkflowSnapshot,
+  snapshotOf,
+} from '../lib/history';
 
 // Re-export types from the new type system for backwards compatibility
 export type {
@@ -60,8 +65,6 @@ export type NodeData = BaseNodeData;
 
 export const WORKFLOW_VERSION = 1;
 
-type WorkflowSnapshot = { nodes: Node<NodeData>[]; edges: Edge[] };
-
 export interface WorkflowState {
   nodes: Node<NodeData>[];
   edges: Edge[];
@@ -76,9 +79,14 @@ export interface WorkflowState {
   executionCancelled: boolean;
   executionHistory: ExecutionRecord[];
 
-  // Undo/Redo state
-  undoStack: WorkflowSnapshot[];
-  redoStack: WorkflowSnapshot[];
+  // Undo/Redo state — operation-based records (Round 4 / C2). The legacy
+  // shape was `WorkflowSnapshot[]` (deep clones of the whole graph per
+  // step); each entry now describes the specific change that was made,
+  // and snapshot-based fallback is captured by `SnapshotRecord` for
+  // mutations we haven't broken into typed records yet (edge ops, full
+  // resets, imports). Public API (undo/redo/canUndo/canRedo) is unchanged.
+  undoStack: HistoryRecord[];
+  redoStack: HistoryRecord[];
 
   // Demo mode
   demoMode: boolean;
@@ -135,19 +143,6 @@ const initialNodes: Node<NodeData>[] = [];
 const initialEdges: Edge[] = [];
 const MAX_HISTORY_SIZE = 50;
 
-// Helper function to create a snapshot of current workflow state
-const createSnapshot = (nodes: Node<NodeData>[], edges: Edge[]): WorkflowSnapshot => {
-  // Deep clone nodes and edges to avoid reference issues
-  return {
-    nodes: nodes.map((n) => ({
-      ...n,
-      data: { ...n.data },
-      position: { ...n.position },
-    })),
-    edges: edges.map((e) => ({ ...e })),
-  };
-};
-
 // Helper function to restore state from snapshot
 const restoreSnapshot = (snapshot: WorkflowSnapshot): { nodes: Node<NodeData>[]; edges: Edge[] } => {
   return {
@@ -163,17 +158,156 @@ const restoreSnapshot = (snapshot: WorkflowSnapshot): { nodes: Node<NodeData>[];
 export const useWorkflowStore = create<WorkflowState>()(
   persist(
     subscribeWithSelector((set, get) => {
-    // Helper to push current state to undo stack
-    const pushToHistory = (skipRedoClear = false) => {
+    // Push a typed history record onto the undo stack. Clears the redo
+    // stack by default — pass `skipRedoClear` from the undo/redo paths
+    // themselves so they can re-shuffle records without dropping their
+    // counterpart.
+    const pushRecord = (record: HistoryRecord, skipRedoClear = false) => {
     const state = get();
-    const snapshot = createSnapshot(state.nodes, state.edges);
-    const undoStack = [snapshot, ...state.undoStack].slice(0, MAX_HISTORY_SIZE);
-    
+    const undoStack = [record, ...state.undoStack].slice(0, MAX_HISTORY_SIZE);
     set({
       undoStack,
-      // Clear redo stack when a new action is taken (not via undo/redo)
       redoStack: skipRedoClear ? state.redoStack : [],
     });
+  };
+
+  /**
+   * Snapshot wrapper: captures BEFORE state, runs `mutate`, captures AFTER,
+   * pushes a SnapshotRecord. Used for mutations we haven't converted to
+   * typed records yet — edge ops, reset, importWorkflow.
+   */
+  const recordSnapshot = (mutate: () => void) => {
+    const before = snapshotOf(get().nodes, get().edges);
+    mutate();
+    const after = snapshotOf(get().nodes, get().edges);
+    pushRecord({ kind: 'snapshot', before, after });
+  };
+
+  /**
+   * Apply a HistoryRecord in either direction. Centralises the reversal
+   * logic so undo() and redo() share one switch — every record subtype
+   * is symmetric, but the per-kind behavior differs (snapshot restores
+   * a frozen state; addNode toggles existence; etc.).
+   */
+  const applyRecord = (record: HistoryRecord, direction: 'undo' | 'redo') => {
+    switch (record.kind) {
+      case 'snapshot': {
+        const target = direction === 'undo' ? record.before : record.after;
+        const restored = restoreSnapshot(target);
+        const restoredIds = new Set(restored.nodes.map((n) => n.id));
+        const cur = get();
+        const nodeStatus: Record<string, NodeStatus> = {};
+        restored.nodes.forEach((n) => {
+          nodeStatus[n.id] = cur.nodeStatus[n.id] || 'idle';
+        });
+        set({
+          nodes: restored.nodes,
+          edges: restored.edges,
+          nodeStatus,
+          nodeOutputs: Object.fromEntries(
+            Object.entries(cur.nodeOutputs).filter(([id]) => restoredIds.has(id))
+          ),
+          nodeErrors: Object.fromEntries(
+            Object.entries(cur.nodeErrors).filter(([id]) => restoredIds.has(id))
+          ),
+        });
+        break;
+      }
+      case 'addNode': {
+        if (direction === 'undo') {
+          // Remove the added node + its adjacent edges + side state.
+          const cur = get();
+          const id = record.node.id;
+          const nodeStatus = { ...cur.nodeStatus };
+          delete nodeStatus[id];
+          const nodeOutputs = { ...cur.nodeOutputs };
+          delete nodeOutputs[id];
+          const nodeErrors = { ...cur.nodeErrors };
+          delete nodeErrors[id];
+          const batchProgress = { ...cur.batchProgress };
+          delete batchProgress[id];
+          set({
+            nodes: cur.nodes.filter((n) => n.id !== id),
+            edges: cur.edges.filter((e) => e.source !== id && e.target !== id),
+            nodeStatus,
+            nodeOutputs,
+            nodeErrors,
+            batchProgress,
+          });
+        } else {
+          const cur = get();
+          set({
+            nodes: [...cur.nodes, record.node],
+            nodeStatus: { ...cur.nodeStatus, [record.node.id]: 'idle' },
+          });
+        }
+        break;
+      }
+      case 'deleteNode': {
+        if (direction === 'undo') {
+          // Restore the deleted nodes + their adjacent edges. Drop any
+          // ids that already exist in the current state to stay safe in
+          // pathological cases (e.g. record stale after a reset).
+          const cur = get();
+          const haveIds = new Set(cur.nodes.map((n) => n.id));
+          const newNodes = [
+            ...cur.nodes,
+            ...record.nodes.filter((n) => !haveIds.has(n.id)),
+          ];
+          const haveEdgeIds = new Set(cur.edges.map((e) => e.id));
+          const newEdges = [
+            ...cur.edges,
+            ...record.edges.filter((e) => !haveEdgeIds.has(e.id)),
+          ];
+          const nodeStatus = { ...cur.nodeStatus };
+          for (const n of record.nodes) {
+            if (!nodeStatus[n.id]) nodeStatus[n.id] = 'idle';
+          }
+          set({ nodes: newNodes, edges: newEdges, nodeStatus });
+        } else {
+          // Re-delete: drop those node ids again.
+          const cur = get();
+          const dropIds = new Set(record.nodes.map((n) => n.id));
+          const dropEdgeIds = new Set(record.edges.map((e) => e.id));
+          const nodeStatus = { ...cur.nodeStatus };
+          const nodeOutputs = { ...cur.nodeOutputs };
+          const nodeErrors = { ...cur.nodeErrors };
+          const batchProgress = { ...cur.batchProgress };
+          for (const id of dropIds) {
+            delete nodeStatus[id];
+            delete nodeOutputs[id];
+            delete nodeErrors[id];
+            delete batchProgress[id];
+          }
+          set({
+            nodes: cur.nodes.filter((n) => !dropIds.has(n.id)),
+            edges: cur.edges.filter(
+              (e) =>
+                !dropEdgeIds.has(e.id) &&
+                !dropIds.has(e.source) &&
+                !dropIds.has(e.target)
+            ),
+            nodeStatus,
+            nodeOutputs,
+            nodeErrors,
+            batchProgress,
+          });
+        }
+        break;
+      }
+      case 'paramChange': {
+        const target = direction === 'undo' ? record.before : record.after;
+        const cur = get();
+        set({
+          nodes: cur.nodes.map((n) =>
+            n.id === record.nodeId
+              ? { ...n, data: { ...n.data, ...target } }
+              : n
+          ),
+        });
+        break;
+      }
+    }
   };
 
   return {
@@ -199,84 +333,89 @@ export const useWorkflowStore = create<WorkflowState>()(
 
     onNodesChange: (changes) => {
       const state = get();
-      
-      // Check if this is a structural change (remove) that should be tracked
-      const hasStructuralChange = changes.some(
-        (change) => change.type === 'remove'
-      );
-      
-      // Push to history BEFORE applying changes (save old state)
-      if (hasStructuralChange) {
-        pushToHistory();
-      }
-      
+
+      const removedIds = changes
+        .filter((change) => change.type === 'remove')
+        .map((change) => change.id);
+      const hasRemove = removedIds.length > 0;
+
+      // Capture removed nodes + their adjacent edges BEFORE applying so the
+      // DeleteNodeRecord has enough state to undo.
+      const removedNodes = hasRemove
+        ? state.nodes.filter((n) => removedIds.includes(n.id))
+        : [];
+      const removedEdges = hasRemove
+        ? state.edges.filter(
+            (e) => removedIds.includes(e.source) || removedIds.includes(e.target)
+          )
+        : [];
+
       // Apply changes
       const newNodes = applyNodeChanges(changes, state.nodes);
       set({ nodes: newNodes });
 
-      if (hasStructuralChange) {
-        const removedNodeIds = changes
-          .filter((change) => change.type === 'remove')
-          .map((change) => change.id);
+      if (hasRemove) {
+        // React Flow emits separate edge-remove changes for adjacent edges,
+        // so we don't drop them here — onEdgesChange will get its own
+        // SnapshotRecord. We DO capture them in this DeleteNodeRecord so
+        // an undo can also resurrect the edges in lockstep with the node.
+        const currentState = get();
+        const nodeOutputs = { ...currentState.nodeOutputs };
+        const nodeStatus = { ...currentState.nodeStatus };
+        const nodeErrors = { ...currentState.nodeErrors };
+        const batchProgress = { ...currentState.batchProgress };
 
-        if (removedNodeIds.length > 0) {
-          const currentState = get();
-          const nodeOutputs = { ...currentState.nodeOutputs };
-          const nodeStatus = { ...currentState.nodeStatus };
-          const nodeErrors = { ...currentState.nodeErrors };
-          const batchProgress = { ...currentState.batchProgress };
+        removedIds.forEach((id) => {
+          delete nodeOutputs[id];
+          delete nodeStatus[id];
+          delete nodeErrors[id];
+          delete batchProgress[id];
+        });
 
-          removedNodeIds.forEach((id) => {
-            delete nodeOutputs[id];
-            delete nodeStatus[id];
-            delete nodeErrors[id];
-            delete batchProgress[id];
-          });
+        set({ nodeOutputs, nodeStatus, nodeErrors, batchProgress });
 
-          set({ nodeOutputs, nodeStatus, nodeErrors, batchProgress });
-        }
+        pushRecord({
+          kind: 'deleteNode',
+          nodes: removedNodes,
+          edges: removedEdges,
+        });
       }
     },
 
     onEdgesChange: (changes) => {
       const state = get();
-      
-      // Check if this is a structural change (remove) that should be tracked
-      const hasStructuralChange = changes.some(
-        (change) => change.type === 'remove'
-      );
-      
-      // Push to history BEFORE applying changes (save old state)
+
+      const hasStructuralChange = changes.some((change) => change.type === 'remove');
+
       if (hasStructuralChange) {
-        pushToHistory();
+        recordSnapshot(() => {
+          set({ edges: applyEdgeChanges(changes, state.edges) });
+        });
+      } else {
+        set({ edges: applyEdgeChanges(changes, state.edges) });
       }
-      
-      // Apply changes
-      const newEdges = applyEdgeChanges(changes, state.edges);
-      set({ edges: newEdges });
     },
 
     onConnect: (connection) => {
-      // Push to history BEFORE adding edge (save old state)
-      pushToHistory();
-      const state = get();
-      const newEdges = addEdge(connection, state.edges);
-      set({ edges: newEdges });
+      recordSnapshot(() => {
+        const state = get();
+        set({ edges: addEdge(connection, state.edges) });
+      });
     },
 
     addNode: (node) => {
-      // Push to history BEFORE adding node (save old state)
-      pushToHistory();
       const state = get();
       set({
         nodes: [...state.nodes, node],
         nodeStatus: { ...state.nodeStatus, [node.id]: 'idle' },
       });
+      pushRecord({ kind: 'addNode', node });
     },
 
     setNodes: (nodes) => {
-      pushToHistory();
-      set({ nodes });
+      recordSnapshot(() => {
+        set({ nodes });
+      });
     },
 
   updateNodeData: (nodeId, data) => {
@@ -336,18 +475,18 @@ export const useWorkflowStore = create<WorkflowState>()(
   },
 
   reset: () => {
-    // Save current state before resetting
-    pushToHistory();
-    set({
-      nodes: initialNodes,
-      edges: initialEdges,
-      nodeOutputs: {},
-      nodeStatus: {},
-      nodeErrors: {},
-      batchProgress: {},
-      isExecuting: false,
-      executionProgress: { current: 0, total: 0 },
-      executionCancelled: false,
+    recordSnapshot(() => {
+      set({
+        nodes: initialNodes,
+        edges: initialEdges,
+        nodeOutputs: {},
+        nodeStatus: {},
+        nodeErrors: {},
+        batchProgress: {},
+        isExecuting: false,
+        executionProgress: { current: 0, total: 0 },
+        executionCancelled: false,
+      });
     });
   },
 
@@ -410,28 +549,26 @@ export const useWorkflowStore = create<WorkflowState>()(
       throw new Error(`Workflow version ${data.version} is not supported (max ${WORKFLOW_VERSION})`);
     }
 
-    // Save current state before importing
-    pushToHistory();
-    
-    // Reset current state
-    set({
-      nodes: data.nodes.map(n => ({
-        id: n.id,
-        type: n.type,
-        position: n.position,
-        data: n.data,
-      })),
-      edges: data.edges.map(e => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle || null,
-        targetHandle: e.targetHandle || null,
-      })),
-      nodeOutputs: {},
-      nodeStatus: data.nodes.reduce((acc, n) => ({ ...acc, [n.id]: 'idle' }), {}),
-      nodeErrors: {},
-      batchProgress: {},
+    recordSnapshot(() => {
+      set({
+        nodes: data.nodes.map(n => ({
+          id: n.id,
+          type: n.type,
+          position: n.position,
+          data: n.data,
+        })),
+        edges: data.edges.map(e => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          sourceHandle: e.sourceHandle || null,
+          targetHandle: e.targetHandle || null,
+        })),
+        nodeOutputs: {},
+        nodeStatus: data.nodes.reduce((acc, n) => ({ ...acc, [n.id]: 'idle' }), {}),
+        nodeErrors: {},
+        batchProgress: {},
+      });
     });
   },
 
@@ -439,72 +576,24 @@ export const useWorkflowStore = create<WorkflowState>()(
     const state = get();
     if (state.undoStack.length === 0) return;
 
-    // Save current state to redo stack
-    const currentSnapshot = createSnapshot(state.nodes, state.edges);
-    const redoStack = [currentSnapshot, ...state.redoStack].slice(0, MAX_HISTORY_SIZE);
-
-    // Restore previous state from undo stack
-    const previousSnapshot = state.undoStack[0];
-    const restored = restoreSnapshot(previousSnapshot);
+    const record = state.undoStack[0]!;
     const undoStack = state.undoStack.slice(1);
+    const redoStack = [record, ...state.redoStack].slice(0, MAX_HISTORY_SIZE);
 
-    // Update nodeStatus for nodes that exist in the restored state
-    const restoredNodeIds = new Set(restored.nodes.map((n) => n.id));
-    const nodeStatus: Record<string, NodeStatus> = {};
-    restored.nodes.forEach((n) => {
-      nodeStatus[n.id] = state.nodeStatus[n.id] || 'idle';
-    });
-
-    set({
-      nodes: restored.nodes,
-      edges: restored.edges,
-      undoStack,
-      redoStack,
-      nodeStatus,
-      // Clear outputs/errors for nodes that no longer exist
-      nodeOutputs: Object.fromEntries(
-        Object.entries(state.nodeOutputs).filter(([id]) => restoredNodeIds.has(id))
-      ),
-      nodeErrors: Object.fromEntries(
-        Object.entries(state.nodeErrors).filter(([id]) => restoredNodeIds.has(id))
-      ),
-    });
+    applyRecord(record, 'undo');
+    set({ undoStack, redoStack });
   },
 
   redo: () => {
     const state = get();
     if (state.redoStack.length === 0) return;
 
-    // Save current state to undo stack
-    const currentSnapshot = createSnapshot(state.nodes, state.edges);
-    const undoStack = [currentSnapshot, ...state.undoStack].slice(0, MAX_HISTORY_SIZE);
-
-    // Restore next state from redo stack
-    const nextSnapshot = state.redoStack[0];
-    const restored = restoreSnapshot(nextSnapshot);
+    const record = state.redoStack[0]!;
     const redoStack = state.redoStack.slice(1);
+    const undoStack = [record, ...state.undoStack].slice(0, MAX_HISTORY_SIZE);
 
-    // Update nodeStatus for nodes that exist in the restored state
-    const restoredNodeIds = new Set(restored.nodes.map((n) => n.id));
-    const nodeStatus: Record<string, NodeStatus> = {};
-    restored.nodes.forEach((n) => {
-      nodeStatus[n.id] = state.nodeStatus[n.id] || 'idle';
-    });
-
-    set({
-      nodes: restored.nodes,
-      edges: restored.edges,
-      undoStack,
-      redoStack,
-      nodeStatus,
-      // Clear outputs/errors for nodes that no longer exist
-      nodeOutputs: Object.fromEntries(
-        Object.entries(state.nodeOutputs).filter(([id]) => restoredNodeIds.has(id))
-      ),
-      nodeErrors: Object.fromEntries(
-        Object.entries(state.nodeErrors).filter(([id]) => restoredNodeIds.has(id))
-      ),
-    });
+    applyRecord(record, 'redo');
+    set({ undoStack, redoStack });
   },
 
   canUndo: () => {

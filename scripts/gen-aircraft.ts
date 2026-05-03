@@ -36,11 +36,86 @@ ground at Y=0. Prefer the axis-specific primitives (capsuleXGeo, cylinderXGeo, \
 cylinderZGeo, coneXGeo) over hand-rotating Y-axis primitives. Use \
 createWingPair() for any wings or stub wings so the roots attach flush to \
 the fuselage. Use beamBetween() for skid struts, pylons, braces, and antenna \
-wires — endpoints must touch the parts they connect. Use createLadder() only \
-if there's a visible ladder.
+wires — endpoints must touch the parts they connect. Use cylinderOnAxis(center, \
+normal, radius, height) for non-cardinal-axis tubes. Use taperConeGeo(rBottom, \
+rTop, height, axis) for engine nacelles, pylon caps — anything that's a frustum \
+rather than a pointed cone. Use pipeAlongPath(points, radius, { bendRadius }) \
+for cables, hoses, antennas with corners. Use createLadder() only if there's a \
+visible ladder.
+
+NO DECORATIVE GEOMETRY (CRITICAL — performance + visual cleanliness):
+- DO NOT call decalBox at all. No insignia, no national markings, no red stars, \
+no white stars, no hull numbers, no invasion stripes, no painted bands.
+- DO NOT add boxGeo / planeGeo decals to "represent paint" or to "represent \
+door frames". Color variation is texture work, not mesh work.
+- DO NOT model open-doorway frames as separate boxes around an empty space. \
+Helicopter cabin sides are SOLID outside of window inserts (see exception below).
+- Every mesh in the scene must contribute to the recognizable silhouette. If \
+removing the mesh does not change the readable shape, the mesh should not \
+exist. Each box/plane/cylinder is a draw call.
+
+WINDOW + OPEN-DOORWAY INSERTS — the ONE narrow exception to "no decorative geometry":
+- Window panes AND open cargo doorways MAY be modelled as dark boxGeo inserts \
+sitting flush on the fuselage surface. They count as silhouette-relevant detail, \
+NOT decoration.
+- Two sizing categories — pick the one that matches the part you're representing:
+  1. WINDOW PANES (small, glassy): ≤ 0.5m wide × ≤ 0.4m tall × ≤ 0.04m thick. \
+Material: gameMaterial(0x182228) (navy-black — reads as window glass). Used for \
+passenger windows on transports, cockpit-side windows on helicopters.
+  2. OPEN DOORWAYS (large, void-like — for helicopters that fly with the cargo \
+doors slid open): up to 1.5m wide × 0.9m tall × 0.05m thick. Material: \
+gameMaterial(0x0a0e10) (very dark — reads as empty interior, looking through the \
+open door into the cabin). One per side, centered on the cabin side wall at \
+door-height. This is the iconic Huey doors-open silhouette.
+- Material rule: NOT glassMaterial — these are opaque dark inserts, not \
+transparent panes. glassMaterial is reserved for cockpit canopies / nose domes.
+- Position rule: only at real window / door / cockpit-side locations. NOT \
+mid-fuselage "paint stripes".
+- Embedded depth: the box's thin face must overlap the body skin by ~0.005-0.02 \
+units so it reads as flush-mounted, not floating off the side.
+- Forbidden uses of this exception: hull numbers, painted-on stars, panel lines, \
+"frames" around a doorway, or door-frame boxes that just outline a region. Those \
+are still texture work.
+
+WING PARAMETERS (CRITICAL — these are world-unit OFFSETS, NOT angles):
+- 'dihedral' on wingGeo / createWingPair is the TIP Y-OFFSET in METERS, not \
+an angle. For a normal-looking wing use ~3-6% of span (e.g. span=4 → \
+dihedral=0.1 to 0.25). dihedral >= span/2 makes a 45°+ gull-wing — almost \
+always WRONG.
+- 'sweep' is the TIP X-DISPLACEMENT in METERS (positive = tip aft along -X).
+- 'span', 'rootChord', 'tipChord', 'thickness' all in world units (meters).
+
+VERTICAL TAIL FIN ORIENTATION (CRITICAL — a vertical fin must STAND UP):
+- The simplest reliable form: boxGeo(chord, height, thickness) where Y \
+(height) is the second-largest dimension after chord, and thickness is small. \
+Example: boxGeo(2.0, 1.8, 0.08) — chord 2.0m along X, height 1.8m along Y, \
+thickness 0.08m along Z. boxGeo's default orientation already stands up — do \
+not rotate it.
+- Position the fin so its BASE overlaps the top-rear of the fuselage \
+(final ~5% of body length, lower face flush with fuselage roof).
+- DO NOT use createWingPair / wingGeo for a vertical fin without explicitly \
+rotating by [Math.PI/2, 0, 0] — wingGeo's span axis is Z by default, which \
+makes it lay flat horizontally.
 
 Attachment is mandatory: every part must visibly touch or overlap (~0.02 units) \
-the part it connects to. Nothing floating.
+the part it connects to. Nothing floating. ESPECIALLY:
+- T-TAIL ATTACHMENT: vertical fin's BASE must overlap the top-rear of the \
+fuselage (final ~5% of body length). Horizontal stabilizer (createWingPair \
+on top of the fin) must mount with rootZ at fin half-thickness so its roots \
+visibly touch the fin tip.
+- ROTOR BLADES: each blade must overlap the rotor hub by 0.05+ at its inner \
+end. Position blades RELATIVE to the hub center, not at world origin.
+- TAIL BOOM: must connect continuously from the rear of the cabin to the \
+tail fin. No gap.
+- COCKPIT GLASS: position the canopy so its bottom edge sits flush against \
+the fuselage roof, slightly forward of fuselage center. Glass MUST be a \
+distinct glassMaterial mesh, not the same color as the body.
+
+NAMED PIVOTS (TIJ animation hookup — case-insensitive regex match):
+- Helicopter main rotor pivot: 'mainRotor' OR 'mainBlades' (either works).
+- Helicopter tail rotor pivot: 'tailRotor' OR 'tailBlades'.
+- Fixed-wing single propeller: 'propeller'. Twin: 'propLeft', 'propRight'. \
+Quad: 'prop1', 'prop2', 'prop3', 'prop4'.
 
 Helicopter tail rotors spin around the X axis — their blades live in the YZ \
 plane (NOT the XZ plane). Main rotors spin around Y — blades in XZ plane.`;
@@ -54,16 +129,20 @@ Target ~14m nose-to-tail, 3000 tris.
 ${FRAME}
 
 Parts:
-- Teardrop fuselage pod along +X, wide at the cockpit tapering toward the tail, with olive-drab skin and a separate olive-drab engine cowling hump above the roof.
-- Bulbous glass cockpit/nose glass at the front (glassMaterial).
-- Two open cargo doorways on each side (left/right) — model as rectangular cutouts with a door frame, not solid walls. Hint at door-gun M60 barrels pointing outward (use cylinderZGeo for the barrels so they naturally point sideways).
+- Teardrop fuselage pod along +X, wide at the cockpit tapering toward the tail, with olive-drab skin and a separate olive-drab engine cowling hump above the roof. Approximate the body with capsuleXGeo radius 0.85, length ~3.5, centered at the cabin.
+- COCKPIT GLASS (CRITICAL — must be visible, external, at the FRONT, NOT embedded inside the body): a large bulbous glass nose/canopy positioned at the FRONT of the fuselage. The glass must bulge OUT and UP from the body — the bottom half of the dome sits against the front of the fuselage, the top half is clearly proud of the body silhouette. Recommended: sphereGeo of radius ~0.7 positioned so its CENTER is at (fuselage_front_x + 0.2, fuselage_center_y + 0.15, 0) — that is, slightly forward of the fuselage front face and slightly above the centerline so the dome reads from front, side, and top views. Use glassMaterial. Distinct color from the olive-drab body. NO part of the glass should be hidden inside another mesh.
+- OPEN CARGO DOORS (per the FRAME exception, "open doorway" category): on EACH cabin side, place ONE large dark open-doorway insert centered at door-height — approximately 1.4m wide × 0.7m tall × 0.04m thick, gameMaterial(0x0a0e10). This is the slid-open cargo door — Hueys flew doors-open in Vietnam and the open doorways are a defining silhouette feature. The box's outer face must sit flush + 0.005m proud of the fuselage skin.
+- COCKPIT-SIDE WINDOW PANES (per the FRAME exception, "window pane" category): ONE small dark window insert per side just FORWARD of the open doorway, at the pilot/co-pilot position — ~0.35m wide × 0.25m tall × 0.03m thick, gameMaterial(0x182228). Symmetric on both sides.
+- DOOR-GUN M60s (CRITICAL — must be prominent and obvious, contributing to the silhouette): one M60 machine gun on EACH side of the fuselage at cabin height (Y ≈ fuselage centerline). Each gun is two parts:
+  1. A long protruding barrel: cylinderZGeo with radius 0.045, length 1.0. Position it so its CENTER is at (fuselage_center_x, cabin_y, ±(fuselage_half_width + 0.45)) — i.e. half the barrel is OUTSIDE the cabin side, sticking ~0.5m beyond the fuselage skin.
+  2. A small mount block at the side wall: a small boxGeo or cylinderZGeo (~0.1 × 0.1 × 0.1) sitting on the fuselage side at the gun's inner end so the barrel visibly emerges from a mount, not from the body skin directly.
+  Both guns must be clearly visible from the front, side, and top views — they are a defining silhouette feature of the armed Huey.
 - Long cylindrical tail boom extending aft from the fuselage along -X — use cylinderXGeo or capsuleXGeo, tapered from 0.25 radius at the root to 0.12 at the tip.
-- Vertical fin at the tail end, angled slightly forward.
+- Vertical fin at the tail end, slightly swept. Use a boxGeo standing up (e.g. boxGeo(0.9, 1.2, 0.08)) — Y dimension is the height. Base must overlap the tail-boom top.
 - Horizontal stabilizer mounted on the tail boom just ahead of the fin.
 - Tail rotor mounted on the LEFT side of the vertical fin. Blades in the YZ plane (standing vertical, spinning around X). Include a named pivot "tailRotor" and a spin animation around X.
 - Main rotor mast rising ~1.5m above the engine cowling with a rotor hub and two long thin blades forming a cross in the XZ plane. Named pivot "mainRotor" with spin around Y.
 - Twin landing skids running along +X below the fuselage (use cylinderXGeo). Each skid connected to the fuselage by TWO vertical struts via beamBetween() — front strut and rear strut per side.
-- Small US Army white-star insignia on each cargo door (basicMaterial).
 
 Include meta.tags = ['aircraft','helicopter','transport']. Emit rotor-spin and tail-rotor-spin animation clips.`,
   },
@@ -74,13 +153,20 @@ Include meta.tags = ['aircraft','helicopter','transport']. Emit rotor-spin and t
 
 ${FRAME}
 
-Same fuselage and rotor geometry as the UH-1H transport above, but with gunship weapons instead of open cargo doors:
-- Solid doors in place of the transport's open cargo bay.
-- Short stub-wing pylons on each side of the fuselage at cabin height — use createWingPair with rootZ set to fuselage half-width, a short span, thick chord, shallow sweep.
+Parts:
+- Teardrop fuselage pod along +X, ROUNDED — use capsuleXGeo as the base body (e.g. capsuleXGeo(1.0, 3.5)) with a slightly elongated shape. NOT a tall boxy cabin. Width and height should be similar (~2m diameter), length ~5m. Olive drab.
+- Engine cowling hump above the cabin roof (a smaller capsuleXGeo or low-profile boxGeo blended into the top).
+- Bubble cockpit GLASS at the FRONT — a separate, distinct glassMaterial mesh covering the forward ~30% of the cabin roof. Use a sphereGeo or capsuleXGeo with glassMaterial; it must be visually different in color/transparency from the olive-drab body. Bottom edge flush with fuselage roof.
+- SOLID cabin sides — no door frames, no insignia boxes, no red squares, no white squares, no painted panels. The gunship variant flew with cabin doors CLOSED (unlike the transport Huey) so there is NO open-doorway insert on this aircraft. The stub-wing pylons attach directly to a solid cabin side.
+- COCKPIT-SIDE WINDOW PANES (per the FRAME exception, "window pane" category): ONE small dark window insert per side at the pilot/co-pilot position, FORWARD of the stub-wing pylon attachment point — ~0.3m wide × 0.22m tall × 0.03m thick, gameMaterial(0x182228). Symmetric on both sides.
+- Short stub-wing pylons on each side of the fuselage at cabin height — use createWingPair with rootZ set to fuselage half-width, a short span (~1.2m), thick chord, shallow sweep, dihedral 0.05.
 - Under each pylon: a 7-shot rocket pod (capsuleXGeo or cylinderXGeo pointing +X), plus attachment hard-point via beamBetween() so it visibly hangs under the wing.
 - Chin-mounted minigun turret at the nose-bottom — a small pivot "minigun" with a stubby cylinderXGeo barrel cluster. Emit a minigun-spin animation around X.
-- Same tail rotor on LEFT side of tail fin (YZ plane, spin around X).
-- Same twin skids with 4 beamBetween struts.
+- Long cylindrical tail boom extending -X from the rear of the fuselage (cylinderXGeo or capsuleXGeo tapered).
+- Vertical fin at the tail end — use boxGeo(0.9, 1.2, 0.08), standing up, base overlapping tail-boom top.
+- Tail rotor on LEFT side of vertical fin. Blades in YZ plane, spin around X (named pivot "tailRotor").
+- Main rotor mast rising ~1.5m above the cowling. Two long thin blades in XZ plane (named pivot "mainRotor", spin around Y).
+- Twin landing skids along +X below the fuselage with 4 total beamBetween struts.
 
 Include meta.tags = ['aircraft','helicopter','gunship']. Animation clips: rotor-spin, tail-rotor-spin, minigun-spin.`,
   },
@@ -132,8 +218,9 @@ Include meta.tags = ['aircraft','fixed-wing','prop','ground-attack']. Animation:
 ${FRAME}
 
 Parts:
-- Long tubular fuselage along +X (capsuleXGeo elongated). Windows along the sides (small dark boxGeo panels).
-- Rounded nose, cockpit glass just above the nose on top.
+- Long tubular fuselage along +X (capsuleXGeo elongated).
+- Rounded nose, cockpit glass just above the nose on top — a distinct glassMaterial dome that sits PROUD of the fuselage roof at the front.
+- PASSENGER WINDOW ROW (per the FRAME exception, "window pane" category): along EACH side of the fuselage at cabin height, place a row of 5-6 LARGER rectangular dark window inserts evenly spaced. Each window: 0.45m wide × 0.35m tall × 0.03m thick (use these target sizes — these are real C-47 cabin windows, they should be clearly readable from a distance), gameMaterial(0x182228). Outer face flush + 0.005m proud of the fuselage skin. The row should occupy the middle 60% of the cabin length. Symmetric on both sides. Note: the LEFT side will additionally have the three minigun barrels protruding from gun-port positions — interleave windows around them, don't stack.
 - Straight wings — createWingPair, substantial span, tapered, slight dihedral, zero sweep. Low-mounted on the fuselage.
 - Two engine nacelles, one under each wing — cylinderXGeo pods that protrude forward past the wing leading edge. Each nacelle has a 3-blade propeller at the front (named pivots "propLeft" / "propRight", spin around X).
 - On the LEFT side of the fuselage, three side-firing 7.62mm minigun barrels protruding from passenger-window positions (use cylinderZGeo pointing -Z, since they fire out the left side). Include named pivot "miniguns" grouping them.
@@ -225,26 +312,44 @@ Include meta.tags = ['aircraft','fixed-wing','jet','fighter','nva']. No animatio
 
   {
     slug: 'f4-phantom',
-    prompt: `F-4 Phantom II — McDonnell Douglas twin-engine jet fighter-bomber, Vietnam War. Navy gray or olive drab. Tandem cockpit, upswept wingtips, downswept tailplanes (anhedral). ~19m, ~4500 tris.
+    prompt: `F-4 Phantom II — McDonnell Douglas twin-engine jet fighter-bomber, Vietnam War. Navy gray. Tandem cockpit, upswept wingtips, downswept tailplanes (anhedral). ~19m, ~4500 tris.
 
 ${FRAME}
 
 Parts:
 - Long sleek fuselage along +X. Use capsuleXGeo or a chain of cylinderXGeo segments. Pointed nose.
-- Tandem cockpit canopy — two bubble segments stacked along +X, glass material.
-- Intake ducts on either side of the fuselage just behind the cockpit (boxGeo wedges with dark hollow fronts, attached via a short beamBetween to the fuselage side).
-- Swept WINGS — createWingPair with significant sweep (positive — tip moves aft), dihedral slightly positive at the root, and a kinked upturn at the tip (approximate with a small additional upper wing segment mounted near the tip). Wings low-mounted on the fuselage.
+- Tandem cockpit canopy — two bubble segments stacked along +X, glassMaterial. Distinct color from the body. CRITICAL: the canopy must sit PROUD of the fuselage roof, not embedded. Position each bubble so its CENTER is at (cockpit_x, fuselage_top_y + 0.20, 0) — i.e. raised ~0.2m above the body roof so the bottom half of the canopy meets the fuselage skin and the top half clearly bulges above. Each bubble approximately sphereGeo radius 0.45 with slight elongation along +X. The canopy must be visibly higher than the surrounding fuselage in side and 3/4 views.
+- Intake ducts on either side of the fuselage just behind the cockpit (boxGeo wedges, attached so they touch the fuselage side directly — no separate "decal" boxes).
+- Swept WINGS — createWingPair with significant sweep (positive — tip moves aft), dihedral slightly positive at the root (e.g. dihedral=0.15 for span=5). Wings low-mounted on the fuselage. The classic upturned Phantom wingtip can be approximated with a small additional outer wing segment mounted at the tip with positive dihedral — but if in doubt, OMIT the tip-up segment rather than add a flat decal box.
 - Two afterburner exhaust nozzles at the rear (cylinderXGeo rings, dark metal, pointing -X).
-- Tall swept vertical tail fin at the rear.
-- Downswept horizontal stabilizers — createWingPair with NEGATIVE dihedral (anhedral, tips lower than roots) — the Phantom's signature. Mount on the fuselage at tail level.
+- VERTICAL TAIL FIN (must STAND UP — re-read the FRAME rule): use boxGeo(2.5, 2.0, 0.10) — chord 2.5m along X, height 2.0m along Y, thickness 0.10m along Z. Position so the box base sits flush with the fuselage roof at the rear (final ~10% of body length). Do NOT use createWingPair / wingGeo for this fin.
+- Downswept horizontal stabilizers — createWingPair with NEGATIVE dihedral (anhedral, tips lower than roots, e.g. dihedral=-0.3 for span=4). Mount on the fuselage at tail level, NOT on top of the vertical fin.
 - Tricycle landing gear with beamBetween struts and cylinderZGeo wheels.
-- Optional under-wing pylons with 1-2 bombs or sidewinder missiles on each side (beamBetween hardpoints, capsuleXGeo ordnance).
+- Optional under-wing pylons with 1-2 bombs or sidewinder missiles on each side (beamBetween hardpoints, capsuleXGeo ordnance). The bombs are ordnance, not decoration — they belong if you draw a Phantom. They're acceptable.
+
+DO NOT add: hull-number boxes, national-insignia decals, painted-stripe boxes, or any other small flat boxGeo / planeGeo / decalBox elements purely for color variation. Phantom is silver-gray, period.
 
 Include meta.tags = ['aircraft','fixed-wing','jet','fighter']. No animation required (static).`,
   },
 ];
 
-const items = AIRCRAFT.map((a) => ({
+// Optional --slugs=foo,bar filter so we can re-roll a subset (e.g. fixing
+// flagged assets) without re-running the full 10-aircraft batch.
+const slugFilterArg = process.argv.find((a) => a.startsWith('--slugs='));
+const slugFilter = slugFilterArg
+  ? new Set(slugFilterArg.slice('--slugs='.length).split(',').map((s) => s.trim()).filter(Boolean))
+  : undefined;
+
+const filtered = slugFilter ? AIRCRAFT.filter((a) => slugFilter.has(a.slug)) : AIRCRAFT;
+if (slugFilter) {
+  const missing = [...slugFilter].filter((s) => !AIRCRAFT.some((a) => a.slug === s));
+  if (missing.length) {
+    console.warn(`[gen-aircraft] unknown slug(s): ${missing.join(', ')}`);
+  }
+  console.log(`[gen-aircraft] slug filter active: ${[...slugFilter].join(', ')} → ${filtered.length} target(s)`);
+}
+
+const items = filtered.map((a) => ({
   slug: a.slug,
   prompt: a.prompt,
   outPath: join(OUT_DIR, `${a.slug}.glb`),
